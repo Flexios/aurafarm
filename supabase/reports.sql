@@ -117,6 +117,8 @@ $$;
 grant execute on function public.report_user(text, text, text, uuid) to authenticated;
 
 -- Admin: list reports
+drop function if exists public.admin_list_reports();
+
 create or replace function public.admin_list_reports()
 returns table (
   id uuid,
@@ -132,7 +134,9 @@ returns table (
   reported_username text,
   challenge_title text,
   player1_answer text,
-  player2_answer text
+  player2_answer text,
+  player1_username text,
+  player2_username text
 )
 language plpgsql
 security definer
@@ -158,11 +162,15 @@ begin
     rd.username as reported_username,
     d.challenge_title,
     d.player1_answer,
-    d.player2_answer
+    d.player2_answer,
+    p1.username as player1_username,
+    p2.username as player2_username
   from public.user_reports r
   join public.profiles rp on rp.user_id = r.reporter_id
   join public.profiles rd on rd.user_id = r.reported_id
   left join public.online_duels d on d.id = r.duel_id
+  left join public.profiles p1 on p1.user_id = d.player1_id
+  left join public.profiles p2 on p2.user_id = d.player2_id
   order by
     case when r.status = 'open' then 0 else 1 end,
     r.created_at desc

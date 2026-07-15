@@ -99,6 +99,52 @@ export async function searchProfiles(query: string): Promise<ProfileSearchHit[]>
   });
 }
 
+export interface AccountStats {
+  username: string;
+  createdAt: string;
+  banned: boolean;
+  banReason: string | null;
+  matchWins: number;
+  matchLosses: number;
+  matchTies: number;
+  matches: number;
+  duelWins: number;
+  duelLosses: number;
+  duelTies: number;
+  totalAura: number;
+  streak: number;
+  winRate: number | null;
+}
+
+export async function fetchOwnAccountStats(): Promise<AccountStats | null> {
+  if (!isSupabaseConfigured()) return null;
+  const session = getCachedSession();
+  if (!session) return null;
+  const { data, error } = await getSupabase().rpc("get_own_account_stats");
+  if (error) {
+    console.warn("get_own_account_stats", error.message);
+    return null;
+  }
+  const obj = (data || {}) as Record<string, unknown>;
+  if (obj.ok === false) return null;
+  return {
+    username: String(obj.username ?? session.username),
+    createdAt: String(obj.created_at ?? ""),
+    banned: Boolean(obj.banned),
+    banReason: (obj.ban_reason as string | null) ?? null,
+    matchWins: Number(obj.match_wins ?? 0),
+    matchLosses: Number(obj.match_losses ?? 0),
+    matchTies: Number(obj.match_ties ?? 0),
+    matches: Number(obj.matches ?? 0),
+    duelWins: Number(obj.duel_wins ?? 0),
+    duelLosses: Number(obj.duel_losses ?? 0),
+    duelTies: Number(obj.duel_ties ?? 0),
+    totalAura: Number(obj.total_aura ?? 0),
+    streak: Number(obj.streak ?? 0),
+    winRate: obj.win_rate == null || obj.win_rate === "" ? null : Number(obj.win_rate),
+  };
+}
+
 export async function updateBio(bio: string): Promise<{ ok: true } | { ok: false; error: string }> {
   const cfg = getSupabaseConfigError();
   if (cfg) return { ok: false, error: cfg };

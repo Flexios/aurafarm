@@ -153,6 +153,8 @@ export interface AdminReportRow {
   challengeTitle: string | null;
   player1Answer: string | null;
   player2Answer: string | null;
+  player1Username: string | null;
+  player2Username: string | null;
 }
 
 export async function adminListReports(): Promise<AdminReportRow[]> {
@@ -180,6 +182,8 @@ export async function adminListReports(): Promise<AdminReportRow[]> {
       challengeTitle: (row.challenge_title as string | null) ?? null,
       player1Answer: (row.player1_answer as string | null) ?? null,
       player2Answer: (row.player2_answer as string | null) ?? null,
+      player1Username: row.player1_username ? String(row.player1_username) : null,
+      player2Username: row.player2_username ? String(row.player2_username) : null,
     };
   });
 }

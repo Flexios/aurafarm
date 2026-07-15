@@ -19,12 +19,14 @@ import {
 import { renderFriendPanel } from "./friendPanel";
 import { collectiblesHtml } from "./collectibles";
 import {
+  fetchOwnAccountStats,
   fetchPublicProfile,
   loadOwnBio,
   removeAvatar,
   searchProfiles,
   updateBio,
   uploadAvatar,
+  type AccountStats,
   type ProfileSearchHit,
   type PublicProfile,
 } from "../profile/api";
@@ -63,10 +65,13 @@ export function renderProfile(
   let outgoing: FriendRequestRow[] = [];
   let friendsLoading = false;
   let selectedFriend: FriendRow | null = null;
+  let accountStats: AccountStats | null = null;
+  let statsLoading = false;
 
   const session = getCachedSession();
 
   const boot = async () => {
+    statsLoading = true;
     ownBio = await loadOwnBio();
     if (!ownAvatar && session) {
       const p = await fetchPublicProfile(session.username);
@@ -75,6 +80,8 @@ export function renderProfile(
         onState({ ...state, avatarUrl: p.avatarUrl });
       }
     }
+    accountStats = await fetchOwnAccountStats();
+    statsLoading = false;
     paint();
   };
 
@@ -126,6 +133,27 @@ export function renderProfile(
     const rank = rankForAura(state.totalAura);
     const aesthetic = aestheticById(state.core as AestheticCore);
     const name = state.displayName || session?.username || "You";
+    const stats = accountStats;
+    const joined = stats?.createdAt
+      ? new Date(stats.createdAt).toLocaleDateString(undefined, {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        })
+      : "—";
+    const matches = stats?.matches ?? 0;
+    const wins = stats?.matchWins ?? state.duelWins;
+    const losses = stats?.matchLosses ?? state.duelLosses ?? 0;
+    const ties = stats?.matchTies ?? state.duelTies ?? 0;
+    const wr =
+      stats?.winRate != null
+        ? `${stats.winRate}%`
+        : matches > 0
+          ? `${Math.round((wins / matches) * 100)}%`
+          : "—";
+    const accountStatus = stats?.banned
+      ? `Banned${stats.banReason ? ` · ${stats.banReason}` : ""}`
+      : "Good standing";
 
     body.innerHTML = `
       ${banner()}
@@ -144,18 +172,76 @@ export function renderProfile(
             <div class="tag-row">
               <span class="tag">${rank.emoji} ${escapeHtml(rank.name)}</span>
               <span class="tag magenta">${aesthetic.emoji} ${escapeHtml(aesthetic.label)}</span>
+              ${
+                stats?.banned
+                  ? `<span class="tag" style="background:rgba(255,80,80,0.18);color:var(--danger, #ff6b6b)">Banned</span>`
+                  : `<span class="tag">Active</span>`
+              }
             </div>
           </div>
         </div>
         <div class="stat-grid" style="margin-top:16px">
           <div class="stat"><b>${formatNumber(state.totalAura)}</b><span>Aura</span></div>
           <div class="stat"><b>🔥 ${state.streak}</b><span>Streak</span></div>
-          <div class="stat"><b>${state.duelWins}</b><span>Duels</span></div>
+          <div class="stat"><b>${state.duelWins}</b><span>Wins</span></div>
         </div>
         ${
           ownAvatar
             ? `<button type="button" class="btn btn-plain" id="remove-avatar" style="margin-top:8px" ${busy ? "disabled" : ""}>Remove photo</button>`
             : ""
+        }
+      </div>
+
+      <div class="section-header">Stats</div>
+      <div class="card stack">
+        ${
+          statsLoading
+            ? `<p class="muted" style="margin:0">Loading account stats…</p>`
+            : `
+        <div class="stat-grid">
+          <div class="stat"><b>${escapeHtml(joined)}</b><span>Joined</span></div>
+          <div class="stat"><b>${formatNumber(matches)}</b><span>Matches</span></div>
+          <div class="stat"><b>${escapeHtml(wr)}</b><span>Win rate</span></div>
+        </div>
+        <div class="stat-grid">
+          <div class="stat"><b>${formatNumber(wins)}</b><span>Wins</span></div>
+          <div class="stat"><b>${formatNumber(losses)}</b><span>Losses</span></div>
+          <div class="stat"><b>${formatNumber(ties)}</b><span>Ties</span></div>
+        </div>
+        <div class="inset-group" style="margin:0">
+          <div class="list-row">
+            <div class="meta">
+              <strong>Account status</strong>
+              <span class="${stats?.banned ? "danger-text" : ""}">${escapeHtml(accountStatus)}</span>
+            </div>
+          </div>
+          <div class="list-row">
+            <div class="meta">
+              <strong>Registry date</strong>
+              <span>${escapeHtml(joined)}</span>
+            </div>
+          </div>
+          <div class="list-row">
+            <div class="meta">
+              <strong>Record</strong>
+              <span>${formatNumber(wins)}W – ${formatNumber(losses)}L – ${formatNumber(ties)}T</span>
+            </div>
+          </div>
+          <div class="list-row">
+            <div class="meta">
+              <strong>Best daily</strong>
+              <span>${state.bestDailyScore ? formatNumber(state.bestDailyScore) : "—"}</span>
+            </div>
+          </div>
+          <div class="list-row">
+            <div class="meta">
+              <strong>Battle pass</strong>
+              <span>Lv ${state.battlePassLevel}${state.battlePassPremium ? " · Premium" : ""}</span>
+            </div>
+          </div>
+        </div>
+        <p class="field-hint muted" style="margin:0">Matches = completed online + friend duels. Profile wins may differ until cloud sync.</p>
+        `
         }
       </div>
 

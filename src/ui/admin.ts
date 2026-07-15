@@ -504,11 +504,11 @@ export function renderAdmin(
                     r.player1Answer != null || r.player2Answer != null
                       ? `<div class="battle-answers">
                     <div class="battle-answer-card">
-                      <div class="battle-answer-label">Player 1 answer</div>
+                      <div class="battle-answer-label">@${escapeHtml(r.player1Username || "player1")} answer</div>
                       <p class="battle-answer-body">${escapeHtml(r.player1Answer || "—")}</p>
                     </div>
                     <div class="battle-answer-card">
-                      <div class="battle-answer-label">Player 2 answer</div>
+                      <div class="battle-answer-label">@${escapeHtml(r.player2Username || "player2")} answer</div>
                       <p class="battle-answer-body">${escapeHtml(r.player2Answer || "—")}</p>
                     </div>
                   </div>`
