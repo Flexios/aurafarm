@@ -1,7 +1,7 @@
 import { getCachedSession } from "../auth/auth";
 import { aestheticById } from "../data/aesthetics";
-import { CHALLENGES } from "../data/challenges";
 import { rankForAura } from "../data/ranks";
+import { pickChallenge } from "../game/daily";
 import { claimFriendBattleProgress } from "../game/economy";
 import { scoreLocal } from "../game/scorer";
 import {
@@ -21,7 +21,6 @@ import {
 import { fetchPublicProfile, type PublicProfile } from "../profile/api";
 import type { AestheticCore, Challenge, PlayerState } from "../types";
 import { localizeChallenge, localizeChallengeTitle } from "../i18n";
-import { pickDaily } from "../utils/seed";
 import { escapeHtml, formatNumber } from "../utils/format";
 import { collectiblesHtml } from "./collectibles";
 import { showToast } from "./toast";
@@ -33,8 +32,8 @@ function avatarHtml(url: string | null | undefined, name: string): string {
 }
 
 /** Pick a battle prompt; change nonce to “refresh” a new task. */
-function getBattleChallenge(nonce: number): Challenge {
-  return pickDaily(CHALLENGES, `friend-battle-${nonce}`, new Date());
+function getBattleChallenge(nonce: number, includeNsfw: boolean): Challenge {
+  return pickChallenge(`friend-battle-${nonce}`, includeNsfw);
 }
 
 function friendBattleRecord(
@@ -402,7 +401,10 @@ export async function renderFriendPanel(
   };
 
   const paintBattleNew = (banner: string) => {
-    const challenge = getBattleChallenge(challengeNonce);
+    const challenge = getBattleChallenge(
+      challengeNonce,
+      Boolean(player.settings.nsfwChallenges),
+    );
 
     container.innerHTML = `
       <button type="button" class="btn btn-plain" id="friend-back">← Back</button>
@@ -439,7 +441,10 @@ export async function renderFriendPanel(
 
     container.querySelector("#battle-send")?.addEventListener("click", async () => {
       const answer = (container.querySelector("#battle-answer") as HTMLTextAreaElement).value;
-      const ch = getBattleChallenge(challengeNonce);
+      const ch = getBattleChallenge(
+        challengeNonce,
+        Boolean(player.settings.nsfwChallenges),
+      );
       busy = true;
       paintBattleNew(banner);
       const res = await createFriendBattle(

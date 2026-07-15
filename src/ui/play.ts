@@ -13,16 +13,16 @@ import type { Challenge, PlayerState, ScoreResult } from "../types";
 import { escapeHtml } from "../utils/format";
 import { showToast } from "./toast";
 
-function loadChallengeRaw(mode: "daily" | "practice"): Challenge {
-  return mode === "daily" ? getTodaysChallenge() : getPracticeChallenge();
-}
-
 export function renderPlay(
   container: HTMLElement,
   state: PlayerState,
   aiOn: boolean,
   onState: (s: PlayerState) => void,
 ): void {
+  const nsfw = Boolean(state.settings.nsfwChallenges);
+  const loadChallengeRaw = (mode: "daily" | "practice"): Challenge =>
+    mode === "daily" ? getTodaysChallenge(nsfw) : getPracticeChallenge(nsfw);
+
   const dailyDone = hasPlayedDaily(state);
   let mode: "daily" | "practice" = dailyDone ? "practice" : "daily";
   /** English source of truth for scoring / cloud */
@@ -97,7 +97,7 @@ export function renderPlay(
       <div class="desktop-grid play-grid">
       <div class="card home-panel">
         <div class="challenge-emoji">${challenge.emoji}</div>
-        <h2 style="margin:0 0 6px;font-size:1.25rem">${escapeHtml(challenge.title)}</h2>
+        <h2 style="margin:0 0 6px;font-size:1.25rem">${escapeHtml(challenge.title)}${challenge.nsfw ? ` <span class="tag" style="font-size:0.7rem;vertical-align:middle">18+</span>` : ""}</h2>
         <p class="muted" style="margin:0">${escapeHtml(challenge.prompt)}</p>
         <p class="muted" style="margin:10px 0 0;font-size:0.86rem">${t("play.hint", { hint: challenge.hint })}</p>
         ${

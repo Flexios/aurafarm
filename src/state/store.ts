@@ -34,6 +34,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
       ? Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
       : "UTC",
   language: "en",
+  nsfwChallenges: false,
 };
 
 export const USERNAME_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;

@@ -41,7 +41,7 @@ export function renderAdmin(
   let busy = false;
   let error = "";
   let success = "";
-  let dailyPreview = getTodaysChallenge();
+  let dailyPreview = getTodaysChallenge(Boolean(state.settings.nsfwChallenges));
   let deleteTarget: string | null = null;
   let deleteConfirm = "";
   let userSearch = "";
@@ -201,7 +201,7 @@ export function renderAdmin(
     `;
 
     body.querySelector("#admin-refresh-daily")?.addEventListener("click", () => {
-      dailyPreview = refreshDailyChallenge();
+      dailyPreview = refreshDailyChallenge(Boolean(state.settings.nsfwChallenges));
       success = `Daily refreshed: ${dailyPreview.title}`;
       error = "";
       showToast(success);

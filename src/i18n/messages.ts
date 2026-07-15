@@ -254,6 +254,14 @@ const en = {
   "settings.reduceMotion": "Reduce motion",
   "settings.sounds": "Sounds & feedback",
   "settings.hideCurrency": "Hide currency in top bar",
+  "settings.content": "Content",
+  "settings.nsfw": "18+ challenges (NSFW)",
+  "settings.nsfwHint":
+    "Unlocks mature after-dark prompts: situationships, flirting, late-night energy. Still no graphic porn — spicy, not X-rated. Confirm you are 18+.",
+  "settings.nsfwConfirm":
+    "Enable 18+ challenges? You’ll get spicier dating / party prompts. You must be 18 or older.",
+  "settings.nsfwOn": "18+ challenges on",
+  "settings.nsfwOff": "18+ challenges off",
   "settings.streakSection": "Streak reminders",
   "settings.streakEmail": "Email me to keep my 🔥 streak",
   "settings.streakTime": "Reminder time (your local time)",
@@ -512,6 +520,14 @@ const de: Record<MessageKey, string> = {
   "settings.reduceMotion": "Weniger Bewegung",
   "settings.sounds": "Sounds & Feedback",
   "settings.hideCurrency": "Währung in der Topbar ausblenden",
+  "settings.content": "Inhalte",
+  "settings.nsfw": "18+ Challenges (NSFW)",
+  "settings.nsfwHint":
+    "Schaltet reifere After-Dark-Prompts frei: Situationships, Flirts, Late-Night-Energie. Kein Hardcore — spicy, nicht X-rated. Bestätige, dass du 18+ bist.",
+  "settings.nsfwConfirm":
+    "18+ Challenges aktivieren? Du bekommst spicigere Dating-/Party-Prompts. Du musst 18+ sein.",
+  "settings.nsfwOn": "18+ Challenges an",
+  "settings.nsfwOff": "18+ Challenges aus",
   "settings.streakSection": "Serien-Erinnerungen",
   "settings.streakEmail": "E-Mail, damit meine 🔥 Serie hält",
   "settings.streakTime": "Erinnerungszeit (deine Ortszeit)",
@@ -769,6 +785,14 @@ const fr: Record<MessageKey, string> = {
   "settings.reduceMotion": "Réduire les animations",
   "settings.sounds": "Sons et retours",
   "settings.hideCurrency": "Masquer la monnaie en haut",
+  "settings.content": "Contenu",
+  "settings.nsfw": "Challenges 18+ (NSFW)",
+  "settings.nsfwHint":
+    "Débloque des prompts after-dark matures : situationships, flirts, énergie de fin de soirée. Pas de porn hard — spicy, pas X. Confirme que tu as 18+.",
+  "settings.nsfwConfirm":
+    "Activer les challenges 18+ ? Tu auras des prompts dating/soirée plus osés. Tu dois avoir 18 ans ou plus.",
+  "settings.nsfwOn": "Challenges 18+ activés",
+  "settings.nsfwOff": "Challenges 18+ désactivés",
   "settings.streakSection": "Rappels de série",
   "settings.streakEmail": "M’écrire pour garder ma série 🔥",
   "settings.streakTime": "Heure du rappel (heure locale)",
@@ -1026,6 +1050,14 @@ const zh: Record<MessageKey, string> = {
   "settings.reduceMotion": "减少动效",
   "settings.sounds": "音效与反馈",
   "settings.hideCurrency": "隐藏顶栏货币",
+  "settings.content": "内容",
+  "settings.nsfw": "18+ 挑战（NSFW）",
+  "settings.nsfwHint":
+    "解锁更成熟的深夜向提示：暧昧、暧昧关系、派对能量。不是硬核色情——偏辣，不是 X 级。请确认你已满 18 岁。",
+  "settings.nsfwConfirm":
+    "开启 18+ 挑战？会出现更辣的约会/派对提示。你必须年满 18 岁。",
+  "settings.nsfwOn": "已开启 18+ 挑战",
+  "settings.nsfwOff": "已关闭 18+ 挑战",
   "settings.streakSection": "连胜提醒",
   "settings.streakEmail": "发邮件提醒我保住 🔥 连胜",
   "settings.streakTime": "提醒时间（本地时间）",
@@ -1283,6 +1315,14 @@ const es: Record<MessageKey, string> = {
   "settings.reduceMotion": "Reducir movimiento",
   "settings.sounds": "Sonidos y feedback",
   "settings.hideCurrency": "Ocultar moneda en la barra superior",
+  "settings.content": "Contenido",
+  "settings.nsfw": "Retos 18+ (NSFW)",
+  "settings.nsfwHint":
+    "Desbloquea prompts after-dark maduros: situationships, flirteo, energía de madrugada. No es porno hard — spicy, no X. Confirma que tienes 18+.",
+  "settings.nsfwConfirm":
+    "¿Activar retos 18+? Verás prompts de dating/fiesta más picantes. Debes tener 18 años o más.",
+  "settings.nsfwOn": "Retos 18+ activados",
+  "settings.nsfwOff": "Retos 18+ desactivados",
   "settings.streakSection": "Recordatorios de racha",
   "settings.streakEmail": "Escríbeme para no romper mi racha 🔥",
   "settings.streakTime": "Hora del recordatorio (hora local)",

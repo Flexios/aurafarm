@@ -46,6 +46,11 @@ export interface UserSettings {
   timezone: string;
   /** UI language (English default) */
   language: AppLang;
+  /**
+   * 18+ / NSFW challenges — spicy adult-topic prompts.
+   * Default off; only for users who opt in.
+   */
+  nsfwChallenges: boolean;
 }
 
 export type ChallengeCategory =
@@ -53,7 +58,8 @@ export type ChallengeCategory =
   | "rizz"
   | "room-vibe"
   | "main-character"
-  | "caption";
+  | "caption"
+  | "after-dark";
 
 export interface Challenge {
   id: string;
@@ -62,6 +68,8 @@ export interface Challenge {
   prompt: string;
   hint: string;
   emoji: string;
+  /** Only shown when settings.nsfwChallenges is on (18+) */
+  nsfw?: boolean;
 }
 
 export interface CoreDef {

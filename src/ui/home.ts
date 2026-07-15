@@ -23,7 +23,9 @@ export function renderHome(
   const progress = next
     ? Math.min(100, ((state.totalAura - rank.minAura) / (next.minAura - rank.minAura)) * 100)
     : 100;
-  const challenge = localizeChallenge(getTodaysChallenge());
+  const challenge = localizeChallenge(
+    getTodaysChallenge(Boolean(state.settings.nsfwChallenges)),
+  );
   const played = hasPlayedDaily(state);
   const aesthetic = aestheticById(state.core);
   const collectionCores = coresFromIds(state.ownedCores);
@@ -41,6 +43,7 @@ export function renderHome(
           <div class="tag-row">
             <span class="tag">${escapeHtml(localizeCategory(challenge.category))}</span>
             <span class="tag magenta">${aesthetic.emoji} ${escapeHtml(aesthetic.label)}</span>
+            ${challenge.nsfw ? `<span class="tag" style="background:rgba(255,80,120,0.2)">18+</span>` : ""}
             ${played ? `<span class="tag magenta">${t("home.doneToday")}</span>` : `<span class="tag">${t("home.ready")}</span>`}
           </div>
           <div class="btn-row" style="margin-top:auto">

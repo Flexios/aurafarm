@@ -1,18 +1,18 @@
-import { CHALLENGES } from "../data/challenges";
+import { getChallengePool } from "../data/challenges";
 import type { Challenge } from "../types";
 import { pickDaily } from "../utils/seed";
 
 const DAILY_SALT_KEY = "aurafarm.admin.dailySalt";
 
 /** Admin: bump salt so today's daily picks a different challenge. */
-export function refreshDailyChallenge(): Challenge {
+export function refreshDailyChallenge(includeNsfw = false): Challenge {
   const next = String(Date.now());
   try {
     localStorage.setItem(DAILY_SALT_KEY, next);
   } catch {
     /* ignore */
   }
-  return getTodaysChallenge();
+  return getTodaysChallenge(includeNsfw);
 }
 
 export function getDailySalt(): string {
@@ -24,11 +24,24 @@ export function getDailySalt(): string {
   }
 }
 
-export function getTodaysChallenge(date = new Date()): Challenge {
-  return pickDaily(CHALLENGES, getDailySalt(), date);
+export function getTodaysChallenge(
+  includeNsfw = false,
+  date = new Date(),
+): Challenge {
+  const pool = getChallengePool(includeNsfw);
+  return pickDaily(pool, getDailySalt(), date);
 }
 
-export function getPracticeChallenge(): Challenge {
-  // Slightly different salt so practice ≠ daily when same session
-  return pickDaily(CHALLENGES, `practice-${Date.now() % 7}`, new Date());
+export function getPracticeChallenge(includeNsfw = false): Challenge {
+  const pool = getChallengePool(includeNsfw);
+  return pickDaily(pool, `practice-${Date.now() % 7}`, new Date());
+}
+
+/** Pick any challenge from the filtered pool (friend battles, etc.). */
+export function pickChallenge(
+  salt: string,
+  includeNsfw = false,
+  date = new Date(),
+): Challenge {
+  return pickDaily(getChallengePool(includeNsfw), salt, date);
 }

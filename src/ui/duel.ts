@@ -1,5 +1,5 @@
 import { getCachedSession } from "../auth/auth";
-import { getTodaysChallenge } from "../game/daily";
+import { getTodaysChallenge, pickChallenge } from "../game/daily";
 import {
   applyDuelLoss,
   applyDuelWin,
@@ -31,7 +31,6 @@ import {
   type FriendBattle,
   type FriendRow,
 } from "../friends/api";
-import { CHALLENGES } from "../data/challenges";
 import {
   localizeChallenge,
   localizeChallengePrompt,
@@ -40,7 +39,6 @@ import {
 } from "../i18n";
 import { loadState, saveState } from "../state/store";
 import type { AestheticCore, Challenge, PlayerState } from "../types";
-import { pickDaily } from "../utils/seed";
 import { escapeHtml, formatNumber } from "../utils/format";
 import { showToast } from "./toast";
 
@@ -76,6 +74,7 @@ export function renderDuel(
   let pollTimer: ReturnType<typeof setInterval> | null = null;
   const me = getCachedSession();
   const myId = me?.userId ?? "";
+  const nsfw = () => Boolean(state.settings.nsfwChallenges);
 
   const stopPoll = () => {
     if (pollTimer) {
@@ -276,7 +275,7 @@ export function renderDuel(
 
     const open = onlineDuels.filter((d) => d.status === "open");
     const done = onlineDuels.filter((d) => d.status === "complete").slice(0, 10);
-    const challenge = localizeChallenge(getTodaysChallenge());
+    const challenge = localizeChallenge(getTodaysChallenge(nsfw()));
 
     body.innerHTML = `
       <div class="card stack">
@@ -353,7 +352,7 @@ export function renderDuel(
       busy = true;
       error = "";
       paint();
-      const ch = getTodaysChallenge();
+      const ch = getTodaysChallenge(nsfw());
       const res = await findOnlineDuel(ch.title, ch.prompt);
       busy = false;
       if (!res.ok) {
@@ -586,7 +585,7 @@ export function renderDuel(
       duel = {
         ...createDuelState(),
         phase: "p1",
-        challenge: getTodaysChallenge(),
+        challenge: getTodaysChallenge(nsfw()),
         p1: { name: p1, answer: "", result: null },
         p2: { name: p2, answer: "", result: null },
       };
@@ -743,7 +742,10 @@ export function renderDuel(
 
   const paintChallenge = (body: Element) => {
     const f = challengeFriend!;
-    const challengeRaw = pickDaily(CHALLENGES, `friend-battle-${challengeNonce}`, new Date());
+    const challengeRaw = pickChallenge(
+      `friend-battle-${challengeNonce}`,
+      nsfw(),
+    );
     const challenge = localizeChallenge(challengeRaw);
 
     body.innerHTML = `
@@ -777,7 +779,7 @@ export function renderDuel(
     });
     body.querySelector("#send-battle")?.addEventListener("click", async () => {
       const answer = (body.querySelector("#battle-answer") as HTMLTextAreaElement).value;
-      const ch = pickDaily(CHALLENGES, `friend-battle-${challengeNonce}`, new Date());
+      const ch = pickChallenge(`friend-battle-${challengeNonce}`, nsfw());
       busy = true;
       paint();
       const res = await createFriendBattle(f.userId, ch.title, ch.prompt, answer);

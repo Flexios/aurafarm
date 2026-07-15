@@ -386,6 +386,12 @@ export function renderSettings(
         ${toggleRow("hideTopCurrency", t("settings.hideCurrency"), s.hideTopCurrency)}
       </div>
 
+      <div class="section-header">${t("settings.content")}</div>
+      <div class="card stack">
+        ${toggleRow("nsfwChallenges", t("settings.nsfw"), Boolean(s.nsfwChallenges))}
+        <p class="field-hint muted" style="margin:0">${t("settings.nsfwHint")}</p>
+      </div>
+
       <div class="section-header">${t("settings.streakSection")}</div>
       <div class="card stack">
         ${toggleRow("streakEmailEnabled", t("settings.streakEmail"), s.streakEmailEnabled)}
@@ -426,15 +432,28 @@ export function renderSettings(
     body.querySelectorAll<HTMLInputElement>("[data-toggle]").forEach((input) => {
       input.addEventListener("change", () => {
         const key = input.dataset.toggle as keyof UserSettings;
-        const value = input.checked;
+        let value = input.checked;
+        if (key === "nsfwChallenges" && value) {
+          const ok = window.confirm(t("settings.nsfwConfirm"));
+          if (!ok) {
+            input.checked = false;
+            return;
+          }
+        }
         const patch: Partial<UserSettings> = {
           [key]: value,
           timezone: detectTimezone(),
         } as Partial<UserSettings>;
         state = updateSettings(state, patch);
         onState(state);
-        showToast(t("settings.saved"));
-        if (key === "streakEmailEnabled") {
+        showToast(
+          key === "nsfwChallenges"
+            ? value
+              ? t("settings.nsfwOn")
+              : t("settings.nsfwOff")
+            : t("settings.saved"),
+        );
+        if (key === "streakEmailEnabled" || key === "nsfwChallenges") {
           paint();
         }
       });
