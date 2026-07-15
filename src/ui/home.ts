@@ -3,7 +3,7 @@ import { aestheticById } from "../data/aesthetics";
 import { coresFromIds } from "../data/cores";
 import { nextRank, rankForAura } from "../data/ranks";
 import { getTodaysChallenge } from "../game/daily";
-import { t } from "../i18n";
+import { localizeCategory, localizeChallenge, t } from "../i18n";
 import { hasPlayedDaily } from "../state/store";
 import type { PlayerState, Screen } from "../types";
 import { escapeHtml, formatNumber } from "../utils/format";
@@ -23,7 +23,7 @@ export function renderHome(
   const progress = next
     ? Math.min(100, ((state.totalAura - rank.minAura) / (next.minAura - rank.minAura)) * 100)
     : 100;
-  const challenge = getTodaysChallenge();
+  const challenge = localizeChallenge(getTodaysChallenge());
   const played = hasPlayedDaily(state);
   const aesthetic = aestheticById(state.core);
   const collectionCores = coresFromIds(state.ownedCores);
@@ -39,7 +39,7 @@ export function renderHome(
           <strong style="font-size:1.05rem">${escapeHtml(challenge.title)}</strong>
           <p class="muted" style="margin:8px 0 0">${escapeHtml(challenge.prompt)}</p>
           <div class="tag-row">
-            <span class="tag">${escapeHtml(challenge.category)}</span>
+            <span class="tag">${escapeHtml(localizeCategory(challenge.category))}</span>
             <span class="tag magenta">${aesthetic.emoji} ${escapeHtml(aesthetic.label)}</span>
             ${played ? `<span class="tag magenta">${t("home.doneToday")}</span>` : `<span class="tag">${t("home.ready")}</span>`}
           </div>

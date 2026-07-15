@@ -6,7 +6,12 @@ import {
   equipCosmetic,
   unlockBattlePassPremium,
 } from "../game/economy";
-import { t } from "../i18n";
+import {
+  cosmeticName,
+  rarityLabel,
+  rewardLabel,
+  t,
+} from "../i18n";
 import type { CosmeticSlot, PlayerState } from "../types";
 import { escapeHtml } from "../utils/format";
 import { icon, type IconName } from "./icons";
@@ -31,12 +36,12 @@ function priceHtml(item: {
   const parts: string[] = [];
   if (item.priceSparks > 0) {
     parts.push(
-      `<span class="price-chip" title="Sparks">${icon("spark", "icon icon-sm")} ${item.priceSparks}</span>`,
+      `<span class="price-chip" title="${t("currency.sparks")}">${icon("spark", "icon icon-sm")} ${item.priceSparks}</span>`,
     );
   }
   if (item.priceGlow > 0) {
     parts.push(
-      `<span class="price-chip glow" title="Glow">${icon("glow", "icon icon-sm")} ${item.priceGlow}</span>`,
+      `<span class="price-chip glow" title="${t("currency.glow")}">${icon("glow", "icon icon-sm")} ${item.priceGlow}</span>`,
     );
   }
   return `<span class="price-line">${parts.join("")}</span>`;
@@ -87,33 +92,34 @@ export function renderShop(
             .map((item) => {
               const owned = state.ownedCosmetics.includes(item.id);
               const equipped = state.equipped[slot] === item.id;
+              const name = cosmeticName(item.id, item.name);
               return `
                 <div class="shop-item">
                   <div class="swatch" style="background:${item.preview}" aria-hidden="true">
                     ${icon(meta.ico, "icon icon-swatch")}
                   </div>
                   <div class="meta">
-                    <strong>${escapeHtml(item.name)}</strong>
-                    <span class="rarity ${item.rarity}">${item.rarity}</span>
+                    <strong>${escapeHtml(name)}</strong>
+                    <span class="rarity ${item.rarity}">${escapeHtml(rarityLabel(item.rarity))}</span>
                     ${priceHtml(item)}
                   </div>
                   <div class="mini-actions">
                     ${
                       owned
-                        ? `<button type="button" class="btn ${equipped ? "owned" : ""}" data-equip="${item.id}">${equipped ? "Equipped" : "Equip"}</button>`
+                        ? `<button type="button" class="btn ${equipped ? "owned" : ""}" data-equip="${item.id}">${equipped ? t("shop.equipped") : t("shop.equip")}</button>`
                         : `
                           ${
                             item.priceSparks > 0 || item.free
-                              ? `<button type="button" class="btn" data-buy-sparks="${item.id}" ${item.free ? "disabled" : ""} title="Buy with Sparks">${
+                              ? `<button type="button" class="btn" data-buy-sparks="${item.id}" ${item.free ? "disabled" : ""} title="${t("currency.sparks")}">${
                                   item.free
-                                    ? "Owned"
-                                    : `${icon("spark", "icon icon-sm")} Buy`
+                                    ? t("shop.owned")
+                                    : `${icon("spark", "icon icon-sm")} ${t("shop.buy")}`
                                 }</button>`
                               : ""
                           }
                           ${
                             item.priceGlow > 0
-                              ? `<button type="button" class="btn" data-buy-glow="${item.id}" title="Buy with Glow">${icon("glow", "icon icon-sm")} Buy</button>`
+                              ? `<button type="button" class="btn" data-buy-glow="${item.id}" title="${t("currency.glow")}">${icon("glow", "icon icon-sm")} ${t("shop.buy")}</button>`
                               : ""
                           }
                         `
@@ -133,7 +139,7 @@ export function renderShop(
         const next = equipCosmetic(state, btn.dataset.equip!);
         onState(next);
         state = next;
-        showToast("Equipped. Check your Card.");
+        showToast(t("shop.equippedToast"));
         paint();
       });
     });
@@ -147,7 +153,12 @@ export function renderShop(
         }
         onState(res.state);
         state = res.state;
-        showToast(`Owned ${cosmeticById(btn.dataset.buySparks!)?.name ?? "item"}`);
+        const id = btn.dataset.buySparks!;
+        showToast(
+          t("shop.ownedToast", {
+            name: cosmeticName(id, cosmeticById(id)?.name ?? "item"),
+          }),
+        );
         paint();
       });
     });
@@ -161,7 +172,7 @@ export function renderShop(
         }
         onState(res.state);
         state = res.state;
-        showToast("Premium drip secured.");
+        showToast(t("shop.premiumToast"));
         paint();
       });
     });
@@ -169,41 +180,41 @@ export function renderShop(
 
   const renderGlow = (body: Element) => {
     body.innerHTML = `
-      <div class="section-header">Demo Packs</div>
-      <p class="muted" style="margin:0 0 12px;padding:0 4px">No real charges. Premium currency for cosmetics and pass.</p>
+      <div class="section-header">${t("shop.demoPacks")}</div>
+      <p class="muted" style="margin:0 0 12px;padding:0 4px">${t("shop.demoPacksBlurb")}</p>
       <div class="pack-grid">
         <div class="pack">
           <div class="pack-icon" aria-hidden="true">${icon("glow")}</div>
           <div>
-            <strong>Starter</strong>
+            <strong>${t("shop.pack.starter")}</strong>
             <span class="price-line">
-              <span class="price-chip glow" title="Glow">${icon("glow", "icon icon-sm")} 40</span>
-              <span class="price-chip" title="Sparks">${icon("spark", "icon icon-sm")} 50</span>
+              <span class="price-chip glow" title="${t("currency.glow")}">${icon("glow", "icon icon-sm")} 40</span>
+              <span class="price-chip" title="${t("currency.sparks")}">${icon("spark", "icon icon-sm")} 50</span>
             </span>
           </div>
-          <button class="btn btn-fill" data-pack="starter">Get</button>
+          <button class="btn btn-fill" data-pack="starter">${t("shop.get")}</button>
         </div>
         <div class="pack">
           <div class="pack-icon" aria-hidden="true">${icon("star")}</div>
           <div>
-            <strong>Hype</strong>
+            <strong>${t("shop.pack.hype")}</strong>
             <span class="price-line">
-              <span class="price-chip glow" title="Glow">${icon("glow", "icon icon-sm")} 120</span>
-              <span class="price-chip" title="Sparks">${icon("spark", "icon icon-sm")} 150</span>
+              <span class="price-chip glow" title="${t("currency.glow")}">${icon("glow", "icon icon-sm")} 120</span>
+              <span class="price-chip" title="${t("currency.sparks")}">${icon("spark", "icon icon-sm")} 150</span>
             </span>
           </div>
-          <button class="btn btn-fill" data-pack="hype">Get</button>
+          <button class="btn btn-fill" data-pack="hype">${t("shop.get")}</button>
         </div>
         <div class="pack">
           <div class="pack-icon" aria-hidden="true">${icon("pass")}</div>
           <div>
-            <strong>Mogul</strong>
+            <strong>${t("shop.pack.mogul")}</strong>
             <span class="price-line">
-              <span class="price-chip glow" title="Glow">${icon("glow", "icon icon-sm")} 300</span>
-              <span class="price-chip" title="Sparks">${icon("spark", "icon icon-sm")} 400</span>
+              <span class="price-chip glow" title="${t("currency.glow")}">${icon("glow", "icon icon-sm")} 300</span>
+              <span class="price-chip" title="${t("currency.sparks")}">${icon("spark", "icon icon-sm")} 400</span>
             </span>
           </div>
-          <button class="btn btn-fill" data-pack="mogul">Get</button>
+          <button class="btn btn-fill" data-pack="mogul">${t("shop.get")}</button>
         </div>
       </div>
     `;
@@ -214,25 +225,27 @@ export function renderShop(
         const next = buyGlowPack(state, pack);
         onState(next);
         state = next;
-        showToast("Glow delivered (demo purchase).");
+        showToast(t("shop.glowDelivered"));
         paint();
       });
     });
   };
 
   const renderPass = (body: Element) => {
+    const track = state.battlePassPremium
+      ? t("shop.passPremiumOn")
+      : t("shop.passPremiumOff");
     body.innerHTML = `
       <div class="card">
-        <h3 class="section-title-with-icon">${icon("pass", "icon icon-sm")} Season 1 — Soft Launch</h3>
-        <p class="muted" style="margin:0 0 10px">Level ${state.battlePassLevel}/10. Play dailies to level up. ${
-          state.battlePassPremium
-            ? "Premium track unlocked."
-            : "Free track active — unlock Premium for full drip."
-        }</p>
+        <h3 class="section-title-with-icon">${icon("pass", "icon icon-sm")} ${t("shop.passTitle")}</h3>
+        <p class="muted" style="margin:0 0 10px">${t("shop.passLevelLine", {
+          level: state.battlePassLevel,
+          track,
+        })}</p>
         ${
           state.battlePassPremium
             ? ""
-            : `<button class="btn btn-fill" id="unlock-bp">Unlock Premium (demo)</button>`
+            : `<button class="btn btn-fill" id="unlock-bp">${t("shop.unlockPremium")}</button>`
         }
         <div class="progress" style="margin-top:12px"><i style="width:${(state.battlePassLevel / 10) * 100}%"></i></div>
       </div>
@@ -241,21 +254,23 @@ export function renderShop(
           const unlocked = state.battlePassLevel >= tier.level;
           const freeClaimed = state.claimedFreeTiers.includes(tier.level);
           const premClaimed = state.claimedPremiumTiers.includes(tier.level);
+          const freeLabel = rewardLabel(tier.freeReward);
+          const premLabel = rewardLabel(tier.premiumReward);
           return `
             <div class="bp-tier">
               <div class="level-badge ${unlocked ? "unlocked" : ""}">${tier.level}</div>
               <div class="bp-tracks">
                 <div class="bp-track">
-                  <small>FREE</small>
+                  <small>${t("shop.freeTrack")}</small>
                   <button type="button" data-claim-free="${tier.level}" class="${freeClaimed ? "claimed" : ""}" ${
                     !unlocked || freeClaimed ? "disabled" : ""
-                  }>${freeClaimed ? "Claimed ✓" : escapeHtml(tier.freeReward.label)}</button>
+                  }>${freeClaimed ? t("shop.claimed") : escapeHtml(freeLabel)}</button>
                 </div>
                 <div class="bp-track">
-                  <small>PREMIUM</small>
+                  <small>${t("shop.premiumTrack")}</small>
                   <button type="button" data-claim-prem="${tier.level}" class="${premClaimed ? "claimed" : ""}" ${
                     !unlocked || !state.battlePassPremium || premClaimed ? "disabled" : ""
-                  }>${premClaimed ? "Claimed ✓" : escapeHtml(tier.premiumReward.label)}</button>
+                  }>${premClaimed ? t("shop.claimed") : escapeHtml(premLabel)}</button>
                 </div>
               </div>
             </div>
@@ -268,7 +283,7 @@ export function renderShop(
       const next = unlockBattlePassPremium(state);
       onState(next);
       state = next;
-      showToast("Premium Battle Pass unlocked (demo).");
+      showToast(t("shop.passUnlocked"));
       paint();
     });
 
@@ -282,7 +297,12 @@ export function renderShop(
         }
         onState(res.state);
         state = res.state;
-        showToast(`Claimed ${res.label}`);
+        const tier = BATTLE_PASS.find((x) => x.level === level);
+        showToast(
+          t("shop.claimToast", {
+            label: tier ? rewardLabel(tier.freeReward) : res.label,
+          }),
+        );
         paint();
       });
     });
@@ -297,7 +317,12 @@ export function renderShop(
         }
         onState(res.state);
         state = res.state;
-        showToast(`Claimed ${res.label}`);
+        const tier = BATTLE_PASS.find((x) => x.level === level);
+        showToast(
+          t("shop.claimToast", {
+            label: tier ? rewardLabel(tier.premiumReward) : res.label,
+          }),
+        );
         paint();
       });
     });

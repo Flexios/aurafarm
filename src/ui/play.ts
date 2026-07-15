@@ -7,11 +7,15 @@ import {
 } from "../game/economy";
 import { gradeFromScore } from "../game/judgeRubric";
 import { blendAiWithLocal, finalizeRewards, scoreLocal } from "../game/scorer";
-import { t } from "../i18n";
+import { coreName, localizeChallenge, t } from "../i18n";
 import { hasPlayedDaily } from "../state/store";
 import type { Challenge, PlayerState, ScoreResult } from "../types";
 import { escapeHtml } from "../utils/format";
 import { showToast } from "./toast";
+
+function loadChallengeRaw(mode: "daily" | "practice"): Challenge {
+  return mode === "daily" ? getTodaysChallenge() : getPracticeChallenge();
+}
 
 export function renderPlay(
   container: HTMLElement,
@@ -21,7 +25,8 @@ export function renderPlay(
 ): void {
   const dailyDone = hasPlayedDaily(state);
   let mode: "daily" | "practice" = dailyDone ? "practice" : "daily";
-  let challenge: Challenge = mode === "daily" ? getTodaysChallenge() : getPracticeChallenge();
+  /** English source of truth for scoring / cloud */
+  let challengeRaw: Challenge = loadChallengeRaw(mode);
   let result: ScoreResult | null = null;
   let busy = false;
   let preferAi = aiOn && state.settings.preferAiJudge;
@@ -57,7 +62,10 @@ export function renderPlay(
           </div>
           ${
             core
-              ? `<p class="muted" style="margin-top:12px">${t("play.unlocked", { name: core.name, desc: core.description })}</p>`
+              ? `<p class="muted" style="margin-top:12px">${t("play.unlocked", {
+                  name: coreName(core.id, core.name),
+                  desc: core.description,
+                })}</p>`
               : ""
           }
           <div class="btn-row">
@@ -69,7 +77,7 @@ export function renderPlay(
       container.querySelector("#again")?.addEventListener("click", () => {
         result = null;
         mode = hasPlayedDaily(state) ? "practice" : "daily";
-        challenge = mode === "daily" ? getTodaysChallenge() : getPracticeChallenge();
+        challengeRaw = loadChallengeRaw(mode);
         paint();
       });
       container.querySelector("#back-home")?.addEventListener("click", () => {
@@ -78,6 +86,8 @@ export function renderPlay(
       });
       return;
     }
+
+    const challenge = localizeChallenge(challengeRaw);
 
     container.innerHTML = `
       <div class="segmented play-tabs">
@@ -113,11 +123,7 @@ export function renderPlay(
     container.querySelectorAll<HTMLButtonElement>("[data-mode]").forEach((btn) => {
       btn.addEventListener("click", () => {
         mode = btn.dataset.mode as "daily" | "practice";
-        if (mode === "daily") {
-          challenge = getTodaysChallenge();
-        } else {
-          challenge = getPracticeChallenge();
-        }
+        challengeRaw = loadChallengeRaw(mode);
         paint();
       });
     });
@@ -142,13 +148,14 @@ export function renderPlay(
       busy = true;
       paint();
       const useAi = preferAi && aiOn;
-      const local = scoreLocal(answer, challenge, state.core, state.streak);
+      // Always score against English source challenge for consistent judging
+      const local = scoreLocal(answer, challengeRaw, state.core, state.streak);
       let base = local;
 
       if (useAi) {
         showToast("Aura Judge is reading the room…");
         const ai = await judgeWithAi(
-          challenge,
+          challengeRaw,
           answer,
           state.core,
           state.streak,
@@ -172,7 +179,7 @@ export function renderPlay(
       result = full;
       const next =
         mode === "daily"
-          ? applyDailyResult(state, full, challenge.id)
+          ? applyDailyResult(state, full, challengeRaw.id)
           : applyPracticeResult(state, full);
       onState(next);
       busy = false;

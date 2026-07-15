@@ -32,7 +32,12 @@ import {
   type FriendRow,
 } from "../friends/api";
 import { CHALLENGES } from "../data/challenges";
-import { t } from "../i18n";
+import {
+  localizeChallenge,
+  localizeChallengePrompt,
+  localizeChallengeTitle,
+  t,
+} from "../i18n";
 import { loadState, saveState } from "../state/store";
 import type { AestheticCore, Challenge, PlayerState } from "../types";
 import { pickDaily } from "../utils/seed";
@@ -271,7 +276,7 @@ export function renderDuel(
 
     const open = onlineDuels.filter((d) => d.status === "open");
     const done = onlineDuels.filter((d) => d.status === "complete").slice(0, 10);
-    const challenge = getTodaysChallenge();
+    const challenge = localizeChallenge(getTodaysChallenge());
 
     body.innerHTML = `
       <div class="card stack">
@@ -303,7 +308,7 @@ export function renderDuel(
                 return `
               <div class="list-row">
                 <div class="meta">
-                  <strong>${escapeHtml(d.challengeTitle)}</strong>
+                  <strong>${escapeHtml(localizeChallengeTitle(d.challengeTitle))}</strong>
                   <span>${t("duel.vs", { user: opp })} · ${escapeHtml(status)}</span>
                 </div>
                 ${
@@ -334,7 +339,7 @@ export function renderDuel(
                 return `
               <div class="list-row">
                 <div class="meta">
-                  <strong>${escapeHtml(d.challengeTitle)}</strong>
+                  <strong>${escapeHtml(localizeChallengeTitle(d.challengeTitle))}</strong>
                   <span>${t("duel.vs", { user: opp })} · ${escapeHtml(result)} · ${myScore ?? "—"}–${theirScore ?? "—"}</span>
                 </div>
                 <button type="button" class="btn btn-secondary btn-sm" data-online-view="${escapeHtml(d.id)}">${t("duel.view")}</button>
@@ -419,8 +424,8 @@ export function renderDuel(
       <div class="section-header">${t("duel.result")}</div>
       <div class="card stack">
         <p style="margin:0;font-weight:600;font-size:1.05rem">${escapeHtml(outcome)}</p>
-        <p class="muted" style="margin:0"><strong>${escapeHtml(d.challengeTitle)}</strong></p>
-        <p class="muted" style="margin:0">${escapeHtml(d.challengePrompt)}</p>
+        <p class="muted" style="margin:0"><strong>${escapeHtml(localizeChallengeTitle(d.challengeTitle))}</strong></p>
+        <p class="muted" style="margin:0">${escapeHtml(localizeChallengePrompt(d.challengeTitle, d.challengePrompt))}</p>
         <div class="battle-answers">
           <div class="battle-answer-card mine">
             <div class="battle-answer-label">${t("common.you")} · ${myScore ?? "—"} pts</div>
@@ -527,10 +532,10 @@ export function renderDuel(
       <button type="button" class="btn btn-plain" id="online-back">← Back</button>
       <div class="section-header">Online duel vs @${escapeHtml(opp)}</div>
       <div class="card stack">
-        <p class="muted" style="margin:0"><strong>${escapeHtml(d.challengeTitle)}</strong></p>
-        <p class="muted" style="margin:0">${escapeHtml(d.challengePrompt)}</p>
+        <p class="muted" style="margin:0"><strong>${escapeHtml(localizeChallengeTitle(d.challengeTitle))}</strong></p>
+        <p class="muted" style="margin:0">${escapeHtml(localizeChallengePrompt(d.challengeTitle, d.challengePrompt))}</p>
         <div class="field">
-          <label for="online-answer">Your answer</label>
+          <label for="online-answer">${t("play.yourAnswer")}</label>
           <textarea id="online-answer" maxlength="400" rows="4" placeholder="Drop your line…"></textarea>
         </div>
         <button type="button" class="btn btn-fill" id="online-submit" ${busy ? "disabled" : ""}>Submit answer</button>
@@ -633,7 +638,7 @@ export function renderDuel(
                 (b) => `
             <div class="list-row">
               <div class="meta">
-                <strong>${escapeHtml(b.challengeTitle)}</strong>
+                <strong>${escapeHtml(localizeChallengeTitle(b.challengeTitle))}</strong>
                 <span>from @${escapeHtml(
                   b.challengerId === myId
                     ? b.opponentUsername
@@ -655,7 +660,7 @@ export function renderDuel(
                 (b) => `
             <div class="list-row">
               <div class="meta">
-                <strong>${escapeHtml(b.challengeTitle)}</strong>
+                <strong>${escapeHtml(localizeChallengeTitle(b.challengeTitle))}</strong>
                 <span>waiting on @${escapeHtml(b.opponentUsername)}</span>
               </div>
             </div>`,
@@ -707,7 +712,7 @@ export function renderDuel(
                 return `
             <div class="list-row">
               <div class="meta">
-                <strong>${escapeHtml(b.challengeTitle)}</strong>
+                <strong>${escapeHtml(localizeChallengeTitle(b.challengeTitle))}</strong>
                 <span>vs @${escapeHtml(other)} · ${escapeHtml(result)} · ${myScore ?? "—"}–${theirScore ?? "—"}</span>
               </div>
             </div>`;
@@ -738,7 +743,8 @@ export function renderDuel(
 
   const paintChallenge = (body: Element) => {
     const f = challengeFriend!;
-    const challenge = pickDaily(CHALLENGES, `friend-battle-${challengeNonce}`, new Date());
+    const challengeRaw = pickDaily(CHALLENGES, `friend-battle-${challengeNonce}`, new Date());
+    const challenge = localizeChallenge(challengeRaw);
 
     body.innerHTML = `
       <button type="button" class="btn btn-plain" id="back-friends">← Back</button>
@@ -801,7 +807,7 @@ export function renderDuel(
       ${error ? `<p class="danger-text" style="margin:12px 0">${escapeHtml(error)}</p>` : ""}
       <div class="section-header">Your turn</div>
       <div class="card stack">
-        <p class="muted" style="margin:0"><strong>${escapeHtml(b.challengeTitle)}</strong></p>
+        <p class="muted" style="margin:0"><strong>${escapeHtml(localizeChallengeTitle(b.challengeTitle))}</strong></p>
         <p class="muted" style="margin:0">${escapeHtml(b.challengePrompt)}</p>
         <div class="field">
           <label for="ans">Your answer</label>
@@ -923,7 +929,7 @@ export function renderDuel(
 
     const isP1 = duel.phase === "p1";
     const player = isP1 ? duel.p1 : duel.p2;
-    const challenge = duel.challenge!;
+    const challenge = localizeChallenge(duel.challenge!);
 
     container.innerHTML = `
       <div class="desktop-grid play-grid">

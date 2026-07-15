@@ -20,6 +20,7 @@ import {
 } from "../friends/api";
 import { fetchPublicProfile, type PublicProfile } from "../profile/api";
 import type { AestheticCore, Challenge, PlayerState } from "../types";
+import { localizeChallenge, localizeChallengeTitle } from "../i18n";
 import { pickDaily } from "../utils/seed";
 import { escapeHtml, formatNumber } from "../utils/format";
 import { collectiblesHtml } from "./collectibles";
@@ -330,7 +331,7 @@ export async function renderFriendPanel(
     return `
       <div class="list-row">
         <div class="meta">
-          <strong>${escapeHtml(b.challengeTitle)}</strong>
+          <strong>${escapeHtml(localizeChallengeTitle(b.challengeTitle))}</strong>
           <span>${escapeHtml(statusLine)}</span>
         </div>
         ${
@@ -410,8 +411,8 @@ export async function renderFriendPanel(
       <div class="card stack">
         <div class="battle-task-header">
           <div>
-            <p class="muted" style="margin:0"><strong>${escapeHtml(challenge.title)}</strong></p>
-            <p class="muted" style="margin:6px 0 0">${escapeHtml(challenge.prompt)}</p>
+            <p class="muted" style="margin:0"><strong>${escapeHtml(localizeChallenge(challenge).title)}</strong></p>
+            <p class="muted" style="margin:6px 0 0">${escapeHtml(localizeChallenge(challenge).prompt)}</p>
           </div>
           <button type="button" class="btn btn-secondary btn-sm" id="refresh-task" ${busy ? "disabled" : ""} title="Roll a different task">
             Refresh task
@@ -493,7 +494,7 @@ export async function renderFriendPanel(
         .map(
           (b) => `
         <div class="card stack" data-battle-id="${escapeHtml(b.id)}" style="margin-bottom:12px">
-          <p class="muted" style="margin:0"><strong>${escapeHtml(b.challengeTitle)}</strong></p>
+          <p class="muted" style="margin:0"><strong>${escapeHtml(localizeChallengeTitle(b.challengeTitle))}</strong></p>
           <p class="muted" style="margin:0">${escapeHtml(b.challengePrompt)}</p>
           <div class="field">
             <label for="ans-${escapeHtml(b.id)}">Your answer</label>
@@ -593,7 +594,7 @@ export async function renderFriendPanel(
       <div class="section-header">Battle results</div>
       <div class="card stack">
         <p style="margin:0;font-weight:600;font-size:1.05rem">${escapeHtml(outcome)}</p>
-        <p class="muted" style="margin:0"><strong>${escapeHtml(b.challengeTitle)}</strong></p>
+        <p class="muted" style="margin:0"><strong>${escapeHtml(localizeChallengeTitle(b.challengeTitle))}</strong></p>
         <p class="muted" style="margin:0">${escapeHtml(b.challengePrompt)}</p>
 
         <div class="battle-answers">
