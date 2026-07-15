@@ -14,6 +14,7 @@ Daily aesthetic RPG for **Gen Z** & **Gen Alpha** — cloud accounts, online sav
    - [`supabase/profiles_public.sql`](./supabase/profiles_public.sql) (public profiles + avatars)
    - [`supabase/friends.sql`](./supabase/friends.sql) (friend requests + lists)
    - [`supabase/friends_social.sql`](./supabase/friends_social.sql) (DMs, battles, private notes)
+   - [`supabase/streak_reminders.sql`](./supabase/streak_reminders.sql) (email streak reminder prefs)
 3. **Authentication → Providers → Email**
    - Enable Email
    - For instant play MVP: **turn off “Confirm email”**
@@ -44,6 +45,11 @@ Open the printed URL (default `http://127.0.0.1:5173`).
 | `VITE_SUPABASE_URL` | from Supabase |
 | `VITE_SUPABASE_ANON_KEY` | from Supabase |
 | `XAI_API_KEY` | optional, for AI Aura Judge |
+| `SUPABASE_SERVICE_ROLE_KEY` | optional, for streak reminder cron |
+| `CRON_SECRET` | optional, protect `/api/streak-reminders` |
+| `RESEND_API_KEY` | optional, send streak emails via [Resend](https://resend.com) |
+| `EMAIL_FROM` | optional, e.g. `AuraFarm <onboarding@resend.dev>` |
+| `APP_URL` | optional, link in reminder emails |
 
 4. Deploy → you get an `https://….vercel.app` link  
 5. On phone: open the same link → **Log in** with the same account → progress matches

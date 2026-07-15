@@ -27,6 +27,12 @@ export interface UserSettings {
   accent: AccentTheme;
   /** Hide currency in top bar (still in sidebar) */
   hideTopCurrency: boolean;
+  /** Email reminder if daily streak not played */
+  streakEmailEnabled: boolean;
+  /** Local time HH:MM (24h) for streak email */
+  streakEmailTime: string;
+  /** IANA timezone, e.g. Europe/Berlin (auto-detected) */
+  timezone: string;
 }
 
 export type ChallengeCategory =

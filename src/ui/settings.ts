@@ -12,6 +12,7 @@ import {
   USERNAME_COOLDOWN_MS,
   formatCooldown,
   msUntil,
+  normalizeLocalTime,
   saveState,
   updateDisplayName,
   updateSettings,
@@ -19,6 +20,14 @@ import {
 import type { AccentTheme, PlayerState, UserSettings } from "../types";
 import { escapeHtml } from "../utils/format";
 import { showToast } from "./toast";
+
+function detectTimezone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch {
+    return "UTC";
+  }
+}
 
 type SettingsTab = "account" | "general";
 
@@ -244,6 +253,9 @@ export function renderSettings(
 
   const renderGeneral = (body: Element) => {
     const s = state.settings;
+    const tz = s.timezone || detectTimezone();
+    const localTime = normalizeLocalTime(s.streakEmailTime || "18:00");
+
     body.innerHTML = `
       ${banner()}
       <div class="section-header">Appearance</div>
@@ -272,6 +284,17 @@ export function renderSettings(
         ${toggleRow("hideTopCurrency", "Hide currency in top bar", s.hideTopCurrency)}
       </div>
 
+      <div class="section-header">Streak reminders</div>
+      <div class="card stack">
+        ${toggleRow("streakEmailEnabled", "Email me to keep my 🔥 streak", s.streakEmailEnabled)}
+        <div class="field">
+          <label for="streak-time">Reminder time (your local time)</label>
+          <input id="streak-time" type="time" value="${escapeHtml(localTime)}" ${s.streakEmailEnabled ? "" : "disabled"} />
+          <p class="field-hint muted">Timezone: ${escapeHtml(tz)} · only if you haven’t played today’s daily yet</p>
+        </div>
+        <button class="btn btn-secondary" id="save-streak-time" ${busy || !s.streakEmailEnabled ? "disabled" : ""}>Save reminder time</button>
+      </div>
+
       <p class="muted" style="font-size:0.82rem;padding:0 4px;margin:12px 0 0">
         Preferences sync with your cloud save on this account.
       </p>
@@ -292,10 +315,32 @@ export function renderSettings(
       input.addEventListener("change", () => {
         const key = input.dataset.toggle as keyof UserSettings;
         const value = input.checked;
-        state = updateSettings(state, { [key]: value } as Partial<UserSettings>);
+        const patch: Partial<UserSettings> = {
+          [key]: value,
+          timezone: detectTimezone(),
+        } as Partial<UserSettings>;
+        state = updateSettings(state, patch);
         onState(state);
         showToast("Preference saved");
+        if (key === "streakEmailEnabled") {
+          paint();
+        }
       });
+    });
+
+    body.querySelector("#save-streak-time")?.addEventListener("click", () => {
+      const raw = (body.querySelector("#streak-time") as HTMLInputElement).value;
+      const time = normalizeLocalTime(raw);
+      state = updateSettings(state, {
+        streakEmailTime: time,
+        timezone: detectTimezone(),
+        streakEmailEnabled: true,
+      });
+      onState(state);
+      success = `Streak email set for ${time} local time.`;
+      error = "";
+      showToast(success);
+      paint();
     });
   };
 

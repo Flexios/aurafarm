@@ -3,7 +3,7 @@ import type { PlayerState, Screen } from "../types";
 import { formatNumber } from "../utils/format";
 import { icon, type IconName } from "./icons";
 
-const NAV: Array<{ id: Screen; label: string; ico: IconName }> = [
+const NAV_DESKTOP: Array<{ id: Screen; label: string; ico: IconName }> = [
   { id: "home", label: "Home", ico: "home" },
   { id: "play", label: "Play", ico: "play" },
   { id: "shop", label: "Shop", ico: "shop" },
@@ -13,15 +13,32 @@ const NAV: Array<{ id: Screen; label: string; ico: IconName }> = [
   { id: "settings", label: "Settings", ico: "settings" },
 ];
 
-function navButtons(screen: Screen, extraClass = ""): string {
-  return NAV.map(
-    (n) => `
-    <button type="button" data-nav="${n.id}" class="${extraClass} ${n.id === screen ? "active" : ""}">
+/** Mobile bottom nav — Home sits in the center (4th of 7). */
+const NAV_MOBILE: Array<{ id: Screen; label: string; ico: IconName }> = [
+  { id: "play", label: "Play", ico: "play" },
+  { id: "shop", label: "Shop", ico: "shop" },
+  { id: "card", label: "Card", ico: "card" },
+  { id: "home", label: "Home", ico: "home" },
+  { id: "profile", label: "Profile", ico: "person" },
+  { id: "duel", label: "Duel", ico: "duel" },
+  { id: "settings", label: "Settings", ico: "settings" },
+];
+
+function navButtons(
+  items: Array<{ id: Screen; label: string; ico: IconName }>,
+  screen: Screen,
+  extraClass = "",
+): string {
+  return items
+    .map(
+      (n) => `
+    <button type="button" data-nav="${n.id}" class="${extraClass} ${n.id === screen ? "active" : ""}${n.id === "home" ? " nav-home" : ""}">
       ${icon(n.ico)}
       <span class="nav-label">${n.label}</span>
     </button>
   `,
-  ).join("");
+    )
+    .join("");
 }
 
 export function renderShell(
@@ -43,10 +60,11 @@ export function renderShell(
           </div>
         </div>
         <nav class="nav nav-side">
-          ${navButtons(screen, "nav-item")}
+          ${navButtons(NAV_DESKTOP, screen, "nav-item")}
         </nav>
         <div class="sidebar-foot">
           <div class="currency-pill sidebar-currency">
+            <div class="pill streak-pill" title="Streak">🔥 ${formatNumber(state.streak)}</div>
             <div class="pill" title="Sparks">${icon("spark")} ${formatNumber(state.sparks)}</div>
             <div class="pill glow" title="Glow">${icon("glow")} ${formatNumber(state.glow)}</div>
           </div>
@@ -72,19 +90,22 @@ export function renderShell(
               <span class="page-title large-title" data-page="${screen}">${pageTitle(screen)}</span>
               <span class="user-line">${escape(state.displayName)}${session ? ` · @${escape(session.username)}` : ""}</span>
             </div>
-            ${!state.settings.hideTopCurrency
-              ? `<div class="currency-pill topbar-currency">
-              <div class="pill" title="Sparks">${icon("spark")} ${formatNumber(state.sparks)}</div>
-              <div class="pill glow" title="Glow">${icon("glow")} ${formatNumber(state.glow)}</div>
-            </div>`
-              : `<div></div>`}
+            <div class="currency-pill topbar-currency">
+              <div class="pill streak-pill" title="Day streak">🔥 ${formatNumber(state.streak)}</div>
+              ${
+                !state.settings.hideTopCurrency
+                  ? `<div class="pill" title="Sparks">${icon("spark")} ${formatNumber(state.sparks)}</div>
+              <div class="pill glow" title="Glow">${icon("glow")} ${formatNumber(state.glow)}</div>`
+                  : ""
+              }
+            </div>
           </div>
           ${bodyHtml}
         </div>
       </div>
 
       <nav class="nav nav-bottom" aria-label="Mobile navigation">
-        ${navButtons(screen)}
+        ${navButtons(NAV_MOBILE, screen)}
       </nav>
     </div>
   `;

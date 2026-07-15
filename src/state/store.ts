@@ -24,6 +24,12 @@ export const DEFAULT_SETTINGS: UserSettings = {
   soundEnabled: true,
   accent: "purple",
   hideTopCurrency: false,
+  streakEmailEnabled: false,
+  streakEmailTime: "18:00",
+  timezone:
+    typeof Intl !== "undefined"
+      ? Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
+      : "UTC",
 };
 
 export const USERNAME_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
@@ -114,13 +120,32 @@ export function updateSettings(
   state: PlayerState,
   patch: Partial<UserSettings>,
 ): PlayerState {
+  const merged = { ...state.settings, ...patch };
+  if (merged.streakEmailTime) {
+    merged.streakEmailTime = normalizeLocalTime(merged.streakEmailTime);
+  }
+  if (!merged.timezone) {
+    merged.timezone =
+      typeof Intl !== "undefined"
+        ? Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
+        : "UTC";
+  }
   const next: PlayerState = {
     ...state,
-    settings: { ...state.settings, ...patch },
+    settings: merged,
   };
   applySettingsToDom(next.settings);
   saveState(next);
   return next;
+}
+
+/** Normalize "9:5" / "09:05" → "09:05". */
+export function normalizeLocalTime(raw: string): string {
+  const m = String(raw || "").trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return "18:00";
+  const h = Math.min(23, Math.max(0, Number(m[1])));
+  const min = Math.min(59, Math.max(0, Number(m[2])));
+  return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
 }
 
 export function updateDisplayName(
@@ -230,6 +255,14 @@ async function pushStateToCloud(
 ): Promise<void> {
   if (!isSupabaseConfigured()) return;
   const sb = getSupabase();
+  const tz =
+    state.settings.timezone ||
+    (typeof Intl !== "undefined"
+      ? Intl.DateTimeFormat().resolvedOptions().timeZone
+      : "UTC") ||
+    "UTC";
+  const time = normalizeLocalTime(state.settings.streakEmailTime);
+
   const { error } = await sb.from("profiles").upsert(
     {
       user_id: userId,
@@ -238,6 +271,9 @@ async function pushStateToCloud(
       display_name: state.displayName || username,
       game_state: state,
       updated_at: new Date().toISOString(),
+      streak_reminder_enabled: Boolean(state.settings.streakEmailEnabled),
+      streak_reminder_time: time,
+      timezone: tz,
     },
     { onConflict: "user_id" },
   );

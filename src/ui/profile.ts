@@ -148,7 +148,7 @@ export function renderProfile(
         </div>
         <div class="stat-grid" style="margin-top:16px">
           <div class="stat"><b>${formatNumber(state.totalAura)}</b><span>Aura</span></div>
-          <div class="stat"><b>${state.streak}</b><span>Streak</span></div>
+          <div class="stat"><b>🔥 ${state.streak}</b><span>Streak</span></div>
           <div class="stat"><b>${state.duelWins}</b><span>Duels</span></div>
         </div>
         ${
@@ -566,7 +566,7 @@ export function renderProfile(
           }
           <div class="stat-grid" style="margin-top:16px">
             <div class="stat"><b>${formatNumber(viewed.totalAura)}</b><span>Aura</span></div>
-            <div class="stat"><b>${viewed.streak}</b><span>Streak</span></div>
+            <div class="stat"><b>🔥 ${viewed.streak}</b><span>Streak</span></div>
             <div class="stat"><b>${viewed.duelWins}</b><span>Duels</span></div>
           </div>
           <div class="stat-grid" style="margin-top:1px">

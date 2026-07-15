@@ -177,6 +177,11 @@ button {
   background: rgba(255, 214, 10, 0.12);
 }
 
+.pill.streak-pill {
+  background: rgba(255, 159, 10, 0.16);
+  color: #ffb340;
+}
+
 .pill .icon,
 .badge .icon {
   width: 14px;
@@ -624,6 +629,21 @@ button {
 
 .nav-bottom button.active {
   color: var(--accent);
+}
+
+/* Center Home tab slightly emphasized on mobile */
+.nav-bottom button.nav-home {
+  position: relative;
+}
+
+.nav-bottom button.nav-home .icon {
+  width: 24px;
+  height: 24px;
+}
+
+.nav-bottom button.nav-home.active {
+  color: var(--accent);
+  font-weight: 600;
 }
 
 .nav-side {

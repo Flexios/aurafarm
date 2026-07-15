@@ -39,7 +39,45 @@ function auraColor(id: string): string {
   return cosmeticById(id)?.preview ?? "#a78bfa";
 }
 
-export function drawAuraCard(canvas: HTMLCanvasElement, state: PlayerState): void {
+function loadImage(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("avatar load failed"));
+    img.src = url;
+  });
+}
+
+function drawCoverCircle(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  cx: number,
+  cy: number,
+  radius: number,
+): void {
+  const size = radius * 2;
+  const iw = img.naturalWidth || img.width;
+  const ih = img.naturalHeight || img.height;
+  const scale = Math.max(size / iw, size / ih);
+  const dw = iw * scale;
+  const dh = ih * scale;
+  const dx = cx - dw / 2;
+  const dy = cy - dh / 2;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.closePath();
+  ctx.clip();
+  ctx.drawImage(img, dx, dy, dw, dh);
+  ctx.restore();
+}
+
+export async function drawAuraCard(
+  canvas: HTMLCanvasElement,
+  state: PlayerState,
+): Promise<void> {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
   canvas.width = W;
@@ -99,20 +137,43 @@ export function drawAuraCard(canvas: HTMLCanvasElement, state: PlayerState): voi
   ctx.arc(cx, cy, 150, 0, Math.PI * 2);
   ctx.fill();
 
+  let drewPhoto = false;
+  if (state.avatarUrl) {
+    try {
+      const img = await loadImage(state.avatarUrl);
+      // Base fill under photo (letterbox)
+      ctx.beginPath();
+      ctx.arc(cx, cy, 100, 0, Math.PI * 2);
+      const av = ctx.createLinearGradient(cx - 100, cy - 100, cx + 100, cy + 100);
+      av.addColorStop(0, aesthetic.colors[0]);
+      av.addColorStop(1, aesthetic.colors[1]);
+      ctx.fillStyle = av;
+      ctx.fill();
+      drawCoverCircle(ctx, img, cx, cy, 100);
+      drewPhoto = true;
+    } catch {
+      drewPhoto = false;
+    }
+  }
+
+  if (!drewPhoto) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, 100, 0, Math.PI * 2);
+    const av = ctx.createLinearGradient(cx - 100, cy - 100, cx + 100, cy + 100);
+    av.addColorStop(0, aesthetic.colors[0]);
+    av.addColorStop(1, aesthetic.colors[1]);
+    ctx.fillStyle = av;
+    ctx.fill();
+    ctx.font = "80px serif";
+    ctx.textAlign = "center";
+    ctx.fillText(aesthetic.emoji, cx, cy + 28);
+  }
+
   ctx.beginPath();
   ctx.arc(cx, cy, 100, 0, Math.PI * 2);
-  const av = ctx.createLinearGradient(cx - 100, cy - 100, cx + 100, cy + 100);
-  av.addColorStop(0, aesthetic.colors[0]);
-  av.addColorStop(1, aesthetic.colors[1]);
-  ctx.fillStyle = av;
-  ctx.fill();
   ctx.lineWidth = 6;
   ctx.strokeStyle = fCol;
   ctx.stroke();
-
-  ctx.font = "80px serif";
-  ctx.textAlign = "center";
-  ctx.fillText(aesthetic.emoji, cx, cy + 28);
 
   // Nameplate
   const plate = cosmeticById(plateId)?.preview ?? "#374151";
@@ -208,7 +269,7 @@ export function renderCard(
       </div>
       <div class="card card-actions home-panel">
         <h2 style="margin:0">Share Card</h2>
-        <p class="muted" style="margin:8px 0 0">Export a PNG for Stories or chats. Equipped cosmetics apply automatically.</p>
+        <p class="muted" style="margin:8px 0 0">Export a PNG for Stories or chats. Your profile photo, rank, and cosmetics apply automatically.</p>
         <div class="btn-row card-actions-btns">
           <button class="btn btn-fill" id="download-card">Download PNG</button>
           <button class="btn btn-secondary" id="redraw">Refresh</button>
@@ -218,15 +279,21 @@ export function renderCard(
   `;
 
   const canvas = container.querySelector("#aura-card-canvas") as HTMLCanvasElement;
-  drawAuraCard(canvas, state);
+  void drawAuraCard(canvas, state);
 
-  container.querySelector("#redraw")?.addEventListener("click", () => drawAuraCard(canvas, state));
-  container.querySelector("#download-card")?.addEventListener("click", () => {
-    drawAuraCard(canvas, state);
-    const link = document.createElement("a");
-    link.download = `aurafarm-${state.displayName || "card"}.png`;
-    link.href = canvas.toDataURL("image/png");
-    link.click();
-    showToast("Saved to downloads");
+  container.querySelector("#redraw")?.addEventListener("click", () => {
+    void drawAuraCard(canvas, state);
+  });
+  container.querySelector("#download-card")?.addEventListener("click", async () => {
+    await drawAuraCard(canvas, state);
+    try {
+      const link = document.createElement("a");
+      link.download = `aurafarm-${state.displayName || "card"}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      showToast("Saved to downloads");
+    } catch {
+      showToast("Could not export card (photo blocked by browser CORS). Try again later.");
+    }
   });
 }

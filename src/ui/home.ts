@@ -65,7 +65,7 @@ export function renderHome(
             </div>
           </div>
           <div class="stat-grid" style="margin-top:auto">
-            <div class="stat"><b>${state.streak}</b><span>Streak</span></div>
+            <div class="stat"><b>🔥 ${state.streak}</b><span>Streak</span></div>
             <div class="stat"><b>${state.duelWins}</b><span>Duels</span></div>
             <div class="stat"><b>${state.bestDailyScore || "—"}</b><span>Best</span></div>
           </div>
