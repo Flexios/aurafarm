@@ -7,7 +7,7 @@ const NAV: Array<{ id: Screen; label: string; ico: IconName }> = [
   { id: "home", label: "Home", ico: "home" },
   { id: "play", label: "Play", ico: "play" },
   { id: "shop", label: "Shop", ico: "shop" },
-  { id: "card", label: "Card", ico: "card" },
+  { id: "profile", label: "Profile", ico: "person" },
   { id: "duel", label: "Duel", ico: "duel" },
   { id: "settings", label: "Settings", ico: "settings" },
 ];
@@ -49,10 +49,17 @@ export function renderShell(
             <div class="pill" title="Sparks">${icon("spark")} ${formatNumber(state.sparks)}</div>
             <div class="pill glow" title="Glow">${icon("glow")} ${formatNumber(state.glow)}</div>
           </div>
-          <div class="sidebar-user">
-            <div class="name">${escape(state.displayName)}</div>
-            <div class="handle">@${escape(session?.username ?? "—")}</div>
-          </div>
+          <button type="button" class="sidebar-user" data-nav="profile">
+            ${
+              state.avatarUrl
+                ? `<img class="avatar avatar-sm" src="${escape(state.avatarUrl)}" alt="" />`
+                : `<div class="avatar avatar-sm avatar-fallback">${escape((state.displayName || "?").slice(0, 1).toUpperCase())}</div>`
+            }
+            <div>
+              <div class="name">${escape(state.displayName)}</div>
+              <div class="handle">@${escape(session?.username ?? "—")}</div>
+            </div>
+          </button>
         </div>
       </aside>
 
@@ -93,6 +100,7 @@ function pageTitle(screen: Screen): string {
     shop: "Shop",
     card: "Aura Card",
     duel: "Duel",
+    profile: "Profile",
     settings: "Settings",
   };
   return map[screen];

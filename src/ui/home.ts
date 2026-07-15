@@ -118,6 +118,7 @@ export function renderHome(
               </div>
             </div>
             <div style="display:flex;gap:8px;flex-shrink:0">
+              <button type="button" class="btn btn-secondary" id="go-profile" style="width:auto;min-height:36px;padding:0 12px;font-size:0.86rem">Profile</button>
               <button type="button" class="btn btn-secondary" id="go-settings" style="width:auto;min-height:36px;padding:0 12px;font-size:0.86rem">Settings</button>
               <button type="button" class="btn-logout" id="logout-btn">${icon("logout")} Log Out</button>
             </div>
@@ -130,6 +131,7 @@ export function renderHome(
   container.querySelector("#go-play")?.addEventListener("click", () => onNavigate("play"));
   container.querySelector("#go-shop")?.addEventListener("click", () => onNavigate("shop"));
   container.querySelector("#go-card")?.addEventListener("click", () => onNavigate("card"));
+  container.querySelector("#go-profile")?.addEventListener("click", () => onNavigate("profile"));
   container.querySelector("#go-settings")?.addEventListener("click", () => onNavigate("settings"));
   container.querySelector("#logout-btn")?.addEventListener("click", () => onLogout());
 }

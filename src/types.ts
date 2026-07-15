@@ -8,7 +8,7 @@ export type AestheticCore =
   | "soft-boy"
   | "main-character";
 
-export type Screen = "home" | "play" | "shop" | "card" | "duel" | "settings";
+export type Screen = "home" | "play" | "shop" | "card" | "duel" | "profile" | "settings";
 
 export type AccentTheme = "purple" | "blue" | "pink" | "green";
 
@@ -112,6 +112,8 @@ export interface PlayerState {
   /** ISO timestamp — display name change cooldown (3 days) */
   lastDisplayNameChangeAt: string | null;
   settings: UserSettings;
+  /** Cached public avatar URL (also on profiles.avatar_url) */
+  avatarUrl: string | null;
 }
 
 export interface ScoreResult {

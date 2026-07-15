@@ -36,6 +36,8 @@ export interface ProfileRow {
   username: string;
   email: string;
   display_name: string | null;
+  avatar_url?: string | null;
+  bio?: string | null;
   game_state: unknown;
   updated_at: string;
 }

@@ -58,6 +58,7 @@ export function createDefaultState(): PlayerState {
     lastUsernameChangeAt: null,
     lastDisplayNameChangeAt: null,
     settings: { ...DEFAULT_SETTINGS },
+    avatarUrl: null,
   };
 }
 
@@ -79,6 +80,7 @@ export function normalizeState(parsed: Partial<PlayerState> | null | undefined):
     lastUsernameChangeAt: parsed.lastUsernameChangeAt ?? null,
     lastDisplayNameChangeAt: parsed.lastDisplayNameChangeAt ?? null,
     settings: { ...DEFAULT_SETTINGS, ...(parsed.settings ?? {}) },
+    avatarUrl: parsed.avatarUrl ?? null,
   };
 }
 
@@ -180,7 +182,7 @@ export async function loadState(): Promise<PlayerState> {
     const sb = getSupabase();
     const { data, error } = await sb
       .from("profiles")
-      .select("game_state, display_name, username, updated_at")
+      .select("game_state, display_name, username, updated_at, avatar_url")
       .eq("user_id", session.userId)
       .maybeSingle();
 
@@ -208,6 +210,9 @@ export async function loadState(): Promise<PlayerState> {
 
     if (!remote.displayName && data.display_name) {
       remote.displayName = data.display_name;
+    }
+    if (data.avatar_url) {
+      remote.avatarUrl = data.avatar_url as string;
     }
     writeLocalCache(session.userId, remote);
     cloudSyncError = null;

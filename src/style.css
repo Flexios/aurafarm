@@ -593,6 +593,7 @@ button {
   width: min(100%, 430px);
   display: grid;
   grid-template-columns: repeat(6, 1fr);
+  /* Profile replaced Card in primary nav; Card still openable from Home */
   gap: 0;
   padding: 6px 4px calc(6px + var(--safe-bottom));
   background: rgba(28, 28, 30, 0.86);
@@ -1386,6 +1387,107 @@ html[data-reduce-motion="1"] *::after {
 
 html[data-hide-top-currency="1"] .topbar-currency {
   display: none;
+}
+
+/* ——— Profile ——— */
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--fill);
+  flex-shrink: 0;
+}
+
+.avatar-sm {
+  width: 36px;
+  height: 36px;
+}
+
+.avatar-lg {
+  width: 88px;
+  height: 88px;
+}
+
+.avatar-fallback {
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--label);
+  background: var(--accent-soft);
+  color: #e8c4ff;
+}
+
+.avatar-lg.avatar-fallback {
+  font-size: 2rem;
+}
+
+.avatar-wrap {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.avatar-edit {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.avatar-edit.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.profile-hero-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.profile-hero-meta {
+  min-width: 0;
+  flex: 1;
+}
+
+.profile-hit {
+  width: 100%;
+  text-align: left;
+  border: none;
+  cursor: pointer;
+}
+
+.profile-hit:hover {
+  background: rgba(44, 44, 46, 1);
+}
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px;
+  border-radius: 12px;
+  text-align: left;
+  color: inherit;
+}
+
+.sidebar-user:hover {
+  background: var(--fill);
+}
+
+.sidebar-user .name {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.sidebar-user .handle {
+  color: var(--label-secondary);
+  font-size: 0.84rem;
 }
 
 @media (hover: hover) and (pointer: fine) {
