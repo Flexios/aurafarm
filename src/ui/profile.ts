@@ -5,6 +5,7 @@ import {
   acceptFriendRequest,
   cancelFriendRequest,
   declineFriendRequest,
+  formatFriendshipDuration,
   getFriendshipStatus,
   listFriends,
   listIncomingRequests,
@@ -15,6 +16,7 @@ import {
   type FriendRow,
   type FriendshipStatusInfo,
 } from "../friends/api";
+import { renderFriendPanel } from "./friendPanel";
 import {
   fetchPublicProfile,
   loadOwnBio,
@@ -59,6 +61,7 @@ export function renderProfile(
   let incoming: FriendRequestRow[] = [];
   let outgoing: FriendRequestRow[] = [];
   let friendsLoading = false;
+  let selectedFriend: FriendRow | null = null;
 
   const session = getCachedSession();
 
@@ -239,6 +242,14 @@ export function renderProfile(
   };
 
   const renderFriends = (body: Element) => {
+    if (selectedFriend) {
+      void renderFriendPanel(body as HTMLElement, selectedFriend, state, () => {
+        selectedFriend = null;
+        paint();
+      });
+      return;
+    }
+
     if (friendsLoading) {
       body.innerHTML = `<p class="muted" style="padding:8px 4px">Loading friends…</p>`;
       return;
@@ -299,11 +310,11 @@ export function renderProfile(
               .map(
                 (f) => `
             <div class="list-row friend-row">
-              <button type="button" class="profile-hit-inline" data-open="${escapeHtml(f.username)}">
+              <button type="button" class="profile-hit-inline" data-friend="${escapeHtml(f.userId)}">
                 ${avatarHtml(f.avatarUrl, f.displayName)}
                 <div class="meta">
                   <strong>${escapeHtml(f.displayName)}</strong>
-                  <span>@${escapeHtml(f.username)} · ${formatNumber(f.totalAura)} aura</span>
+                  <span>@${escapeHtml(f.username)} · ${escapeHtml(formatFriendshipDuration(f.friendsSince))}</span>
                 </div>
               </button>
               <div class="friend-actions">
@@ -373,13 +384,10 @@ export function renderProfile(
       });
     });
 
-    body.querySelectorAll<HTMLButtonElement>("[data-open]").forEach((btn) => {
-      btn.addEventListener("click", async () => {
-        const u = btn.dataset.open!;
-        tab = "lookup";
-        searchQ = u;
-        viewed = await fetchPublicProfile(u);
-        viewedFriend = await getFriendshipStatus(u);
+    body.querySelectorAll<HTMLButtonElement>("[data-friend]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.friend!;
+        selectedFriend = friends.find((f) => f.userId === id) ?? null;
         paint();
       });
     });

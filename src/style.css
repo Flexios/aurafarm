@@ -836,38 +836,62 @@ button {
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
 }
 
-/* Auth / onboarding */
-.onboarding {
+/* Auth / onboarding — always centered single column (no empty desktop void) */
+.onboarding,
+.auth-screen,
+.auth-layout {
   min-height: 100dvh;
-  width: min(100%, 430px);
+  width: 100%;
+  max-width: 440px;
   margin: 0 auto;
-  padding: 40px 20px 32px;
+  padding: 40px 20px 48px;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 20px;
+  box-sizing: border-box;
 }
 
 .logo,
-.onboarding .logo {
-  font-size: 2.2rem;
+.onboarding .logo,
+.auth-hero .logo {
+  font-size: 2.4rem;
   font-weight: 700;
   letter-spacing: -0.04em;
   line-height: 1.05;
   color: var(--label);
+  text-align: center;
+}
+
+.auth-hero {
+  text-align: center;
+  padding: 0 8px;
+}
+
+.auth-tagline {
+  text-align: center;
+  margin: 10px 0 0 !important;
 }
 
 .auth-perks {
-  display: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
   list-style: none;
   padding: 0;
-  margin: 20px 0 0;
+  margin: 16px 0 0;
+  text-align: left;
 }
 
 .auth-perks li {
   padding: 10px 0;
   border-bottom: var(--hairline);
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   color: var(--label-secondary);
+}
+
+.auth-perks li:last-child {
+  border-bottom: none;
 }
 
 .auth-perks li::before {
@@ -875,8 +899,21 @@ button {
   color: var(--accent);
 }
 
+.auth-panel {
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+}
+
 .auth-panel .card {
   padding: 20px;
+}
+
+.auth-panel .btn-fill,
+.auth-panel .btn-primary,
+.auth-panel .btn-secondary {
+  max-width: none;
+  width: 100%;
 }
 
 .danger-text {
@@ -988,10 +1025,6 @@ button {
 
   .nav-bottom {
     width: min(100%, 720px);
-  }
-
-  .onboarding {
-    width: min(100%, 480px);
   }
 
   .core-grid {
@@ -1210,34 +1243,31 @@ button {
   }
 
   .onboarding,
-  .auth-screen {
-    width: min(100%, 920px);
-    min-height: 100dvh;
+  .auth-screen,
+  .auth-layout {
+    max-width: 440px;
+    width: 100%;
     margin: 0 auto;
-    padding: 48px 40px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 48px;
-    align-items: center;
+    padding: 56px 24px 64px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 24px;
   }
 
-  .auth-hero .logo {
-    font-size: 3rem;
+  .auth-hero .logo,
+  .onboarding .logo {
+    font-size: 2.75rem;
   }
 
   .auth-tagline {
-    font-size: 1.1rem;
-    margin-top: 12px !important;
-  }
-
-  .auth-perks {
-    display: block;
+    font-size: 1.05rem;
   }
 
   .auth-panel {
-    max-width: 400px;
+    max-width: 440px;
     width: 100%;
-    justify-self: end;
+    margin: 0 auto;
   }
 
   .btn-primary,
@@ -1246,8 +1276,20 @@ button {
     max-width: 360px;
   }
 
+  .auth-panel .btn-fill,
+  .auth-panel .btn-primary,
+  .auth-panel .btn-secondary {
+    max-width: none;
+  }
+
   .btn-row .btn {
     max-width: none;
+  }
+
+  /* Aesthetic picker: full cards, no clipped edges */
+  .auth-panel .core-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
   }
 
   .toast {
@@ -1528,6 +1570,52 @@ html[data-hide-top-currency="1"] .topbar-currency {
   border: none;
   cursor: pointer;
   padding: 0;
+}
+
+.friend-quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.dm-thread {
+  max-height: 360px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px !important;
+}
+
+.dm-bubble {
+  max-width: 85%;
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+.dm-bubble.mine {
+  align-self: flex-end;
+  background: var(--accent-soft);
+  color: var(--label);
+  border-bottom-right-radius: 4px;
+}
+
+.dm-bubble.theirs {
+  align-self: flex-start;
+  background: var(--fill);
+  border-bottom-left-radius: 4px;
+}
+
+.dm-time {
+  font-size: 0.72rem;
+  margin-top: 4px;
+}
+
+.dm-bubble.mine .dm-time {
+  text-align: right;
 }
 
 @media (hover: hover) and (pointer: fine) {

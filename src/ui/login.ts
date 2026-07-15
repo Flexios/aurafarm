@@ -18,25 +18,20 @@ export function renderLogin(
 
   const paint = () => {
     root.innerHTML = `
-      <div class="onboarding auth-screen auth-layout">
+      <div class="auth-screen auth-layout">
         <div class="auth-hero">
           <div class="logo">AuraFarm</div>
-          <p class="muted auth-tagline">Farm your aura. Flex your vibe.<br/>One account — phone and PC. 13+</p>
-          <ul class="auth-perks">
-            <li>Daily challenges with clear rewards</li>
-            <li>Cosmetics and season pass</li>
-            <li>Cloud save across devices</li>
-          </ul>
+          <p class="muted auth-tagline">Farm your aura. Flex your vibe.<br/>One account for phone and PC. 13+</p>
         </div>
 
-        <div class="auth-panel">
-          ${
-            configError
-              ? `<div class="card"><p class="danger-text">${escapeHtml(configError)}</p>
-                 <p class="muted" style="margin:10px 0 0;font-size:0.86rem">Set Supabase env vars (see README).</p></div>`
-              : ""
-          }
+        ${
+          configError
+            ? `<div class="card"><p class="danger-text">${escapeHtml(configError)}</p>
+               <p class="muted" style="margin:10px 0 0;font-size:0.86rem">Set Supabase env vars (see README).</p></div>`
+            : ""
+        }
 
+        <div class="auth-panel">
           <div class="card stack">
             <div class="segmented">
               <button type="button" data-mode="login" class="${mode === "login" ? "active" : ""}">Log In</button>

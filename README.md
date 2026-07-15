@@ -13,6 +13,7 @@ Daily aesthetic RPG for **Gen Z** & **Gen Alpha** — cloud accounts, online sav
    - [`supabase/schema.sql`](./supabase/schema.sql)
    - [`supabase/profiles_public.sql`](./supabase/profiles_public.sql) (public profiles + avatars)
    - [`supabase/friends.sql`](./supabase/friends.sql) (friend requests + lists)
+   - [`supabase/friends_social.sql`](./supabase/friends_social.sql) (DMs, battles, private notes)
 3. **Authentication → Providers → Email**
    - Enable Email
    - For instant play MVP: **turn off “Confirm email”**

@@ -15,7 +15,7 @@ export function renderOnboarding(
   const defaultName = state.displayName || session?.username || "";
 
   root.innerHTML = `
-    <div class="onboarding auth-layout">
+    <div class="auth-layout onboarding">
       <div class="auth-hero">
         <div class="logo">Welcome</div>
         <p class="muted auth-tagline">${session ? `Hi @${escapeHtml(session.username)}.` : "Hi."}<br/>Choose how you show up in AuraFarm.</p>
