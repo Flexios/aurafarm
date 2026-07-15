@@ -9,7 +9,10 @@ Daily aesthetic RPG for **Gen Z** & **Gen Alpha** — cloud accounts, online sav
 ### 1. Supabase (free) — online auth + saves
 
 1. Create a project at [supabase.com](https://supabase.com)
-2. **SQL Editor** → run [`supabase/schema.sql`](./supabase/schema.sql), then [`supabase/profiles_public.sql`](./supabase/profiles_public.sql) (public profiles + avatars)
+2. **SQL Editor** → run in order:
+   - [`supabase/schema.sql`](./supabase/schema.sql)
+   - [`supabase/profiles_public.sql`](./supabase/profiles_public.sql) (public profiles + avatars)
+   - [`supabase/friends.sql`](./supabase/friends.sql) (friend requests + lists)
 3. **Authentication → Providers → Email**
    - Enable Email
    - For instant play MVP: **turn off “Confirm email”**

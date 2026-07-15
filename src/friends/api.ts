@@ -1,0 +1,186 @@
+import { getSupabase, getSupabaseConfigError, isSupabaseConfigured } from "../lib/supabase";
+
+export type FriendshipStatus =
+  | "none"
+  | "self"
+  | "friends"
+  | "incoming"
+  | "outgoing";
+
+export interface FriendRow {
+  userId: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+  totalAura: number;
+  core: string;
+  friendsSince: string | null;
+}
+
+export interface FriendRequestRow {
+  id: string;
+  userId: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+  totalAura: number;
+  createdAt: string;
+}
+
+export interface FriendshipStatusInfo {
+  status: FriendshipStatus;
+  id?: string;
+  userId?: string;
+}
+
+function mapFriend(row: Record<string, unknown>): FriendRow {
+  return {
+    userId: String(row.user_id ?? ""),
+    username: String(row.username ?? ""),
+    displayName: String(row.display_name ?? row.username ?? ""),
+    avatarUrl: (row.avatar_url as string | null) ?? null,
+    totalAura: Number(row.total_aura ?? 0),
+    core: String(row.core ?? "main-character"),
+    friendsSince: (row.friends_since as string | null) ?? null,
+  };
+}
+
+function mapRequest(row: Record<string, unknown>): FriendRequestRow {
+  return {
+    id: String(row.id ?? ""),
+    userId: String(row.user_id ?? ""),
+    username: String(row.username ?? ""),
+    displayName: String(row.display_name ?? row.username ?? ""),
+    avatarUrl: (row.avatar_url as string | null) ?? null,
+    totalAura: Number(row.total_aura ?? 0),
+    createdAt: String(row.created_at ?? ""),
+  };
+}
+
+export async function listFriends(): Promise<FriendRow[]> {
+  if (!isSupabaseConfigured()) return [];
+  const { data, error } = await getSupabase().rpc("list_friends");
+  if (error) {
+    console.warn("list_friends", error.message);
+    return [];
+  }
+  return Array.isArray(data)
+    ? data.map((r) => mapFriend(r as Record<string, unknown>))
+    : [];
+}
+
+export async function listIncomingRequests(): Promise<FriendRequestRow[]> {
+  if (!isSupabaseConfigured()) return [];
+  const { data, error } = await getSupabase().rpc("list_incoming_friend_requests");
+  if (error) {
+    console.warn("list_incoming", error.message);
+    return [];
+  }
+  return Array.isArray(data)
+    ? data.map((r) => mapRequest(r as Record<string, unknown>))
+    : [];
+}
+
+export async function listOutgoingRequests(): Promise<FriendRequestRow[]> {
+  if (!isSupabaseConfigured()) return [];
+  const { data, error } = await getSupabase().rpc("list_outgoing_friend_requests");
+  if (error) {
+    console.warn("list_outgoing", error.message);
+    return [];
+  }
+  return Array.isArray(data)
+    ? data.map((r) => mapRequest(r as Record<string, unknown>))
+    : [];
+}
+
+export async function getFriendshipStatus(
+  username: string,
+): Promise<FriendshipStatusInfo> {
+  if (!isSupabaseConfigured()) return { status: "none" };
+  const { data, error } = await getSupabase().rpc("friendship_status", {
+    p_username: username.trim(),
+  });
+  if (error || !data) {
+    console.warn("friendship_status", error?.message);
+    return { status: "none" };
+  }
+  const obj = data as Record<string, unknown>;
+  return {
+    status: (obj.status as FriendshipStatus) || "none",
+    id: obj.id ? String(obj.id) : undefined,
+    userId: obj.user_id ? String(obj.user_id) : undefined,
+  };
+}
+
+export type FriendActionResult =
+  | { ok: true; status?: string; message?: string }
+  | { ok: false; error: string };
+
+export async function sendFriendRequest(username: string): Promise<FriendActionResult> {
+  const cfg = getSupabaseConfigError();
+  if (cfg) return { ok: false, error: cfg };
+  const { data, error } = await getSupabase().rpc("send_friend_request", {
+    p_username: username.trim(),
+  });
+  if (error) {
+    return {
+      ok: false,
+      error:
+        error.message.includes("function") || error.message.includes("does not exist")
+          ? "Friend system not set up. Run supabase/friends.sql in Supabase."
+          : error.message,
+    };
+  }
+  const obj = data as Record<string, unknown>;
+  if (!obj?.ok) return { ok: false, error: String(obj?.error ?? "Failed") };
+  return {
+    ok: true,
+    status: String(obj.status ?? "pending"),
+    message:
+      obj.status === "accepted"
+        ? "You are now friends!"
+        : "Friend request sent.",
+  };
+}
+
+export async function acceptFriendRequest(id: string): Promise<FriendActionResult> {
+  const { data, error } = await getSupabase().rpc("respond_friend_request", {
+    p_id: id,
+    p_accept: true,
+  });
+  if (error) return { ok: false, error: error.message };
+  const obj = data as Record<string, unknown>;
+  if (!obj?.ok) return { ok: false, error: String(obj?.error ?? "Failed") };
+  return { ok: true, message: "Friend request accepted." };
+}
+
+export async function declineFriendRequest(id: string): Promise<FriendActionResult> {
+  const { data, error } = await getSupabase().rpc("respond_friend_request", {
+    p_id: id,
+    p_accept: false,
+  });
+  if (error) return { ok: false, error: error.message };
+  const obj = data as Record<string, unknown>;
+  if (!obj?.ok) return { ok: false, error: String(obj?.error ?? "Failed") };
+  return { ok: true, message: "Request declined." };
+}
+
+export async function cancelFriendRequest(id: string): Promise<FriendActionResult> {
+  const { data, error } = await getSupabase().rpc("cancel_friend_request", {
+    p_id: id,
+  });
+  if (error) return { ok: false, error: error.message };
+  const obj = data as Record<string, unknown>;
+  if (!obj?.ok) return { ok: false, error: String(obj?.error ?? "Failed") };
+  return { ok: true, message: "Request cancelled." };
+}
+
+export async function removeFriend(userId: string): Promise<FriendActionResult> {
+  const { data, error } = await getSupabase().rpc("remove_friend", {
+    p_user_id: userId,
+  });
+  if (error) return { ok: false, error: error.message };
+  const obj = data as Record<string, unknown>;
+  if (!obj?.ok) return { ok: false, error: String(obj?.error ?? "Failed") };
+  return { ok: true, message: "Friend removed." };
+}

@@ -1490,6 +1490,46 @@ html[data-hide-top-currency="1"] .topbar-currency {
   font-size: 0.84rem;
 }
 
+.friend-row {
+  gap: 10px;
+}
+
+.friend-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.friend-action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-sm {
+  min-height: 32px !important;
+  padding: 0 12px !important;
+  font-size: 0.84rem !important;
+  width: auto !important;
+  max-width: none !important;
+}
+
+.profile-hit-inline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
 @media (hover: hover) and (pointer: fine) {
   .core-option:hover {
     background: rgba(120, 120, 128, 0.28);
