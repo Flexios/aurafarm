@@ -257,7 +257,7 @@ const en = {
   "settings.content": "Content",
   "settings.nsfw": "18+ challenges (NSFW)",
   "settings.nsfwHint":
-    "Unlocks mature after-dark prompts: situationships, flirting, late-night energy. Still no graphic porn — spicy, not X-rated. Confirm you are 18+.",
+    "Unlocks mature after-dark prompts: situationships, flirting, late-night energy. Spicy and adult-toned — keep answers appropriate. Confirm you are 18+.",
   "settings.nsfwConfirm":
     "Enable 18+ challenges? You’ll get spicier dating / party prompts. You must be 18 or older.",
   "settings.nsfwOn": "18+ challenges on",
@@ -523,7 +523,7 @@ const de: Record<MessageKey, string> = {
   "settings.content": "Inhalte",
   "settings.nsfw": "18+ Challenges (NSFW)",
   "settings.nsfwHint":
-    "Schaltet reifere After-Dark-Prompts frei: Situationships, Flirts, Late-Night-Energie. Kein Hardcore — spicy, nicht X-rated. Bestätige, dass du 18+ bist.",
+    "Schaltet reifere After-Dark-Prompts frei: Situationships, Flirts, Late-Night-Energie. Spicy und erwachsen — Antworten bitte angemessen halten. Bestätige, dass du 18+ bist.",
   "settings.nsfwConfirm":
     "18+ Challenges aktivieren? Du bekommst spicigere Dating-/Party-Prompts. Du musst 18+ sein.",
   "settings.nsfwOn": "18+ Challenges an",
@@ -788,7 +788,7 @@ const fr: Record<MessageKey, string> = {
   "settings.content": "Contenu",
   "settings.nsfw": "Challenges 18+ (NSFW)",
   "settings.nsfwHint":
-    "Débloque des prompts after-dark matures : situationships, flirts, énergie de fin de soirée. Pas de porn hard — spicy, pas X. Confirme que tu as 18+.",
+    "Débloque des prompts after-dark matures : situationships, flirts, énergie de fin de soirée. Spicy et adulte — garde des réponses appropriées. Confirme que tu as 18+.",
   "settings.nsfwConfirm":
     "Activer les challenges 18+ ? Tu auras des prompts dating/soirée plus osés. Tu dois avoir 18 ans ou plus.",
   "settings.nsfwOn": "Challenges 18+ activés",
@@ -1053,7 +1053,7 @@ const zh: Record<MessageKey, string> = {
   "settings.content": "内容",
   "settings.nsfw": "18+ 挑战（NSFW）",
   "settings.nsfwHint":
-    "解锁更成熟的深夜向提示：暧昧、暧昧关系、派对能量。不是硬核色情——偏辣，不是 X 级。请确认你已满 18 岁。",
+    "解锁更成熟的深夜向提示：暧昧关系、撩感、派对与深夜能量。偏辣成人向——作答请保持得体。请确认你已满 18 岁。",
   "settings.nsfwConfirm":
     "开启 18+ 挑战？会出现更辣的约会/派对提示。你必须年满 18 岁。",
   "settings.nsfwOn": "已开启 18+ 挑战",
@@ -1318,7 +1318,7 @@ const es: Record<MessageKey, string> = {
   "settings.content": "Contenido",
   "settings.nsfw": "Retos 18+ (NSFW)",
   "settings.nsfwHint":
-    "Desbloquea prompts after-dark maduros: situationships, flirteo, energía de madrugada. No es porno hard — spicy, no X. Confirma que tienes 18+.",
+    "Desbloquea prompts after-dark maduros: situationships, flirteo, energía de madrugada. Spicy y adulto — mantén respuestas apropiadas. Confirma que tienes 18+.",
   "settings.nsfwConfirm":
     "¿Activar retos 18+? Verás prompts de dating/fiesta más picantes. Debes tener 18 años o más.",
   "settings.nsfwOn": "Retos 18+ activados",

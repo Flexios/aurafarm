@@ -220,7 +220,7 @@ const challengeDe: Record<string, ChallengeCopy> = {
   "nsfw-hotel": {
     title: "Hotel-Key-Energie",
     prompt:
-      "Wochenendtrip mit jemandem Neuem. Beschreib die ersten zehn Minuten im Zimmer wie eine spicy Slow-Burn-Szene (geschmackvoll, kein Porno).",
+      "Wochenendtrip mit jemandem Neuem. Beschreib die ersten zehn Minuten im Zimmer wie eine spicy Slow-Burn-Szene (bleib angemessen).",
     hint: "Spannung > Checkliste.",
   },
   "nsfw-jealousy": {
@@ -451,7 +451,7 @@ const challengeFr: Record<string, ChallengeCopy> = {
   "nsfw-hotel": {
     title: "Énergie clé d’hôtel",
     prompt:
-      "Week-end avec quelqu’un de nouveau. Les 10 premières minutes dans la chambre en slow-burn spicy (goût, pas porno).",
+      "Week-end avec quelqu’un de nouveau. Les 10 premières minutes dans la chambre en slow-burn spicy (reste approprié).",
     hint: "Tension > check-list.",
   },
   "nsfw-jealousy": {
@@ -647,7 +647,7 @@ const challengeZh: Record<string, ChallengeCopy> = {
   },
   "nsfw-hotel": {
     title: "酒店钥匙能量",
-    prompt: "和新认识的人周末旅行。描述进屋前十分钟，像辣味慢燃戏（有品味，不是黄片）。",
+    prompt: "和新认识的人周末旅行。描述进屋前十分钟，像辣味慢燃戏（注意分寸、保持得体）。",
     hint: "张力 > 清单。",
   },
   "nsfw-jealousy": {
@@ -875,7 +875,7 @@ const challengeEs: Record<string, ChallengeCopy> = {
   "nsfw-hotel": {
     title: "Energía llave de hotel",
     prompt:
-      "Fin de semana con alguien nuevo. Describe los primeros diez minutos en la habitación como slow-burn spicy (con gusto, no porno).",
+      "Fin de semana con alguien nuevo. Describe los primeros diez minutos en la habitación como slow-burn spicy (manténlo apropiado).",
     hint: "Tensión > checklist.",
   },
   "nsfw-jealousy": {

@@ -4,7 +4,7 @@ import type { Challenge } from "../types";
  * Challenge catalog.
  * - Default pool is SFW / all-ages vibe content.
  * - Entries with `nsfw: true` only appear when Settings → 18+ Challenges is on.
- *   NSFW here means mature dating / party / situationship energy — not hardcore porn.
+ *   NSFW here means mature dating / party / situationship energy (opt-in 18+).
  */
 export const CHALLENGES: Challenge[] = [
   // ─── Original SFW ───────────────────────────────────────────
@@ -329,7 +329,7 @@ export const CHALLENGES: Challenge[] = [
     category: "after-dark",
     title: "Hotel Key Energy",
     prompt:
-      "You're on a weekend trip with someone new. Describe the first ten minutes in the room like a spicy slow-burn scene (keep it tasteful, not porn).",
+      "You're on a weekend trip with someone new. Describe the first ten minutes in the room like a spicy slow-burn scene (keep it appropriate).",
     hint: "Tension > checklist.",
     emoji: "🔑",
     nsfw: true,
