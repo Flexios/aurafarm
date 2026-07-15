@@ -6,7 +6,14 @@ import {
   restoreSession,
   type Session,
 } from "./auth/auth";
-import { createDefaultState, flushSave, loadState, refreshStreak, resetState } from "./state/store";
+import {
+  applySettingsToDom,
+  createDefaultState,
+  flushSave,
+  loadState,
+  refreshStreak,
+  resetState,
+} from "./state/store";
 import type { PlayerState, Screen } from "./types";
 import { renderCard } from "./ui/card";
 import { renderDuel } from "./ui/duel";
@@ -14,6 +21,7 @@ import { renderHome } from "./ui/home";
 import { renderLogin } from "./ui/login";
 import { renderOnboarding } from "./ui/onboarding";
 import { renderPlay } from "./ui/play";
+import { renderSettings } from "./ui/settings";
 import { mountInShell } from "./ui/shell";
 import { renderShop } from "./ui/shop";
 
@@ -41,6 +49,12 @@ async function initAi(): Promise<void> {
 
 async function setState(next: PlayerState): Promise<void> {
   state = next;
+  applySettingsToDom(state.settings);
+  render();
+}
+
+function refreshSessionFromCache(): void {
+  session = getCachedSession();
   render();
 }
 
@@ -63,6 +77,7 @@ async function handleAuthed(next: Session): Promise<void> {
   session = next;
   showBoot("Loading your farm…");
   state = refreshStreak(await loadState());
+  applySettingsToDom(state.settings);
   screen = "home";
   render();
 }
@@ -124,6 +139,19 @@ function render(): void {
             void setState(s);
           });
           break;
+        case "settings":
+          renderSettings(
+            slot,
+            state,
+            (s) => {
+              void setState(s);
+            },
+            refreshSessionFromCache,
+            () => {
+              void handleLogout();
+            },
+          );
+          break;
       }
     },
     navigate,
@@ -151,6 +179,7 @@ async function boot(): Promise<void> {
     session = await restoreSession();
     if (session) {
       state = refreshStreak(await loadState());
+      applySettingsToDom(state.settings);
     } else {
       state = createDefaultState();
     }

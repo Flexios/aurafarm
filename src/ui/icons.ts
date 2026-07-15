@@ -21,7 +21,8 @@ export type IconName =
   | "download"
   | "refresh"
   | "logout"
-  | "star";
+  | "star"
+  | "settings";
 
 const ICONS: Record<IconName, string> = {
   home: `<path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5z"/>`,
@@ -38,4 +39,5 @@ const ICONS: Record<IconName, string> = {
   refresh: `<path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 5v5h-5"/>`,
   logout: `<path d="M10 12h9"/><path d="M15 8l4 4-4 4"/><path d="M13 5H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h6"/>`,
   star: `<path d="M12 3.5 14.5 9l6 .5-4.5 4 1.5 5.5L12 16.5 6.5 19l1.5-5.5L3.5 9.5 9.5 9 12 3.5z"/>`,
+  settings: `<circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M3 12h2M19 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>`,
 };

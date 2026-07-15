@@ -22,7 +22,7 @@ export function renderPlay(
   let challenge: Challenge = mode === "daily" ? getTodaysChallenge() : getPracticeChallenge();
   let result: ScoreResult | null = null;
   let busy = false;
-  let preferAi = aiOn;
+  let preferAi = aiOn && state.settings.preferAiJudge;
 
   const paint = () => {
     if (result) {

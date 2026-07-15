@@ -8,7 +8,26 @@ export type AestheticCore =
   | "soft-boy"
   | "main-character";
 
-export type Screen = "home" | "play" | "shop" | "card" | "duel";
+export type Screen = "home" | "play" | "shop" | "card" | "duel" | "settings";
+
+export type AccentTheme = "purple" | "blue" | "pink" | "green";
+
+export interface UserSettings {
+  /** Prefer AI judge when available */
+  preferAiJudge: boolean;
+  /** Softer animations */
+  reduceMotion: boolean;
+  /** Tighter spacing */
+  compactMode: boolean;
+  /** Larger UI type */
+  largeText: boolean;
+  /** Toast / feedback sounds (reserved; UI toggle) */
+  soundEnabled: boolean;
+  /** Accent color */
+  accent: AccentTheme;
+  /** Hide currency in top bar (still in sidebar) */
+  hideTopCurrency: boolean;
+}
 
 export type ChallengeCategory =
   | "fit-check"
@@ -88,6 +107,11 @@ export interface PlayerState {
   duelWins: number;
   onboarded: boolean;
   history: Array<{ date: string; score: number; challengeId: string }>;
+  /** ISO timestamp — username change cooldown (7 days) */
+  lastUsernameChangeAt: string | null;
+  /** ISO timestamp — display name change cooldown (3 days) */
+  lastDisplayNameChangeAt: string | null;
+  settings: UserSettings;
 }
 
 export interface ScoreResult {

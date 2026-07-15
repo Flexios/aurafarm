@@ -9,6 +9,7 @@ const NAV: Array<{ id: Screen; label: string; ico: IconName }> = [
   { id: "shop", label: "Shop", ico: "shop" },
   { id: "card", label: "Card", ico: "card" },
   { id: "duel", label: "Duel", ico: "duel" },
+  { id: "settings", label: "Settings", ico: "settings" },
 ];
 
 function navButtons(screen: Screen, extraClass = ""): string {
@@ -63,10 +64,12 @@ export function renderShell(
               <span class="page-title large-title" data-page="${screen}">${pageTitle(screen)}</span>
               <span class="user-line">${escape(state.displayName)}${session ? ` · @${escape(session.username)}` : ""}</span>
             </div>
-            <div class="currency-pill topbar-currency">
+            ${!state.settings.hideTopCurrency
+              ? `<div class="currency-pill topbar-currency">
               <div class="pill" title="Sparks">${icon("spark")} ${formatNumber(state.sparks)}</div>
               <div class="pill glow" title="Glow">${icon("glow")} ${formatNumber(state.glow)}</div>
-            </div>
+            </div>`
+              : `<div></div>`}
           </div>
           ${bodyHtml}
         </div>
@@ -90,6 +93,7 @@ function pageTitle(screen: Screen): string {
     shop: "Shop",
     card: "Aura Card",
     duel: "Duel",
+    settings: "Settings",
   };
   return map[screen];
 }

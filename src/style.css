@@ -592,7 +592,7 @@ button {
   transform: translateX(-50%);
   width: min(100%, 430px);
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 0;
   padding: 6px 4px calc(6px + var(--safe-bottom));
   background: rgba(28, 28, 30, 0.86);
@@ -1268,6 +1268,124 @@ button {
     max-width: 820px;
     padding-left: 48px;
   }
+}
+
+/* ——— Settings ——— */
+.settings-meta {
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.field-hint {
+  font-size: 0.8rem;
+  margin: 6px 0 0;
+}
+
+.success-text {
+  color: var(--green);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 44px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.toggle-row input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+
+.accent-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.accent-swatch {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+
+.accent-swatch.selected {
+  box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--accent);
+}
+
+.accent-swatch.purple {
+  background: #bf5af2;
+}
+.accent-swatch.blue {
+  background: #0a84ff;
+}
+.accent-swatch.pink {
+  background: #ff375f;
+}
+.accent-swatch.green {
+  background: #30d158;
+}
+
+/* Preference-driven UI */
+html[data-accent="blue"] {
+  --accent: #0a84ff;
+  --accent-press: #0071e3;
+  --accent-soft: rgba(10, 132, 255, 0.18);
+}
+
+html[data-accent="pink"] {
+  --accent: #ff375f;
+  --accent-press: #d70015;
+  --accent-soft: rgba(255, 55, 95, 0.18);
+}
+
+html[data-accent="green"] {
+  --accent: #30d158;
+  --accent-press: #248a3d;
+  --accent-soft: rgba(48, 209, 88, 0.18);
+}
+
+html[data-compact="1"] .screen {
+  padding-top: 12px;
+}
+
+html[data-compact="1"] .card {
+  padding: 12px;
+}
+
+html[data-compact="1"] .section-header {
+  margin-top: 12px;
+}
+
+html[data-large-text="1"] {
+  font-size: 17px;
+}
+
+html[data-large-text="1"] .page-title,
+html[data-large-text="1"] .large-title {
+  font-size: 2.25rem;
+}
+
+html[data-reduce-motion="1"] *,
+html[data-reduce-motion="1"] *::before,
+html[data-reduce-motion="1"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+html[data-hide-top-currency="1"] .topbar-currency {
+  display: none;
 }
 
 @media (hover: hover) and (pointer: fine) {

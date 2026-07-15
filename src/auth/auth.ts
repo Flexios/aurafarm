@@ -208,5 +208,101 @@ function friendlyAuthError(message: string): string {
   }
   if (m.includes("password")) return "Password is too weak. Use at least 6 characters.";
   if (m.includes("rate")) return "Too many attempts. Wait a moment and try again.";
+  if (m.includes("same")) return message;
   return message;
+}
+
+export type SimpleResult = { ok: true; message?: string } | { ok: false; error: string };
+
+export async function changePassword(newPassword: string): Promise<SimpleResult> {
+  const cfg = getSupabaseConfigError();
+  if (cfg) return { ok: false, error: cfg };
+  const passErr = validatePassword(newPassword);
+  if (passErr) return { ok: false, error: passErr };
+
+  const sb = getSupabase();
+  const { error } = await sb.auth.updateUser({ password: newPassword });
+  if (error) return { ok: false, error: friendlyAuthError(error.message) };
+  return { ok: true, message: "Password updated." };
+}
+
+export async function changeEmail(newEmail: string): Promise<SimpleResult> {
+  const cfg = getSupabaseConfigError();
+  if (cfg) return { ok: false, error: cfg };
+  const emailErr = validateEmail(newEmail);
+  if (emailErr) return { ok: false, error: emailErr };
+
+  const normalized = newEmail.trim().toLowerCase();
+  const session = getCachedSession();
+  if (session && session.email === normalized) {
+    return { ok: false, error: "That's already your email." };
+  }
+
+  const sb = getSupabase();
+  const { data, error } = await sb.auth.updateUser({ email: normalized });
+  if (error) return { ok: false, error: friendlyAuthError(error.message) };
+
+  const userId = data.user?.id ?? session?.userId;
+  if (userId) {
+    await sb
+      .from("profiles")
+      .update({ email: normalized, updated_at: new Date().toISOString() })
+      .eq("user_id", userId);
+    if (cachedSession) {
+      cachedSession = { ...cachedSession, email: normalized };
+    }
+  }
+
+  // With autoconfirm off for email change, user may need to confirm
+  return {
+    ok: true,
+    message:
+      "Email update requested. If confirmation is required, check your inbox for both addresses.",
+  };
+}
+
+export async function changeUsername(newUsername: string): Promise<SimpleResult> {
+  const cfg = getSupabaseConfigError();
+  if (cfg) return { ok: false, error: cfg };
+  const userErr = validateUsername(newUsername);
+  if (userErr) return { ok: false, error: userErr };
+
+  const session = getCachedSession();
+  if (!session) return { ok: false, error: "Not signed in." };
+
+  const normalized = normalizeUsername(newUsername);
+  if (normalized === session.username) {
+    return { ok: false, error: "That's already your username." };
+  }
+
+  const sb = getSupabase();
+
+  // Availability check
+  const { data: existingEmail, error: lookupErr } = await sb.rpc("email_for_username", {
+    p_username: normalized,
+  });
+  if (lookupErr) {
+    return { ok: false, error: "Could not check username availability." };
+  }
+  if (existingEmail && typeof existingEmail === "string") {
+    return { ok: false, error: "That username is already taken." };
+  }
+
+  const { error } = await sb
+    .from("profiles")
+    .update({
+      username: normalized,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", session.userId);
+
+  if (error) {
+    if (error.message.toLowerCase().includes("unique") || error.code === "23505") {
+      return { ok: false, error: "That username is already taken." };
+    }
+    return { ok: false, error: error.message };
+  }
+
+  cachedSession = { ...session, username: normalized };
+  return { ok: true, message: "Username updated." };
 }
