@@ -202,12 +202,18 @@ export function renderCard(
   state: PlayerState,
 ): void {
   container.innerHTML = `
-    <div class="card card-preview-wrap">
-      <h2 style="margin:0;align-self:stretch">Aura Card</h2>
-      <p class="muted" style="margin:0;align-self:stretch">Export a shareable card for Stories / TikTok / group chats. Equipped cosmetics apply automatically.</p>
-      <canvas id="aura-card-canvas" width="720" height="1080" aria-label="Aura card preview"></canvas>
-      <button class="btn btn-primary" id="download-card">Download PNG</button>
-      <button class="btn btn-secondary" id="redraw">Refresh preview</button>
+    <div class="desktop-grid card-layout">
+      <div class="card card-preview-wrap">
+        <canvas id="aura-card-canvas" width="720" height="1080" aria-label="Aura card preview"></canvas>
+      </div>
+      <div class="card card-actions">
+        <h2 style="margin:0">Aura Card</h2>
+        <p class="muted" style="margin:8px 0 0">Export a shareable card for Stories / TikTok / group chats. Equipped cosmetics apply automatically.</p>
+        <div class="btn-row" style="flex-direction:column">
+          <button class="btn btn-primary" id="download-card">Download PNG</button>
+          <button class="btn btn-secondary" id="redraw">Refresh preview</button>
+        </div>
+      </div>
     </div>
   `;
 

@@ -66,10 +66,11 @@ export function renderPlay(
     }
 
     container.innerHTML = `
-      <div class="tabs-inline">
-        <button type="button" data-mode="daily" class="${mode === "daily" ? "active" : ""}" ${dailyDone && mode !== "daily" ? "" : ""}>Daily ${dailyDone ? "✓" : ""}</button>
+      <div class="tabs-inline play-tabs">
+        <button type="button" data-mode="daily" class="${mode === "daily" ? "active" : ""}">Daily ${dailyDone ? "✓" : ""}</button>
         <button type="button" data-mode="practice" class="${mode === "practice" ? "active" : ""}">Practice</button>
       </div>
+      <div class="desktop-grid play-grid">
       <div class="card">
         <div class="challenge-emoji">${challenge.emoji}</div>
         <h2 style="margin:0 0 6px">${escapeHtml(challenge.title)}</h2>
@@ -81,7 +82,7 @@ export function renderPlay(
             : ""
         }
       </div>
-      <div class="card" style="margin-top:12px">
+      <div class="card">
         <div class="field">
           <label for="answer">Your answer</label>
           <textarea id="answer" maxlength="400" placeholder="Drop the line. Make it cinematic..."></textarea>
@@ -91,6 +92,7 @@ export function renderPlay(
           Use AI Aura Judge ${aiOn ? "" : "(offline — set XAI_API_KEY)"}
         </label>
         <button class="btn btn-primary" id="submit" ${mode === "daily" && dailyDone ? "disabled" : ""}>${busy ? "Judging..." : "Submit for aura"}</button>
+      </div>
       </div>
     `;
 

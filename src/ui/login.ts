@@ -18,12 +18,18 @@ export function renderLogin(
 
   const paint = () => {
     root.innerHTML = `
-      <div class="onboarding auth-screen">
-        <div>
+      <div class="onboarding auth-screen auth-layout">
+        <div class="auth-hero">
           <div class="logo">AuraFarm</div>
-          <p class="muted" style="margin:10px 0 0">Farm your aura. Flex your vibe.<br/>Cloud account — play on phone &amp; PC. 13+</p>
+          <p class="muted auth-tagline">Farm your aura. Flex your vibe.<br/>Cloud account — play on phone &amp; PC. 13+</p>
+          <ul class="auth-perks muted">
+            <li>Daily vibe challenges</li>
+            <li>Cosmetics & battle pass</li>
+            <li>Sync progress across devices</li>
+          </ul>
         </div>
 
+        <div class="auth-panel">
         ${
           configError
             ? `<div class="card"><p class="danger-text" style="margin:0">${escapeHtml(configError)}</p>
@@ -91,6 +97,7 @@ export function renderLogin(
             Progress syncs online so you can hop between phone and PC.
             Cosmetics &amp; Glow packs are demo economy (no real charges).
           </p>
+        </div>
         </div>
       </div>
     `;

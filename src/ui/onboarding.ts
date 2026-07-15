@@ -15,11 +15,12 @@ export function renderOnboarding(
   const defaultName = state.displayName || session?.username || "";
 
   root.innerHTML = `
-    <div class="onboarding">
-      <div>
+    <div class="onboarding auth-layout">
+      <div class="auth-hero">
         <div class="logo">AuraFarm</div>
-        <p class="muted" style="margin:10px 0 0">Welcome${session ? `, @${escapeHtml(session.username)}` : ""}.<br/>Set your in-game vibe identity. 13+</p>
+        <p class="muted auth-tagline">Welcome${session ? `, @${escapeHtml(session.username)}` : ""}.<br/>Set your in-game vibe identity. 13+</p>
       </div>
+      <div class="auth-panel">
       <div class="card stack">
         <div class="field">
           <label for="display-name">Display name</label>
@@ -32,6 +33,7 @@ export function renderOnboarding(
         <button class="btn btn-primary" id="start-btn">Enter the farm ✨</button>
         <button class="btn btn-secondary" type="button" id="logout-onboard">Use a different account</button>
         <p class="muted" style="font-size:0.78rem;margin:0">Progress syncs online to your account. Cosmetics & Glow packs are demo economy (no real charges).</p>
+      </div>
       </div>
     </div>
   `;

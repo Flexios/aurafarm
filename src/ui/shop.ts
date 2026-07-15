@@ -47,6 +47,7 @@ export function renderShop(
         const items = COSMETICS.filter((c) => c.slot === slot);
         return `
           <div class="section-title"><h3>${slot}</h3></div>
+          <div class="shop-grid">
           ${items
             .map((item) => {
               const owned = state.ownedCosmetics.includes(item.id);
@@ -79,6 +80,7 @@ export function renderShop(
               `;
             })
             .join("")}
+          </div>
         `;
       })
       .join("");
