@@ -1579,6 +1579,61 @@ html[data-hide-top-currency="1"] .topbar-currency {
   margin-top: 16px;
 }
 
+.friend-bio {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: var(--hairline);
+}
+
+.friend-bio-text {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  color: var(--label-secondary);
+}
+
+.battle-task-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.battle-task-header .btn {
+  align-self: flex-start;
+}
+
+.battle-answers {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.battle-answer-card {
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: var(--fill);
+}
+
+.battle-answer-card.mine {
+  background: var(--accent-soft);
+}
+
+.battle-answer-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--label-secondary);
+  margin-bottom: 6px;
+}
+
+.battle-answer-body {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .dm-thread {
   max-height: 360px;
   overflow-y: auto;

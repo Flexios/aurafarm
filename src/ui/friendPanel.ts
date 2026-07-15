@@ -1,5 +1,5 @@
 import { getCachedSession } from "../auth/auth";
-import { getTodaysChallenge } from "../game/daily";
+import { CHALLENGES } from "../data/challenges";
 import { scoreLocal } from "../game/scorer";
 import {
   completeFriendBattle,
@@ -15,7 +15,9 @@ import {
   type FriendBattle,
   type FriendRow,
 } from "../friends/api";
-import type { AestheticCore, PlayerState } from "../types";
+import { fetchPublicProfile } from "../profile/api";
+import type { AestheticCore, Challenge, PlayerState } from "../types";
+import { pickDaily } from "../utils/seed";
 import { escapeHtml, formatNumber } from "../utils/format";
 import { showToast } from "./toast";
 
@@ -25,10 +27,37 @@ function avatarHtml(url: string | null | undefined, name: string): string {
   return `<div class="avatar avatar-fallback" aria-hidden="true">${escapeHtml(initial)}</div>`;
 }
 
-type PanelMode = "menu" | "dm" | "battle" | "note";
+/** Pick a battle prompt; change nonce to “refresh” a new task. */
+function getBattleChallenge(nonce: number): Challenge {
+  return pickDaily(CHALLENGES, `friend-battle-${nonce}`, new Date());
+}
+
+function friendBattleRecord(
+  battles: FriendBattle[],
+  myId: string,
+  friendId: string,
+): { wins: number; losses: number; ties: number; played: number } {
+  let wins = 0;
+  let losses = 0;
+  let ties = 0;
+  for (const b of battles) {
+    if (b.status !== "complete") continue;
+    if (b.challengerId !== friendId && b.opponentId !== friendId) continue;
+    if (b.challengerScore == null || b.opponentScore == null) continue;
+    const iAmChallenger = b.challengerId === myId;
+    const myScore = iAmChallenger ? b.challengerScore : b.opponentScore;
+    const theirScore = iAmChallenger ? b.opponentScore : b.challengerScore;
+    if (myScore > theirScore) wins++;
+    else if (myScore < theirScore) losses++;
+    else ties++;
+  }
+  return { wins, losses, ties, played: wins + losses + ties };
+}
+
+type PanelMode = "menu" | "dm" | "battle-new" | "battle-reply" | "battle-result";
 
 /**
- * Friend detail: duration, private note, DM, battle.
+ * Friend detail: bio, duration, inline private note, DM, battles, W/L.
  */
 export async function renderFriendPanel(
   container: HTMLElement,
@@ -37,20 +66,35 @@ export async function renderFriendPanel(
   onBack: () => void,
 ): Promise<void> {
   const me = getCachedSession();
+  const myId = me?.userId ?? "";
   let mode: PanelMode = "menu";
   let note = "";
+  let friendBio: string | null = null;
   let messages: DmMessage[] = [];
   let battles: FriendBattle[] = [];
   let busy = false;
   let error = "";
   let success = "";
+  /** When set, battle-reply shows only this open battle. */
+  let replyBattleId: string | null = null;
+  /** When set, battle-result shows this completed battle. */
+  let resultBattleId: string | null = null;
+  /** Salt for rolling a new challenge task. */
+  let challengeNonce = Date.now();
 
   const load = async () => {
-    note = await getFriendNote(friend.userId);
-    messages = await listFriendDms(friend.userId);
-    battles = (await listFriendBattles()).filter(
+    const [n, msgs, allBattles, publicProf] = await Promise.all([
+      getFriendNote(friend.userId),
+      listFriendDms(friend.userId),
+      listFriendBattles(),
+      fetchPublicProfile(friend.username),
+    ]);
+    note = n;
+    messages = msgs;
+    battles = allBattles.filter(
       (b) => b.challengerId === friend.userId || b.opponentId === friend.userId,
     );
+    friendBio = publicProf?.bio ?? null;
   };
 
   await load();
@@ -67,14 +111,32 @@ export async function renderFriendPanel(
       paintDm(banner);
       return;
     }
-    if (mode === "battle") {
-      paintBattle(banner);
+    if (mode === "battle-new") {
+      paintBattleNew(banner);
       return;
     }
-    if (mode === "note") {
-      paintNote(banner);
+    if (mode === "battle-reply") {
+      paintBattleReply(banner);
       return;
     }
+    if (mode === "battle-result") {
+      paintBattleResult(banner);
+      return;
+    }
+
+    paintMenu(banner);
+  };
+
+  const paintMenu = (banner: string) => {
+    const wl = friendBattleRecord(battles, myId, friend.userId);
+    const wlLabel =
+      wl.played === 0
+        ? "No battles yet"
+        : `${wl.wins}W · ${wl.losses}L${wl.ties ? ` · ${wl.ties}T` : ""}`;
+    const wlRatio =
+      wl.played === 0
+        ? ""
+        : ` · ${(wl.wins / wl.played * 100).toFixed(0)}% win rate`;
 
     container.innerHTML = `
       <button type="button" class="btn btn-plain" id="friend-back" style="align-self:flex-start">← Friends</button>
@@ -91,13 +153,32 @@ export async function renderFriendPanel(
             <p class="muted" style="margin:4px 0 0;font-size:0.84rem">
               ${formatNumber(friend.totalAura)} aura
             </p>
+            <p class="muted" style="margin:6px 0 0;font-size:0.84rem;font-weight:600">
+              Battle record: ${escapeHtml(wlLabel)}${escapeHtml(wlRatio)}
+            </p>
           </div>
+        </div>
+        <div class="friend-bio">
+          ${
+            friendBio
+              ? `<p class="friend-bio-text">${escapeHtml(friendBio)}</p>`
+              : `<p class="muted" style="margin:0;font-size:0.9rem">No bio yet.</p>`
+          }
         </div>
         <div class="friend-quick-actions">
           <button type="button" class="btn btn-fill btn-sm" id="open-dm">Message</button>
-          <button type="button" class="btn btn-secondary btn-sm" id="open-battle">Battle</button>
-          <button type="button" class="btn btn-secondary btn-sm" id="open-note">Private note</button>
+          <button type="button" class="btn btn-secondary btn-sm" id="open-battle">New battle</button>
         </div>
+      </div>
+
+      <div class="section-header">Private note</div>
+      <div class="card stack">
+        <p class="muted" style="margin:0;font-size:0.84rem">Only you can see this note about @${escapeHtml(friend.username)}.</p>
+        <div class="field">
+          <label for="note-input">Note</label>
+          <textarea id="note-input" maxlength="500" rows="3" placeholder="Reminders, context…">${escapeHtml(note)}</textarea>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="note-save" ${busy ? "disabled" : ""} style="align-self:flex-start">Save note</button>
       </div>
 
       ${
@@ -105,47 +186,76 @@ export async function renderFriendPanel(
           ? `<div class="section-header">Battles</div>
              <div class="inset-group">
                ${battles
-                 .slice(0, 8)
-                 .map((b) => battleRow(b, me?.userId ?? ""))
+                 .slice(0, 12)
+                 .map((b) => battleRow(b, myId))
                  .join("")}
              </div>`
           : `<div class="section-header">Battles</div>
-             <div class="card"><p class="muted" style="margin:0">No battles yet. Challenge them!</p></div>`
+             <div class="card"><p class="muted" style="margin:0">No battles yet. Start one!</p></div>`
       }
     `;
 
     container.querySelector("#friend-back")?.addEventListener("click", onBack);
     container.querySelector("#open-dm")?.addEventListener("click", () => {
       mode = "dm";
+      error = "";
+      success = "";
       paint();
     });
     container.querySelector("#open-battle")?.addEventListener("click", () => {
-      mode = "battle";
+      mode = "battle-new";
+      challengeNonce = Date.now();
+      error = "";
+      success = "";
       paint();
     });
-    container.querySelector("#open-note")?.addEventListener("click", () => {
-      mode = "note";
+
+    container.querySelector("#note-save")?.addEventListener("click", async () => {
+      const text = (container.querySelector("#note-input") as HTMLTextAreaElement).value;
+      busy = true;
+      error = "";
+      success = "";
+      paint();
+      const res = await saveFriendNote(friend.userId, text);
+      busy = false;
+      if (!res.ok) {
+        error = res.error;
+        paint();
+        return;
+      }
+      note = text.trim().slice(0, 500);
+      showToast("Note saved");
+      success = "Note saved (only you can see it).";
       paint();
     });
 
     container.querySelectorAll<HTMLButtonElement>("[data-answer-battle]").forEach((btn) => {
       btn.addEventListener("click", () => {
-        mode = "battle";
+        replyBattleId = btn.dataset.answerBattle!;
+        mode = "battle-reply";
+        error = "";
+        success = "";
         paint();
-        // scroll / focus handled in battle paint via selected id
-        const id = btn.dataset.answerBattle!;
-        setTimeout(() => {
-          const el = container.querySelector(`[data-battle-id="${id}"]`);
-          el?.scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 50);
+      });
+    });
+
+    container.querySelectorAll<HTMLButtonElement>("[data-view-battle]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        resultBattleId = btn.dataset.viewBattle!;
+        mode = "battle-result";
+        error = "";
+        success = "";
+        paint();
       });
     });
   };
 
-  const battleRow = (b: FriendBattle, myId: string): string => {
-    const iAmChallenger = b.challengerId === myId;
+  const battleRow = (b: FriendBattle, uid: string): string => {
+    const iAmChallenger = b.challengerId === uid;
     const needAnswer =
       b.status === "open" && !iAmChallenger && !b.opponentAnswer;
+    const waitingThem =
+      b.status === "open" && iAmChallenger && !b.opponentAnswer;
     const done = b.status === "complete";
     let result = "";
     if (done && b.challengerScore != null && b.opponentScore != null) {
@@ -158,18 +268,23 @@ export async function renderFriendPanel(
             ? "They won"
             : "Tie";
     }
+    let statusLine = b.status;
+    if (needAnswer) statusLine = "your turn";
+    else if (waitingThem) statusLine = "waiting on them";
+    else if (done && result) statusLine = result;
+
     return `
       <div class="list-row">
         <div class="meta">
           <strong>${escapeHtml(b.challengeTitle)}</strong>
-          <span>${escapeHtml(b.status)}${result ? ` · ${result}` : ""}${
-            needAnswer ? " · your turn" : ""
-          }</span>
+          <span>${escapeHtml(statusLine)}</span>
         </div>
         ${
           needAnswer
-            ? `<button type="button" class="btn btn-fill btn-sm" data-answer-battle="${escapeHtml(b.id)}">Answer</button>`
-            : ""
+            ? `<button type="button" class="btn btn-fill btn-sm" data-answer-battle="${escapeHtml(b.id)}">Reply</button>`
+            : done
+              ? `<button type="button" class="btn btn-secondary btn-sm" data-view-battle="${escapeHtml(b.id)}">Results</button>`
+              : ""
         }
       </div>
     `;
@@ -231,84 +346,29 @@ export async function renderFriendPanel(
     });
   };
 
-  const paintNote = (banner: string) => {
+  const paintBattleNew = (banner: string) => {
+    const challenge = getBattleChallenge(challengeNonce);
+
     container.innerHTML = `
       <button type="button" class="btn btn-plain" id="friend-back">← Back</button>
       ${banner}
-      <div class="section-header">Private note</div>
+      <div class="section-header">New battle vs @${escapeHtml(friend.username)}</div>
       <div class="card stack">
-        <p class="muted" style="margin:0">Only you can see this note about @${escapeHtml(friend.username)}.</p>
-        <div class="field">
-          <label for="note-input">Note</label>
-          <textarea id="note-input" maxlength="500" rows="5" placeholder="Reminders, context…">${escapeHtml(note)}</textarea>
+        <div class="battle-task-header">
+          <div>
+            <p class="muted" style="margin:0"><strong>${escapeHtml(challenge.title)}</strong></p>
+            <p class="muted" style="margin:6px 0 0">${escapeHtml(challenge.prompt)}</p>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" id="refresh-task" ${busy ? "disabled" : ""} title="Roll a different task">
+            Refresh task
+          </button>
         </div>
-        <button class="btn btn-fill" id="note-save" ${busy ? "disabled" : ""}>Save note</button>
-      </div>
-    `;
-    container.querySelector("#friend-back")?.addEventListener("click", () => {
-      mode = "menu";
-      paint();
-    });
-    container.querySelector("#note-save")?.addEventListener("click", async () => {
-      const text = (container.querySelector("#note-input") as HTMLTextAreaElement).value;
-      busy = true;
-      paintNote(banner);
-      const res = await saveFriendNote(friend.userId, text);
-      busy = false;
-      if (!res.ok) {
-        error = res.error;
-        paintNote(`<p class="danger-text" style="margin:0 0 12px">${escapeHtml(error)}</p>`);
-        return;
-      }
-      note = text.trim().slice(0, 500);
-      showToast("Note saved");
-      mode = "menu";
-      paint();
-    });
-  };
-
-  const paintBattle = (banner: string) => {
-    const challenge = getTodaysChallenge();
-    const pendingForMe = battles.filter(
-      (b) =>
-        b.status === "open" &&
-        b.opponentId === me?.userId &&
-        !b.opponentAnswer,
-    );
-
-    container.innerHTML = `
-      <button type="button" class="btn btn-plain" id="friend-back">← Back</button>
-      ${banner}
-      <div class="section-header">Challenge @${escapeHtml(friend.username)}</div>
-      <div class="card stack">
-        <p class="muted" style="margin:0"><strong>${escapeHtml(challenge.title)}</strong></p>
-        <p class="muted" style="margin:0">${escapeHtml(challenge.prompt)}</p>
         <div class="field">
           <label for="battle-answer">Your answer</label>
           <textarea id="battle-answer" maxlength="400" rows="4" placeholder="Drop your line…"></textarea>
         </div>
         <button class="btn btn-fill" id="battle-send" ${busy ? "disabled" : ""}>Send battle</button>
       </div>
-
-      ${
-        pendingForMe.length
-          ? `<div class="section-header">Your turn</div>
-             ${pendingForMe
-               .map(
-                 (b) => `
-               <div class="card stack" data-battle-id="${escapeHtml(b.id)}" style="margin-top:12px">
-                 <p class="muted" style="margin:0"><strong>${escapeHtml(b.challengeTitle)}</strong></p>
-                 <p class="muted" style="margin:0">${escapeHtml(b.challengePrompt)}</p>
-                 <div class="field">
-                   <label for="ans-${escapeHtml(b.id)}">Your answer</label>
-                   <textarea id="ans-${escapeHtml(b.id)}" maxlength="400" rows="3"></textarea>
-                 </div>
-                 <button class="btn btn-fill" data-submit-battle="${escapeHtml(b.id)}" ${busy ? "disabled" : ""}>Submit answer</button>
-               </div>`,
-               )
-               .join("")}`
-          : ""
-      }
     `;
 
     container.querySelector("#friend-back")?.addEventListener("click", () => {
@@ -316,20 +376,27 @@ export async function renderFriendPanel(
       paint();
     });
 
+    container.querySelector("#refresh-task")?.addEventListener("click", () => {
+      challengeNonce = Date.now() + Math.floor(Math.random() * 1000);
+      error = "";
+      paint();
+    });
+
     container.querySelector("#battle-send")?.addEventListener("click", async () => {
       const answer = (container.querySelector("#battle-answer") as HTMLTextAreaElement).value;
+      const ch = getBattleChallenge(challengeNonce);
       busy = true;
-      paintBattle(banner);
+      paintBattleNew(banner);
       const res = await createFriendBattle(
         friend.userId,
-        challenge.title,
-        challenge.prompt,
+        ch.title,
+        ch.prompt,
         answer,
       );
       busy = false;
       if (!res.ok) {
         error = res.error;
-        paintBattle(`<p class="danger-text" style="margin:0 0 12px">${escapeHtml(error)}</p>`);
+        paintBattleNew(`<p class="danger-text" style="margin:0 0 12px">${escapeHtml(error)}</p>`);
         return;
       }
       showToast(res.message ?? "Battle sent");
@@ -339,6 +406,56 @@ export async function renderFriendPanel(
       mode = "menu";
       paint();
     });
+  };
+
+  const paintBattleReply = (banner: string) => {
+    const pending = battles.filter(
+      (b) =>
+        b.status === "open" &&
+        b.opponentId === myId &&
+        !b.opponentAnswer &&
+        (replyBattleId ? b.id === replyBattleId : true),
+    );
+
+    if (pending.length === 0) {
+      container.innerHTML = `
+        <button type="button" class="btn btn-plain" id="friend-back">← Back</button>
+        ${banner}
+        <div class="card"><p class="muted" style="margin:0">No open battles to reply to.</p></div>
+      `;
+      container.querySelector("#friend-back")?.addEventListener("click", () => {
+        mode = "menu";
+        replyBattleId = null;
+        paint();
+      });
+      return;
+    }
+
+    container.innerHTML = `
+      <button type="button" class="btn btn-plain" id="friend-back">← Back</button>
+      ${banner}
+      <div class="section-header">Your turn</div>
+      ${pending
+        .map(
+          (b) => `
+        <div class="card stack" data-battle-id="${escapeHtml(b.id)}" style="margin-bottom:12px">
+          <p class="muted" style="margin:0"><strong>${escapeHtml(b.challengeTitle)}</strong></p>
+          <p class="muted" style="margin:0">${escapeHtml(b.challengePrompt)}</p>
+          <div class="field">
+            <label for="ans-${escapeHtml(b.id)}">Your answer</label>
+            <textarea id="ans-${escapeHtml(b.id)}" maxlength="400" rows="4" placeholder="Drop your line…"></textarea>
+          </div>
+          <button class="btn btn-fill" data-submit-battle="${escapeHtml(b.id)}" ${busy ? "disabled" : ""}>Submit answer</button>
+        </div>`,
+        )
+        .join("")}
+    `;
+
+    container.querySelector("#friend-back")?.addEventListener("click", () => {
+      mode = "menu";
+      replyBattleId = null;
+      paint();
+    });
 
     container.querySelectorAll<HTMLButtonElement>("[data-submit-battle]").forEach((btn) => {
       btn.addEventListener("click", async () => {
@@ -346,15 +463,15 @@ export async function renderFriendPanel(
         const ta = container.querySelector(`#ans-${id}`) as HTMLTextAreaElement;
         const answer = ta?.value ?? "";
         busy = true;
-        paintBattle(banner);
+        error = "";
+        paintBattleReply(banner);
         const res = await submitFriendBattleAnswer(id, answer);
         if (!res.ok) {
           busy = false;
           error = res.error;
-          paintBattle(`<p class="danger-text" style="margin:0 0 12px">${escapeHtml(error)}</p>`);
+          paintBattleReply(`<p class="danger-text" style="margin:0 0 12px">${escapeHtml(error)}</p>`);
           return;
         }
-        // Score both sides client-side and complete
         const battle = battles.find((b) => b.id === id);
         if (battle && battle.challengerAnswer) {
           const ch = {
@@ -379,9 +496,67 @@ export async function renderFriendPanel(
         battles = (await listFriendBattles()).filter(
           (b) => b.challengerId === friend.userId || b.opponentId === friend.userId,
         );
-        mode = "menu";
+        replyBattleId = null;
+        resultBattleId = id;
+        mode = "battle-result";
         paint();
       });
+    });
+  };
+
+  const paintBattleResult = (banner: string) => {
+    const b = battles.find((x) => x.id === resultBattleId);
+    if (!b || b.status !== "complete") {
+      container.innerHTML = `
+        <button type="button" class="btn btn-plain" id="friend-back">← Back</button>
+        ${banner}
+        <div class="card"><p class="muted" style="margin:0">Results not available.</p></div>
+      `;
+      container.querySelector("#friend-back")?.addEventListener("click", () => {
+        mode = "menu";
+        resultBattleId = null;
+        paint();
+      });
+      return;
+    }
+
+    const iAmChallenger = b.challengerId === myId;
+    const myAnswer = iAmChallenger ? b.challengerAnswer : b.opponentAnswer;
+    const theirAnswer = iAmChallenger ? b.opponentAnswer : b.challengerAnswer;
+    const myScore = iAmChallenger ? b.challengerScore : b.opponentScore;
+    const theirScore = iAmChallenger ? b.opponentScore : b.challengerScore;
+    let outcome = "Tie";
+    if (myScore != null && theirScore != null) {
+      if (myScore > theirScore) outcome = "You won";
+      else if (myScore < theirScore) outcome = "They won";
+    }
+
+    container.innerHTML = `
+      <button type="button" class="btn btn-plain" id="friend-back">← Back</button>
+      ${banner}
+      <div class="section-header">Battle results</div>
+      <div class="card stack">
+        <p style="margin:0;font-weight:600;font-size:1.05rem">${escapeHtml(outcome)}</p>
+        <p class="muted" style="margin:0"><strong>${escapeHtml(b.challengeTitle)}</strong></p>
+        <p class="muted" style="margin:0">${escapeHtml(b.challengePrompt)}</p>
+
+        <div class="battle-answers">
+          <div class="battle-answer-card mine">
+            <div class="battle-answer-label">You · ${myScore ?? "—"} pts</div>
+            <p class="battle-answer-body">${escapeHtml(myAnswer || "—")}</p>
+          </div>
+          <div class="battle-answer-card theirs">
+            <div class="battle-answer-label">@${escapeHtml(friend.username)} · ${theirScore ?? "—"} pts</div>
+            <p class="battle-answer-body">${escapeHtml(theirAnswer || "—")}</p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    container.querySelector("#friend-back")?.addEventListener("click", () => {
+      mode = "menu";
+      resultBattleId = null;
+      paint();
     });
   };
 
