@@ -834,6 +834,29 @@ button {
   color: var(--accent);
 }
 
+.nav-bottom.nav-bottom-admin {
+  grid-template-columns: repeat(8, 1fr);
+}
+
+.nav-bottom.nav-bottom-admin button {
+  font-size: 0.52rem;
+}
+
+.admin-currency-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-user-row {
+  align-items: flex-start;
+}
+
+.admin-user-row .friend-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 /* Center Home tab slightly emphasized on mobile */
 .nav-bottom button.nav-home {
   position: relative;

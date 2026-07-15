@@ -187,6 +187,25 @@ export async function login(identifier: string, password: string): Promise<AuthR
     return { ok: false, error: "Invalid email/username or password." };
   }
 
+  // Ban check (column may not exist until admin.sql is applied)
+  try {
+    const { data: prof } = await sb
+      .from("profiles")
+      .select("banned, ban_reason")
+      .eq("user_id", data.user.id)
+      .maybeSingle();
+    if (prof && (prof as { banned?: boolean }).banned) {
+      const reason =
+        ((prof as { ban_reason?: string | null }).ban_reason as string | null) ||
+        "Contact support.";
+      await sb.auth.signOut();
+      cachedSession = null;
+      return { ok: false, error: `This account is banned. ${reason}` };
+    }
+  } catch {
+    /* ignore if column missing */
+  }
+
   const session = await sessionFromUser(data.user.id, data.user.email ?? email);
   return { ok: true, session };
 }

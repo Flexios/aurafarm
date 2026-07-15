@@ -28,7 +28,8 @@ export type IconName =
   | "nameplate"
   | "background"
   | "streak"
-  | "pass";
+  | "pass"
+  | "admin";
 
 const ICONS: Record<IconName, string> = {
   home: `<path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5z"/>`,
@@ -52,4 +53,5 @@ const ICONS: Record<IconName, string> = {
   background: `<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 14l4.5-3.5L12 14l4-3 5 4"/>`,
   streak: `<path d="M12 3c1.5 3 2 5 2 7a4 4 0 1 1-8 0c0-2 .5-4 2-7 1 2 2 3 4 0z"/><path d="M10 17c0 2 1 3 2 3s2-1 2-3"/>`,
   pass: `<path d="M4 7h16v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7z"/><path d="M8 7V5.5A2.5 2.5 0 0 1 10.5 3h3A2.5 2.5 0 0 1 16 5.5V7"/><path d="M9 12h6"/>`,
+  admin: `<path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/><path d="M9.5 12l1.8 1.8L15 10"/>`,
 };

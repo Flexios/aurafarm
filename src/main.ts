@@ -1,4 +1,5 @@
 import "./style.css";
+import { isAdminUsername, isCurrentUserAdmin } from "./admin/gate";
 import { checkAiAvailable } from "./ai/judge";
 import {
   getCachedSession,
@@ -15,6 +16,7 @@ import {
   resetState,
 } from "./state/store";
 import type { PlayerState, Screen } from "./types";
+import { renderAdmin } from "./ui/admin";
 import { renderCard } from "./ui/card";
 import { renderDuel } from "./ui/duel";
 import { renderHome } from "./ui/home";
@@ -60,7 +62,11 @@ function refreshSessionFromCache(): void {
 }
 
 function navigate(next: Screen): void {
-  screen = next;
+  if (next === "admin" && !isCurrentUserAdmin()) {
+    screen = "home";
+  } else {
+    screen = next;
+  }
   render();
 }
 
@@ -169,6 +175,18 @@ function render(): void {
               void handleAccountDeleted();
             },
           );
+          break;
+        case "admin":
+          if (session && isAdminUsername(session.username)) {
+            renderAdmin(slot, state, (s) => {
+              void setState(s);
+            });
+          } else {
+            screen = "home";
+            renderHome(slot, state, navigate, aiOn, () => {
+              void handleLogout();
+            });
+          }
           break;
       }
     },

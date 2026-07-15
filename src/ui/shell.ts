@@ -1,9 +1,10 @@
+import { isAdminUsername } from "../admin/gate";
 import { getSession } from "../auth/auth";
 import type { PlayerState, Screen } from "../types";
 import { formatNumber } from "../utils/format";
 import { icon, type IconName } from "./icons";
 
-const NAV_DESKTOP: Array<{ id: Screen; label: string; ico: IconName }> = [
+const NAV_DESKTOP_BASE: Array<{ id: Screen; label: string; ico: IconName }> = [
   { id: "home", label: "Home", ico: "home" },
   { id: "play", label: "Play", ico: "play" },
   { id: "shop", label: "Shop", ico: "shop" },
@@ -14,7 +15,7 @@ const NAV_DESKTOP: Array<{ id: Screen; label: string; ico: IconName }> = [
 ];
 
 /** Mobile bottom nav — Home sits in the center (4th of 7). */
-const NAV_MOBILE: Array<{ id: Screen; label: string; ico: IconName }> = [
+const NAV_MOBILE_BASE: Array<{ id: Screen; label: string; ico: IconName }> = [
   { id: "play", label: "Play", ico: "play" },
   { id: "shop", label: "Shop", ico: "shop" },
   { id: "card", label: "Card", ico: "card" },
@@ -23,6 +24,29 @@ const NAV_MOBILE: Array<{ id: Screen; label: string; ico: IconName }> = [
   { id: "duel", label: "Duel", ico: "duel" },
   { id: "settings", label: "Settings", ico: "settings" },
 ];
+
+function navForUser(username: string | undefined): {
+  desktop: Array<{ id: Screen; label: string; ico: IconName }>;
+  mobile: Array<{ id: Screen; label: string; ico: IconName }>;
+} {
+  const adminItem: { id: Screen; label: string; ico: IconName } = {
+    id: "admin",
+    label: "Admin",
+    ico: "admin",
+  };
+  if (!isAdminUsername(username)) {
+    return { desktop: NAV_DESKTOP_BASE, mobile: NAV_MOBILE_BASE };
+  }
+  return {
+    desktop: [...NAV_DESKTOP_BASE, adminItem],
+    // Keep Home centered: insert Admin before Settings
+    mobile: [
+      ...NAV_MOBILE_BASE.slice(0, 6),
+      adminItem,
+      NAV_MOBILE_BASE[6]!,
+    ],
+  };
+}
 
 function navButtons(
   items: Array<{ id: Screen; label: string; ico: IconName }>,
@@ -49,6 +73,7 @@ export function renderShell(
   onNavigate: (s: Screen) => void,
 ): void {
   const session = getSession();
+  const nav = navForUser(session?.username);
   root.innerHTML = `
     <div class="app-shell">
       <aside class="sidebar" aria-label="Desktop navigation">
@@ -60,7 +85,7 @@ export function renderShell(
           </div>
         </div>
         <nav class="nav nav-side">
-          ${navButtons(NAV_DESKTOP, screen, "nav-item")}
+          ${navButtons(nav.desktop, screen, "nav-item")}
         </nav>
         <div class="sidebar-foot">
           <div class="currency-pill sidebar-currency">
@@ -104,8 +129,8 @@ export function renderShell(
         </div>
       </div>
 
-      <nav class="nav nav-bottom" aria-label="Mobile navigation">
-        ${navButtons(NAV_MOBILE, screen)}
+      <nav class="nav nav-bottom ${isAdminUsername(session?.username) ? "nav-bottom-admin" : ""}" aria-label="Mobile navigation">
+        ${navButtons(nav.mobile, screen)}
       </nav>
     </div>
   `;
@@ -124,6 +149,7 @@ function pageTitle(screen: Screen): string {
     duel: "Duel",
     profile: "Profile",
     settings: "Settings",
+    admin: "Admin",
   };
   return map[screen];
 }

@@ -8,7 +8,15 @@ export type AestheticCore =
   | "soft-boy"
   | "main-character";
 
-export type Screen = "home" | "play" | "shop" | "card" | "duel" | "profile" | "settings";
+export type Screen =
+  | "home"
+  | "play"
+  | "shop"
+  | "card"
+  | "duel"
+  | "profile"
+  | "settings"
+  | "admin";
 
 export type AccentTheme = "purple" | "blue" | "pink" | "green";
 

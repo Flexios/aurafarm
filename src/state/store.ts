@@ -396,3 +396,41 @@ export function refreshStreak(state: PlayerState): PlayerState {
 export function hasPlayedDaily(state: PlayerState): boolean {
   return state.lastDailyDate === todayKey();
 }
+
+/** Admin: clear daily completion so Play daily can be run again today. */
+export function adminResetDailyProgress(state: PlayerState): PlayerState {
+  const next: PlayerState = {
+    ...state,
+    lastDailyDate: null,
+  };
+  saveState(next);
+  return next;
+}
+
+/** Admin: set sparks/glow on local player (own account). */
+export function adminSetOwnCurrency(
+  state: PlayerState,
+  sparks: number,
+  glow: number,
+): PlayerState {
+  const next: PlayerState = {
+    ...state,
+    sparks: Math.max(0, Math.floor(sparks)),
+    glow: Math.max(0, Math.floor(glow)),
+  };
+  saveState(next);
+  return next;
+}
+
+/** Admin: add deltas to own sparks/glow. */
+export function adminAdjustOwnCurrency(
+  state: PlayerState,
+  sparksDelta: number,
+  glowDelta: number,
+): PlayerState {
+  return adminSetOwnCurrency(
+    state,
+    state.sparks + sparksDelta,
+    state.glow + glowDelta,
+  );
+}
