@@ -58,9 +58,13 @@ function parseTime(hhmm: string): { hour: number; minute: number } {
   };
 }
 
-/** Match if local clock is in the same hour as the preferred time (hourly cron). */
+/**
+ * Hobby Vercel only allows daily cron. Send once the preferred local hour
+ * has been reached today (and we have not already emailed today).
+ * For closer-to-time delivery, call this endpoint hourly via an external cron.
+ */
 function timeMatches(preferred: string, localHour: number): boolean {
-  return localHour === parseTime(preferred).hour;
+  return localHour >= parseTime(preferred).hour;
 }
 
 async function sendEmail(opts: {

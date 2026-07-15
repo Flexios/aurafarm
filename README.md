@@ -51,6 +51,8 @@ Open the printed URL (default `http://127.0.0.1:5173`).
 | `EMAIL_FROM` | optional, e.g. `AuraFarm <onboarding@resend.dev>` |
 | `APP_URL` | optional, link in reminder emails |
 
+**Streak emails:** prefs live in Settings → General. Vercel Hobby runs `/api/streak-reminders` once daily (17:00 UTC). For reminders closer to each user’s chosen local time, point a free external cron (e.g. [cron-job.org](https://cron-job.org)) at `GET /api/streak-reminders` hourly with header `Authorization: Bearer <CRON_SECRET>`.
+
 4. Deploy → you get an `https://….vercel.app` link  
 5. On phone: open the same link → **Log in** with the same account → progress matches
 
