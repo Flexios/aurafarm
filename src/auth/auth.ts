@@ -1,0 +1,212 @@
+import { getSupabase, getSupabaseConfigError, isSupabaseConfigured } from "../lib/supabase";
+
+export interface Session {
+  userId: string;
+  username: string;
+  email: string;
+}
+
+export type AuthResult = { ok: true; session: Session } | { ok: false; error: string };
+
+/** Cached session for sync callers (store save debounce). */
+let cachedSession: Session | null = null;
+
+export function getCachedSession(): Session | null {
+  return cachedSession;
+}
+
+export function setCachedSession(session: Session | null): void {
+  cachedSession = session;
+}
+
+export function normalizeUsername(username: string): string {
+  return username.trim().toLowerCase();
+}
+
+export function validateUsername(username: string): string | null {
+  const u = normalizeUsername(username);
+  if (u.length < 3) return "Username must be at least 3 characters.";
+  if (u.length > 20) return "Username must be 20 characters or less.";
+  if (!/^[a-z0-9_]+$/.test(u)) return "Use letters, numbers, and underscores only.";
+  return null;
+}
+
+export function validatePassword(password: string): string | null {
+  if (password.length < 6) return "Password must be at least 6 characters.";
+  if (password.length > 72) return "Password is too long.";
+  return null;
+}
+
+export function validateEmail(email: string): string | null {
+  const e = email.trim().toLowerCase();
+  if (!e.includes("@") || e.length < 5) return "Enter a valid email.";
+  if (e.length > 120) return "Email is too long.";
+  return null;
+}
+
+async function sessionFromUser(userId: string, email: string): Promise<Session> {
+  const sb = getSupabase();
+  const { data, error } = await sb
+    .from("profiles")
+    .select("username, email")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) {
+    console.warn("profile fetch", error.message);
+  }
+
+  const username =
+    (data?.username as string | undefined) ||
+    email.split("@")[0]?.toLowerCase().replace(/[^a-z0-9_]/g, "_") ||
+    "player";
+
+  const session: Session = {
+    userId,
+    username,
+    email: (data?.email as string | undefined) || email,
+  };
+  cachedSession = session;
+  return session;
+}
+
+export async function restoreSession(): Promise<Session | null> {
+  if (!isSupabaseConfigured()) {
+    cachedSession = null;
+    return null;
+  }
+  const sb = getSupabase();
+  const { data, error } = await sb.auth.getSession();
+  if (error || !data.session?.user) {
+    cachedSession = null;
+    return null;
+  }
+  const user = data.session.user;
+  return sessionFromUser(user.id, user.email ?? "");
+}
+
+/** Sync peek — prefer restoreSession() on boot. */
+export function getSession(): Session | null {
+  return cachedSession;
+}
+
+export async function register(
+  email: string,
+  username: string,
+  password: string,
+): Promise<AuthResult> {
+  const cfg = getSupabaseConfigError();
+  if (cfg) return { ok: false, error: cfg };
+
+  const emailErr = validateEmail(email);
+  if (emailErr) return { ok: false, error: emailErr };
+  const userErr = validateUsername(username);
+  if (userErr) return { ok: false, error: userErr };
+  const passErr = validatePassword(password);
+  if (passErr) return { ok: false, error: passErr };
+
+  const sb = getSupabase();
+  const normalizedUser = normalizeUsername(username);
+  const normalizedEmail = email.trim().toLowerCase();
+
+  // Pre-check username uniqueness (best-effort; unique index is source of truth)
+  const { data: existing } = await sb.rpc("email_for_username", {
+    p_username: normalizedUser,
+  });
+  if (existing) {
+    return { ok: false, error: "That username is already taken." };
+  }
+
+  const { data, error } = await sb.auth.signUp({
+    email: normalizedEmail,
+    password,
+    options: {
+      data: { username: normalizedUser },
+    },
+  });
+
+  if (error) {
+    return { ok: false, error: friendlyAuthError(error.message) };
+  }
+  if (!data.user) {
+    return { ok: false, error: "Sign up failed. Try again." };
+  }
+
+  // If email confirmation is required, session may be null
+  if (!data.session) {
+    return {
+      ok: false,
+      error:
+        "Account created — check your email to confirm, then log in. (Or disable email confirm in Supabase for instant play.)",
+    };
+  }
+
+  // Ensure profile exists (trigger should create it; upsert as safety net)
+  await sb.from("profiles").upsert(
+    {
+      user_id: data.user.id,
+      username: normalizedUser,
+      email: normalizedEmail,
+      display_name: normalizedUser,
+      game_state: {},
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" },
+  );
+
+  const session = await sessionFromUser(data.user.id, normalizedEmail);
+  return { ok: true, session };
+}
+
+export async function login(identifier: string, password: string): Promise<AuthResult> {
+  const cfg = getSupabaseConfigError();
+  if (cfg) return { ok: false, error: cfg };
+
+  if (!identifier.trim() || !password) {
+    return { ok: false, error: "Enter email/username and password." };
+  }
+
+  const sb = getSupabase();
+  let email = identifier.trim().toLowerCase();
+
+  if (!email.includes("@")) {
+    const { data, error } = await sb.rpc("email_for_username", {
+      p_username: normalizeUsername(identifier),
+    });
+    if (error) {
+      return { ok: false, error: "Could not look up username. Is the database schema applied?" };
+    }
+    if (!data || typeof data !== "string") {
+      return { ok: false, error: "Invalid username or password." };
+    }
+    email = data;
+  }
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  if (error || !data.user) {
+    return { ok: false, error: "Invalid email/username or password." };
+  }
+
+  const session = await sessionFromUser(data.user.id, data.user.email ?? email);
+  return { ok: true, session };
+}
+
+export async function logout(): Promise<void> {
+  cachedSession = null;
+  if (!isSupabaseConfigured()) return;
+  try {
+    await getSupabase().auth.signOut();
+  } catch {
+    /* ignore */
+  }
+}
+
+function friendlyAuthError(message: string): string {
+  const m = message.toLowerCase();
+  if (m.includes("already registered") || m.includes("already been registered")) {
+    return "An account with that email already exists. Log in instead.";
+  }
+  if (m.includes("password")) return "Password is too weak. Use at least 6 characters.";
+  if (m.includes("rate")) return "Too many attempts. Wait a moment and try again.";
+  return message;
+}
