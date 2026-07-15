@@ -32,7 +32,7 @@ import {
   type FriendRow,
 } from "../friends/api";
 import { CHALLENGES } from "../data/challenges";
-import { saveState } from "../state/store";
+import { loadState, saveState } from "../state/store";
 import type { AestheticCore, Challenge, PlayerState } from "../types";
 import { pickDaily } from "../utils/seed";
 import { escapeHtml, formatNumber } from "../utils/format";
@@ -92,24 +92,10 @@ export function renderDuel(
     onlineDuels = res.duels;
     onlineSearching = res.searching;
 
-    // Auto-complete + claim rewards when both answered
-    let next = state;
-    let anyClaim = false;
+    // Auto-complete open duels (neutral scoring — same core for both answers).
+    // complete_online_duel awards BOTH players' cloud game_state.
+    let completedAny = false;
     for (const d of onlineDuels) {
-      if (d.status === "complete") {
-        const claimKey = `online:${d.id}`;
-        if (next.claimedFriendBattleIds.includes(claimKey)) continue;
-        if (d.player1Score == null || d.player2Score == null) continue;
-        const iAmP1 = d.player1Id === myId;
-        const myScore = iAmP1 ? d.player1Score : d.player2Score;
-        const theirScore = iAmP1 ? d.player2Score : d.player1Score;
-        const claim = claimFriendBattleProgress(next, claimKey, myScore, theirScore);
-        if (claim.claimed) {
-          next = claim.state;
-          anyClaim = true;
-        }
-        continue;
-      }
       if (
         d.status === "open" &&
         d.player1Answer &&
@@ -124,15 +110,54 @@ export function renderDuel(
           hint: "",
           emoji: "🎯",
         };
-        const s1 = scoreLocal(d.player1Answer, ch, state.core as AestheticCore, 0).score;
-        const s2 = scoreLocal(d.player2Answer, ch, state.core as AestheticCore, 0).score;
-        await completeOnlineDuel(d.id, s1, s2);
+        // Neutral core so the completer's aesthetic doesn't bias both scores
+        const s1 = scoreLocal(d.player1Answer, ch, "main-character", 0).score;
+        const s2 = scoreLocal(d.player2Answer, ch, "main-character", 0).score;
+        const done = await completeOnlineDuel(d.id, s1, s2);
+        if (done.ok) completedAny = true;
+      } else if (
+        d.status === "complete" &&
+        d.player1Score != null &&
+        d.player2Score != null
+      ) {
+        // Ensure server claims both profiles even if completed before reward patch
+        const claimKey = `online:${d.id}`;
+        if (!state.claimedFriendBattleIds.includes(claimKey)) {
+          await completeOnlineDuel(d.id, d.player1Score, d.player2Score);
+          completedAny = true;
+        }
       }
     }
-    if (anyClaim) {
-      state = next;
-      onState(next);
+
+    // Pull cloud rewards (both accounts get credit server-side)
+    if (completedAny) {
+      const fresh = await loadState();
+      state = fresh;
+      onState(fresh);
       showToast("Online duel results counted toward Duels");
+    } else {
+      // Legacy / friend-style local claim if cloud claim not present yet
+      let next = state;
+      let anyClaim = false;
+      for (const d of onlineDuels) {
+        if (d.status !== "complete") continue;
+        if (d.player1Score == null || d.player2Score == null) continue;
+        const claimKey = `online:${d.id}`;
+        if (next.claimedFriendBattleIds.includes(claimKey)) continue;
+        const iAmP1 = d.player1Id === myId;
+        const myScore = iAmP1 ? d.player1Score : d.player2Score;
+        const theirScore = iAmP1 ? d.player2Score : d.player1Score;
+        const claim = claimFriendBattleProgress(next, claimKey, myScore, theirScore);
+        if (claim.claimed) {
+          next = claim.state;
+          anyClaim = true;
+        }
+      }
+      if (anyClaim) {
+        state = next;
+        onState(next);
+        showToast("Online duel results counted toward Duels");
+      }
     }
 
     // Refresh after completes

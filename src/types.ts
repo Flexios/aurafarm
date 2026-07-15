@@ -121,6 +121,8 @@ export interface PlayerState {
   claimedPremiumTiers: number[];
   bestDailyScore: number;
   duelWins: number;
+  duelLosses: number;
+  duelTies: number;
   onboarded: boolean;
   history: Array<{ date: string; score: number; challengeId: string }>;
   /** ISO timestamp — username change cooldown (7 days) */

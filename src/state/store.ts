@@ -61,6 +61,8 @@ export function createDefaultState(): PlayerState {
     claimedPremiumTiers: [],
     bestDailyScore: 0,
     duelWins: 0,
+    duelLosses: 0,
+    duelTies: 0,
     onboarded: false,
     history: [],
     lastUsernameChangeAt: null,
@@ -98,6 +100,9 @@ export function normalizeState(
     claimedFriendBattleIds: Array.isArray(parsed.claimedFriendBattleIds)
       ? parsed.claimedFriendBattleIds.map(String)
       : [],
+    duelWins: Math.max(0, Number(parsed.duelWins ?? 0) || 0),
+    duelLosses: Math.max(0, Number(parsed.duelLosses ?? 0) || 0),
+    duelTies: Math.max(0, Number(parsed.duelTies ?? 0) || 0),
   };
   return withExclusiveCores(next, username ?? getCachedSession()?.username);
 }

@@ -50,6 +50,8 @@ $$;
 revoke all on function public.get_own_ban_status() from public;
 grant execute on function public.get_own_ban_status() to authenticated;
 
+drop function if exists public.admin_list_users();
+
 create or replace function public.admin_list_users()
 returns table (
   user_id uuid,
@@ -61,7 +63,14 @@ returns table (
   sparks integer,
   glow integer,
   total_aura integer,
-  updated_at timestamptz
+  updated_at timestamptz,
+  created_at timestamptz,
+  duel_wins integer,
+  duel_losses integer,
+  duel_ties integer,
+  match_wins integer,
+  match_losses integer,
+  match_ties integer
 )
 language plpgsql
 security definer
@@ -83,8 +92,85 @@ begin
     coalesce((p.game_state->>'sparks')::integer, 0) as sparks,
     coalesce((p.game_state->>'glow')::integer, 0) as glow,
     coalesce((p.game_state->>'totalAura')::integer, 0) as total_aura,
-    p.updated_at
+    p.updated_at,
+    u.created_at,
+    coalesce((p.game_state->>'duelWins')::integer, 0) as duel_wins,
+    coalesce((p.game_state->>'duelLosses')::integer, 0) as duel_losses,
+    coalesce((p.game_state->>'duelTies')::integer, 0) as duel_ties,
+    -- Recorded match outcomes from online + friend battles (source of truth for winrate)
+    (
+      coalesce((
+        select count(*)::integer
+        from public.online_duels d
+        where d.status = 'complete'
+          and d.player1_score is not null
+          and d.player2_score is not null
+          and (
+            (d.player1_id = p.user_id and d.player1_score > d.player2_score)
+            or (d.player2_id = p.user_id and d.player2_score > d.player1_score)
+          )
+      ), 0)
+      +
+      coalesce((
+        select count(*)::integer
+        from public.friend_battles b
+        where b.status = 'complete'
+          and b.challenger_score is not null
+          and b.opponent_score is not null
+          and (
+            (b.challenger_id = p.user_id and b.challenger_score > b.opponent_score)
+            or (b.opponent_id = p.user_id and b.opponent_score > b.challenger_score)
+          )
+      ), 0)
+    )::integer as match_wins,
+    (
+      coalesce((
+        select count(*)::integer
+        from public.online_duels d
+        where d.status = 'complete'
+          and d.player1_score is not null
+          and d.player2_score is not null
+          and (
+            (d.player1_id = p.user_id and d.player1_score < d.player2_score)
+            or (d.player2_id = p.user_id and d.player2_score < d.player1_score)
+          )
+      ), 0)
+      +
+      coalesce((
+        select count(*)::integer
+        from public.friend_battles b
+        where b.status = 'complete'
+          and b.challenger_score is not null
+          and b.opponent_score is not null
+          and (
+            (b.challenger_id = p.user_id and b.challenger_score < b.opponent_score)
+            or (b.opponent_id = p.user_id and b.opponent_score < b.challenger_score)
+          )
+      ), 0)
+    )::integer as match_losses,
+    (
+      coalesce((
+        select count(*)::integer
+        from public.online_duels d
+        where d.status = 'complete'
+          and d.player1_score is not null
+          and d.player2_score is not null
+          and (d.player1_id = p.user_id or d.player2_id = p.user_id)
+          and d.player1_score = d.player2_score
+      ), 0)
+      +
+      coalesce((
+        select count(*)::integer
+        from public.friend_battles b
+        where b.status = 'complete'
+          and b.challenger_score is not null
+          and b.opponent_score is not null
+          and (b.challenger_id = p.user_id or b.opponent_id = p.user_id)
+          and b.challenger_score = b.opponent_score
+      ), 0)
+    )::integer as match_ties
   from public.profiles p
+  left join auth.users u on u.id = p.user_id
   order by lower(p.username)
   limit 500;
 end;

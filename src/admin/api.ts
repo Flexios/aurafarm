@@ -15,6 +15,23 @@ export interface AdminUserRow {
   glow: number;
   totalAura: number;
   updatedAt: string;
+  /** Account creation from auth.users */
+  createdAt: string;
+  /** Profile game_state counters */
+  duelWins: number;
+  duelLosses: number;
+  duelTies: number;
+  /** From online + friend battle records */
+  matchWins: number;
+  matchLosses: number;
+  matchTies: number;
+}
+
+/** Win rate 0–100 from match W/L/T (ties count as games). */
+export function matchWinRate(u: Pick<AdminUserRow, "matchWins" | "matchLosses" | "matchTies">): number | null {
+  const total = u.matchWins + u.matchLosses + u.matchTies;
+  if (total <= 0) return null;
+  return Math.round((u.matchWins / total) * 100);
 }
 
 function requireAdminClient(): AdminResult | null {
@@ -72,6 +89,13 @@ export async function adminListUsers(): Promise<AdminUserRow[]> {
       glow: Number(row.glow ?? 0),
       totalAura: Number(row.total_aura ?? 0),
       updatedAt: String(row.updated_at ?? ""),
+      createdAt: String(row.created_at ?? ""),
+      duelWins: Number(row.duel_wins ?? 0),
+      duelLosses: Number(row.duel_losses ?? 0),
+      duelTies: Number(row.duel_ties ?? 0),
+      matchWins: Number(row.match_wins ?? 0),
+      matchLosses: Number(row.match_losses ?? 0),
+      matchTies: Number(row.match_ties ?? 0),
     };
   });
 }

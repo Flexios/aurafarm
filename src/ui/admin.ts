@@ -5,6 +5,7 @@ import {
   adminListUsers,
   adminResolveReport,
   adminSetBan,
+  matchWinRate,
   type AdminReportRow,
   type AdminUserRow,
 } from "../admin/api";
@@ -307,13 +308,28 @@ export function renderAdmin(
             ? `<div class="card"><p class="muted" style="margin:0">No accounts match “${escapeHtml(userSearch)}”.</p></div>
                <button type="button" class="btn btn-plain" id="reload-users" style="margin-top:12px">Refresh list</button>`
             : `<div class="inset-group">${filtered
-              .map(
-                (u) => `
+              .map((u) => {
+                const wr = matchWinRate(u);
+                const matches = u.matchWins + u.matchLosses + u.matchTies;
+                const created = u.createdAt
+                  ? new Date(u.createdAt).toLocaleDateString(undefined, {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })
+                  : "—";
+                const record =
+                  matches > 0
+                    ? `${u.matchWins}W–${u.matchLosses}L–${u.matchTies}T · ${wr ?? 0}% WR`
+                    : "No matches yet";
+                return `
             <div class="list-row admin-user-row">
               <div class="meta">
                 <strong>@${escapeHtml(u.username)}${u.banned ? " · banned" : ""}</strong>
                 <span>${escapeHtml(u.displayName)} · ${escapeHtml(u.email)}</span>
+                <span>Joined ${escapeHtml(created)}</span>
                 <span>${formatNumber(u.sparks)} sparks · ${formatNumber(u.glow)} glow · ${formatNumber(u.totalAura)} aura</span>
+                <span>Duels ${escapeHtml(record)} · profile wins ${formatNumber(u.duelWins)}</span>
                 ${
                   u.banned && u.banReason
                     ? `<span class="danger-text" style="font-size:0.8rem">Reason: ${escapeHtml(u.banReason)}</span>`
@@ -332,8 +348,8 @@ export function renderAdmin(
                 `
                 }
               </div>
-            </div>`,
-              )
+            </div>`;
+              })
               .join("")}</div>
           <button type="button" class="btn btn-plain" id="reload-users" style="margin-top:12px">Refresh list</button>`
       }

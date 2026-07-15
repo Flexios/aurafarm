@@ -251,6 +251,7 @@ export function claimFriendBattleProgress(
   } else if (outcome === "loss") {
     next = {
       ...next,
+      duelLosses: (next.duelLosses ?? 0) + 1,
       totalAura: next.totalAura + Math.round(myScore * 0.2),
       sparks: next.sparks + 8,
     };
@@ -258,6 +259,7 @@ export function claimFriendBattleProgress(
     const mid = Math.round((myScore + theirScore) / 2);
     next = {
       ...next,
+      duelTies: (next.duelTies ?? 0) + 1,
       totalAura: next.totalAura + Math.round(mid * 0.2),
       sparks: next.sparks + 18,
     };
