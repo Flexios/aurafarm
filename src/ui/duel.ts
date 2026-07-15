@@ -12,6 +12,14 @@ import {
 } from "../game/duel";
 import { finalizeRewards, scoreLocal } from "../game/scorer";
 import {
+  cancelOnlineQueue,
+  completeOnlineDuel,
+  findOnlineDuel,
+  listMyOnlineDuels,
+  submitOnlineDuelAnswer,
+  type OnlineDuel,
+} from "../duels/onlineApi";
+import {
   createFriendBattle,
   formatFriendshipDuration,
   listFriendBattles,
@@ -28,7 +36,7 @@ import { pickDaily } from "../utils/seed";
 import { escapeHtml, formatNumber } from "../utils/format";
 import { showToast } from "./toast";
 
-type DuelTab = "local" | "friends";
+type DuelTab = "online" | "friends" | "local";
 
 function avatarHtml(url: string | null | undefined, name: string): string {
   const initial = (name || "?").slice(0, 1).toUpperCase();
@@ -41,7 +49,7 @@ export function renderDuel(
   state: PlayerState,
   onState: (s: PlayerState) => void,
 ): void {
-  let tab: DuelTab = "friends";
+  let tab: DuelTab = "online";
   let duel: DuelState = createDuelState();
   let friends: FriendRow[] = [];
   let battles: FriendBattle[] = [];
@@ -51,8 +59,87 @@ export function renderDuel(
   let challengeFriend: FriendRow | null = null;
   let challengeNonce = Date.now();
   let replyBattleId: string | null = null;
+  let onlineDuels: OnlineDuel[] = [];
+  let onlineSearching = false;
+  let onlineLoading = false;
+  let onlineAnswerId: string | null = null;
+  let pollTimer: ReturnType<typeof setInterval> | null = null;
   const me = getCachedSession();
   const myId = me?.userId ?? "";
+
+  const stopPoll = () => {
+    if (pollTimer) {
+      clearInterval(pollTimer);
+      pollTimer = null;
+    }
+  };
+
+  const startPoll = () => {
+    stopPoll();
+    pollTimer = setInterval(() => {
+      if (tab === "online" && onlineSearching) void loadOnline(true);
+    }, 2500);
+  };
+
+  const loadOnline = async (silent = false) => {
+    if (!silent) onlineLoading = true;
+    if (!silent) paint();
+    const res = await listMyOnlineDuels();
+    onlineDuels = res.duels;
+    onlineSearching = res.searching;
+
+    // Auto-complete + claim rewards when both answered
+    let next = state;
+    let anyClaim = false;
+    for (const d of onlineDuels) {
+      if (d.status === "complete") {
+        const claimKey = `online:${d.id}`;
+        if (next.claimedFriendBattleIds.includes(claimKey)) continue;
+        if (d.player1Score == null || d.player2Score == null) continue;
+        const iAmP1 = d.player1Id === myId;
+        const myScore = iAmP1 ? d.player1Score : d.player2Score;
+        const theirScore = iAmP1 ? d.player2Score : d.player1Score;
+        const claim = claimFriendBattleProgress(next, claimKey, myScore, theirScore);
+        if (claim.claimed) {
+          next = claim.state;
+          anyClaim = true;
+        }
+        continue;
+      }
+      if (
+        d.status === "open" &&
+        d.player1Answer &&
+        d.player2Answer &&
+        (d.player1Score == null || d.player2Score == null)
+      ) {
+        const ch = {
+          id: "online-duel",
+          category: "caption" as const,
+          title: d.challengeTitle,
+          prompt: d.challengePrompt,
+          hint: "",
+          emoji: "🎯",
+        };
+        const s1 = scoreLocal(d.player1Answer, ch, state.core as AestheticCore, 0).score;
+        const s2 = scoreLocal(d.player2Answer, ch, state.core as AestheticCore, 0).score;
+        await completeOnlineDuel(d.id, s1, s2);
+      }
+    }
+    if (anyClaim) {
+      state = next;
+      onState(next);
+      showToast("Online duel results counted toward Duels");
+    }
+
+    // Refresh after completes
+    const refreshed = await listMyOnlineDuels();
+    onlineDuels = refreshed.duels;
+    onlineSearching = refreshed.searching;
+    onlineLoading = false;
+    if (onlineSearching) startPoll();
+    else stopPoll();
+    paint();
+  };
 
   const loadFriends = async () => {
     friendsLoading = true;
@@ -98,12 +185,14 @@ export function renderDuel(
 
     container.innerHTML = `
       <div class="segmented">
+        <button type="button" data-tab="online" class="${tab === "online" ? "active" : ""}">Online</button>
         <button type="button" data-tab="friends" class="${tab === "friends" ? "active" : ""}">Friends</button>
         <button type="button" data-tab="local" class="${tab === "local" ? "active" : ""}">Local</button>
       </div>
       <p class="muted" style="margin:0 0 12px;font-size:0.88rem">
-        Friend battle wins count toward your <strong>${state.duelWins}</strong> duel total.
+        Online & friend wins count toward your <strong>${state.duelWins}</strong> duel total.
       </p>
+      ${error ? `<p class="danger-text" style="margin:0 0 12px">${escapeHtml(error)}</p>` : ""}
       <div id="duel-body"></div>
     `;
 
@@ -113,14 +202,197 @@ export function renderDuel(
         error = "";
         challengeFriend = null;
         replyBattleId = null;
+        onlineAnswerId = null;
+        if (tab !== "online") stopPoll();
         paint();
         if (tab === "friends") void loadFriends();
+        if (tab === "online") void loadOnline();
       });
     });
 
     const body = container.querySelector("#duel-body")!;
     if (tab === "local") paintLocalSetup(body);
-    else paintFriends(body);
+    else if (tab === "friends") paintFriends(body);
+    else paintOnline(body);
+  };
+
+  const paintOnline = (body: Element) => {
+    if (onlineLoading) {
+      body.innerHTML = `<p class="muted">Loading online duels…</p>`;
+      return;
+    }
+
+    if (onlineAnswerId) {
+      paintOnlineAnswer(body);
+      return;
+    }
+
+    const open = onlineDuels.filter((d) => d.status === "open");
+    const done = onlineDuels.filter((d) => d.status === "complete").slice(0, 10);
+    const challenge = getTodaysChallenge();
+
+    body.innerHTML = `
+      <div class="card stack">
+        <p class="muted" style="margin:0">
+          Match with a <strong>random</strong> player also looking for a duel. Same prompt — both answer async, higher score wins.
+        </p>
+        <p class="muted" style="margin:0;font-size:0.88rem">
+          Today's vibe: <strong>${escapeHtml(challenge.emoji)} ${escapeHtml(challenge.title)}</strong>
+        </p>
+        ${
+          onlineSearching
+            ? `<p class="success-text" style="margin:0">Searching for an opponent… stay on this tab.</p>
+               <button type="button" class="btn btn-secondary" id="cancel-queue" ${busy ? "disabled" : ""}>Cancel search</button>`
+            : `<button type="button" class="btn btn-fill" id="find-match" ${busy ? "disabled" : ""}>Find random opponent</button>`
+        }
+      </div>
+
+      <div class="section-header">Active online duels</div>
+      ${
+        open.length === 0
+          ? `<div class="card"><p class="muted" style="margin:0">No open online matches.</p></div>`
+          : `<div class="inset-group">${open
+              .map((d) => {
+                const iAmP1 = d.player1Id === myId;
+                const opp = iAmP1 ? d.player2Username : d.player1Username;
+                const myAns = iAmP1 ? d.player1Answer : d.player2Answer;
+                const theirAns = iAmP1 ? d.player2Answer : d.player1Answer;
+                let status = "your turn";
+                if (myAns && !theirAns) status = "waiting on them";
+                else if (!myAns && theirAns) status = "your turn";
+                else if (myAns && theirAns) status = "scoring…";
+                return `
+              <div class="list-row">
+                <div class="meta">
+                  <strong>${escapeHtml(d.challengeTitle)}</strong>
+                  <span>vs @${escapeHtml(opp)} · ${escapeHtml(status)}</span>
+                </div>
+                ${
+                  !myAns
+                    ? `<button type="button" class="btn btn-fill btn-sm" data-online-ans="${escapeHtml(d.id)}">Answer</button>`
+                    : ""
+                }
+              </div>`;
+              })
+              .join("")}</div>`
+      }
+
+      <div class="section-header">Recent online results</div>
+      ${
+        done.length === 0
+          ? `<div class="card"><p class="muted" style="margin:0">No completed online duels yet.</p></div>`
+          : `<div class="inset-group">${done
+              .map((d) => {
+                const iAmP1 = d.player1Id === myId;
+                const opp = iAmP1 ? d.player2Username : d.player1Username;
+                const myScore = iAmP1 ? d.player1Score : d.player2Score;
+                const theirScore = iAmP1 ? d.player2Score : d.player1Score;
+                let result = "Tie";
+                if (myScore != null && theirScore != null) {
+                  if (myScore > theirScore) result = "You won";
+                  else if (myScore < theirScore) result = "They won";
+                }
+                return `
+              <div class="list-row">
+                <div class="meta">
+                  <strong>${escapeHtml(d.challengeTitle)}</strong>
+                  <span>vs @${escapeHtml(opp)} · ${escapeHtml(result)} · ${myScore ?? "—"}–${theirScore ?? "—"}</span>
+                </div>
+              </div>`;
+              })
+              .join("")}</div>`
+      }
+    `;
+
+    body.querySelector("#find-match")?.addEventListener("click", async () => {
+      busy = true;
+      error = "";
+      paint();
+      const ch = getTodaysChallenge();
+      const res = await findOnlineDuel(ch.title, ch.prompt);
+      busy = false;
+      if (!res.ok) {
+        error = res.error;
+        paint();
+        return;
+      }
+      if (res.status === "matched") {
+        showToast("Matched! Answer the prompt.");
+        onlineSearching = false;
+        stopPoll();
+        void loadOnline();
+        return;
+      }
+      onlineSearching = true;
+      showToast("In queue — waiting for someone…");
+      startPoll();
+      void loadOnline();
+    });
+
+    body.querySelector("#cancel-queue")?.addEventListener("click", async () => {
+      busy = true;
+      paint();
+      await cancelOnlineQueue();
+      busy = false;
+      onlineSearching = false;
+      stopPoll();
+      showToast("Left the queue");
+      void loadOnline();
+    });
+
+    body.querySelectorAll<HTMLButtonElement>("[data-online-ans]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        onlineAnswerId = btn.dataset.onlineAns!;
+        paint();
+      });
+    });
+  };
+
+  const paintOnlineAnswer = (body: Element) => {
+    const d = onlineDuels.find((x) => x.id === onlineAnswerId);
+    if (!d) {
+      onlineAnswerId = null;
+      paint();
+      return;
+    }
+    const iAmP1 = d.player1Id === myId;
+    const opp = iAmP1 ? d.player2Username : d.player1Username;
+
+    body.innerHTML = `
+      <button type="button" class="btn btn-plain" id="online-back">← Back</button>
+      <div class="section-header">Online duel vs @${escapeHtml(opp)}</div>
+      <div class="card stack">
+        <p class="muted" style="margin:0"><strong>${escapeHtml(d.challengeTitle)}</strong></p>
+        <p class="muted" style="margin:0">${escapeHtml(d.challengePrompt)}</p>
+        <div class="field">
+          <label for="online-answer">Your answer</label>
+          <textarea id="online-answer" maxlength="400" rows="4" placeholder="Drop your line…"></textarea>
+        </div>
+        <button type="button" class="btn btn-fill" id="online-submit" ${busy ? "disabled" : ""}>Submit answer</button>
+      </div>
+    `;
+
+    body.querySelector("#online-back")?.addEventListener("click", () => {
+      onlineAnswerId = null;
+      paint();
+    });
+    body.querySelector("#online-submit")?.addEventListener("click", async () => {
+      const answer = (body.querySelector("#online-answer") as HTMLTextAreaElement).value;
+      busy = true;
+      error = "";
+      paint();
+      const res = await submitOnlineDuelAnswer(d.id, answer);
+      busy = false;
+      if (!res.ok) {
+        error = res.error;
+        onlineAnswerId = d.id;
+        paint();
+        return;
+      }
+      showToast("Answer submitted");
+      onlineAnswerId = null;
+      void loadOnline();
+    });
   };
 
   const paintLocalSetup = (body: Element) => {
@@ -551,5 +823,14 @@ export function renderDuel(
   };
 
   paint();
-  void loadFriends();
+  void loadOnline();
+
+  // Cleanup poll if the shell re-renders away from this screen
+  const observer = new MutationObserver(() => {
+    if (!container.isConnected) {
+      stopPoll();
+      observer.disconnect();
+    }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
 }
