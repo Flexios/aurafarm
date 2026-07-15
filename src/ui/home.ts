@@ -2,7 +2,7 @@ import { getSession } from "../auth/auth";
 import { aestheticById } from "../data/aesthetics";
 import { coresFromIds } from "../data/cores";
 import { nextRank, rankForAura } from "../data/ranks";
-import { challengeArtHtml } from "../data/challenges";
+import { challengeArtHtml, challengeTitleRow } from "../data/challenges";
 import { getTodaysChallenge } from "../game/daily";
 import { localizeCategory, localizeChallenge, t } from "../i18n";
 import { hasPlayedDaily } from "../state/store";
@@ -38,13 +38,12 @@ export function renderHome(
         <div class="section-header">${t("home.today")}</div>
         <div class="card challenge-card home-panel">
           ${challengeArtHtml(challenge)}
-          <h3 style="margin:0 0 4px">${t("home.vibeChallenge")}</h3>
-          <strong style="font-size:1.05rem">${escapeHtml(challenge.title)}</strong>
+          <h3 style="margin:0 0 8px;font-size:0.88rem;font-weight:500;color:var(--label-secondary)">${t("home.vibeChallenge")}</h3>
+          ${challengeTitleRow(challenge.emoji, escapeHtml(challenge.title), challenge.nsfw ? ` <span class="tag challenge-18-tag" style="background:rgba(255,80,120,0.2)">18+</span>` : "")}
           <p class="muted" style="margin:8px 0 0">${escapeHtml(challenge.prompt)}</p>
           <div class="tag-row">
             <span class="tag">${escapeHtml(localizeCategory(challenge.category))}</span>
             <span class="tag magenta">${aesthetic.emoji} ${escapeHtml(aesthetic.label)}</span>
-            ${challenge.nsfw ? `<span class="tag" style="background:rgba(255,80,120,0.2)">18+</span>` : ""}
             ${played ? `<span class="tag magenta">${t("home.doneToday")}</span>` : `<span class="tag">${t("home.ready")}</span>`}
           </div>
           <div class="btn-row" style="margin-top:auto">

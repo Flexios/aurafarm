@@ -1,4 +1,4 @@
-import { challengeArtHtml } from "../data/challenges";
+import { challengeArtHtml, challengeTitleRow } from "../data/challenges";
 import { coreById } from "../data/cores";
 import { judgeWithAi } from "../ai/judge";
 import { getPracticeChallenge, getTodaysChallenge } from "../game/daily";
@@ -98,7 +98,15 @@ export function renderPlay(
       <div class="desktop-grid play-grid">
       <div class="card home-panel">
         ${challengeArtHtml(challenge)}
-        <h2 style="margin:0 0 6px;font-size:1.25rem">${escapeHtml(challenge.title)}${challenge.nsfw ? ` <span class="tag" style="font-size:0.7rem;vertical-align:middle">18+</span>` : ""}</h2>
+        <div style="font-size:1.2rem;margin:0 0 8px">
+          ${challengeTitleRow(
+            challenge.emoji,
+            escapeHtml(challenge.title),
+            challenge.nsfw
+              ? ` <span class="tag challenge-18-tag" style="background:rgba(255,80,120,0.2)">18+</span>`
+              : "",
+          )}
+        </div>
         <p class="muted" style="margin:0">${escapeHtml(challenge.prompt)}</p>
         <p class="muted" style="margin:10px 0 0;font-size:0.86rem">${t("play.hint", { hint: challenge.hint })}</p>
         ${

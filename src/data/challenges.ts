@@ -374,20 +374,35 @@ export function getChallengePool(includeNsfw: boolean): Challenge[] {
 
 /** Public URL for a challenge illustration (`/challenges/{id}.jpg`). */
 export function challengeImageUrl(challengeId: string): string {
-  return `/challenges/${challengeId}.jpg`;
+  // bump when art is regenerated so CDNs / browsers pick up new files
+  return `/challenges/${challengeId}.jpg?v=3`;
 }
 
-/** HTML for challenge cover art (falls back to emoji if image fails). */
+/**
+ * Cover art only (no emoji overlay).
+ * Emoji belongs in the title row via `challengeTitleHtml`.
+ */
 export function challengeArtHtml(challenge: {
   id: string;
-  emoji: string;
-  title: string;
+  emoji?: string;
+  title?: string;
 }): string {
   const src = challengeImageUrl(challenge.id);
-  const emoji = challenge.emoji || "✨";
   return `<div class="challenge-art" data-challenge-art="${challenge.id}">
-    <img src="${src}" alt="" loading="lazy" decoding="async"
-      onerror="this.style.display='none';const f=this.nextElementSibling;if(f)f.hidden=false;" />
-    <div class="challenge-art-fallback" hidden aria-hidden="true">${emoji}</div>
+    <img class="challenge-art-img" src="${src}" alt="" loading="lazy" decoding="async"
+      onerror="this.closest('.challenge-art')?.classList.add('is-broken')" />
+  </div>`;
+}
+
+/** Title row: emoji + escaped title (emoji is never drawn on the cover art). */
+export function challengeTitleRow(
+  emoji: string | undefined,
+  titleEscaped: string,
+  extraHtml = "",
+): string {
+  const e = emoji || "✨";
+  return `<div class="challenge-title-row">
+    <span class="challenge-title-emoji" aria-hidden="true">${e}</span>
+    <span class="challenge-title-text">${titleEscaped}</span>${extraHtml}
   </div>`;
 }

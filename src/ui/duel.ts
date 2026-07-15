@@ -1,5 +1,5 @@
 import { getCachedSession } from "../auth/auth";
-import { challengeArtHtml } from "../data/challenges";
+import { challengeArtHtml, challengeTitleRow } from "../data/challenges";
 import { getTodaysChallenge, pickChallenge } from "../game/daily";
 import {
   applyDuelLoss,
@@ -754,10 +754,10 @@ export function renderDuel(
       ${error ? `<p class="danger-text" style="margin:12px 0">${escapeHtml(error)}</p>` : ""}
       <div class="section-header">Battle @${escapeHtml(f.username)}</div>
       <div class="card stack">
-        ${challengeArtHtml({ ...challengeRaw, emoji: challenge.emoji })}
+        ${challengeArtHtml(challengeRaw)}
         <div class="battle-task-header">
           <div>
-            <p class="muted" style="margin:0"><strong>${escapeHtml(challenge.title)}</strong></p>
+            ${challengeTitleRow(challenge.emoji, escapeHtml(challenge.title))}
             <p class="muted" style="margin:6px 0 0">${escapeHtml(challenge.prompt)}</p>
           </div>
           <button type="button" class="btn btn-secondary btn-sm" id="refresh-task" ${busy ? "disabled" : ""}>Refresh task</button>
@@ -940,7 +940,9 @@ export function renderDuel(
       <div class="card home-panel">
         <div class="muted" style="font-weight:600;font-size:0.84rem">${isP1 ? "Player 1" : "Player 2"} · ${escapeHtml(player.name)}</div>
         ${challengeArtHtml(challenge)}
-        <h2 style="margin:0 0 6px;font-size:1.2rem">${escapeHtml(challenge.title)}</h2>
+        <div style="font-size:1.15rem;margin:0 0 8px">
+          ${challengeTitleRow(challenge.emoji, escapeHtml(challenge.title))}
+        </div>
         <p class="muted" style="margin:0">${escapeHtml(challenge.prompt)}</p>
       </div>
       <div class="card home-panel">

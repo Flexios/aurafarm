@@ -1,6 +1,6 @@
 import { getCachedSession } from "../auth/auth";
 import { aestheticById } from "../data/aesthetics";
-import { challengeArtHtml } from "../data/challenges";
+import { challengeArtHtml, challengeTitleRow } from "../data/challenges";
 import { rankForAura } from "../data/ranks";
 import { pickChallenge } from "../game/daily";
 import { claimFriendBattleProgress } from "../game/economy";
@@ -415,7 +415,7 @@ export async function renderFriendPanel(
         ${challengeArtHtml(challenge)}
         <div class="battle-task-header">
           <div>
-            <p class="muted" style="margin:0"><strong>${escapeHtml(localizeChallenge(challenge).title)}</strong></p>
+            ${challengeTitleRow(challenge.emoji, escapeHtml(localizeChallenge(challenge).title))}
             <p class="muted" style="margin:6px 0 0">${escapeHtml(localizeChallenge(challenge).prompt)}</p>
           </div>
           <button type="button" class="btn btn-secondary btn-sm" id="refresh-task" ${busy ? "disabled" : ""} title="Roll a different task">
