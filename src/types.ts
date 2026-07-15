@@ -120,6 +120,8 @@ export interface PlayerState {
   settings: UserSettings;
   /** Cached public avatar URL (also on profiles.avatar_url) */
   avatarUrl: string | null;
+  /** Friend battle IDs already counted toward duel progress */
+  claimedFriendBattleIds: string[];
 }
 
 export interface ScoreResult {

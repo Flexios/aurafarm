@@ -1,5 +1,8 @@
 import { getCachedSession } from "../auth/auth";
+import { aestheticById } from "../data/aesthetics";
 import { CHALLENGES } from "../data/challenges";
+import { rankForAura } from "../data/ranks";
+import { claimFriendBattleProgress } from "../game/economy";
 import { scoreLocal } from "../game/scorer";
 import {
   completeFriendBattle,
@@ -15,7 +18,7 @@ import {
   type FriendBattle,
   type FriendRow,
 } from "../friends/api";
-import { fetchPublicProfile } from "../profile/api";
+import { fetchPublicProfile, type PublicProfile } from "../profile/api";
 import type { AestheticCore, Challenge, PlayerState } from "../types";
 import { pickDaily } from "../utils/seed";
 import { escapeHtml, formatNumber } from "../utils/format";
@@ -57,19 +60,20 @@ function friendBattleRecord(
 type PanelMode = "menu" | "dm" | "battle-new" | "battle-reply" | "battle-result";
 
 /**
- * Friend detail: bio, duration, inline private note, DM, battles, W/L.
+ * Friend detail: rich public stats, duration, inline private note, DM, battles, W/L.
  */
 export async function renderFriendPanel(
   container: HTMLElement,
   friend: FriendRow,
   state: PlayerState,
   onBack: () => void,
+  onState?: (s: PlayerState) => void,
 ): Promise<void> {
   const me = getCachedSession();
   const myId = me?.userId ?? "";
   let mode: PanelMode = "menu";
   let note = "";
-  let friendBio: string | null = null;
+  let publicProf: PublicProfile | null = null;
   let messages: DmMessage[] = [];
   let battles: FriendBattle[] = [];
   let busy = false;
@@ -81,9 +85,10 @@ export async function renderFriendPanel(
   let resultBattleId: string | null = null;
   /** Salt for rolling a new challenge task. */
   let challengeNonce = Date.now();
+  let player = state;
 
   const load = async () => {
-    const [n, msgs, allBattles, publicProf] = await Promise.all([
+    const [n, msgs, allBattles, prof] = await Promise.all([
       getFriendNote(friend.userId),
       listFriendDms(friend.userId),
       listFriendBattles(),
@@ -94,10 +99,31 @@ export async function renderFriendPanel(
     battles = allBattles.filter(
       (b) => b.challengerId === friend.userId || b.opponentId === friend.userId,
     );
-    friendBio = publicProf?.bio ?? null;
+    publicProf = prof;
+  };
+
+  /** Credit duel progress for any completed battles not yet claimed. */
+  const claimPendingRewards = () => {
+    for (const b of battles) {
+      if (b.status !== "complete") continue;
+      if (b.challengerScore == null || b.opponentScore == null) continue;
+      if (player.claimedFriendBattleIds.includes(b.id)) continue;
+      const iAmChallenger = b.challengerId === myId;
+      const myScore = iAmChallenger ? b.challengerScore : b.opponentScore;
+      const theirScore = iAmChallenger ? b.opponentScore : b.challengerScore;
+      const res = claimFriendBattleProgress(player, b.id, myScore, theirScore);
+      if (res.claimed) {
+        player = res.state;
+        onState?.(player);
+        if (res.outcome === "win") {
+          showToast("⚔️ Friend battle win counted toward Duels!");
+        }
+      }
+    }
   };
 
   await load();
+  claimPendingRewards();
 
   const paint = () => {
     const banner =
@@ -138,32 +164,56 @@ export async function renderFriendPanel(
         ? ""
         : ` · ${(wl.wins / wl.played * 100).toFixed(0)}% win rate`;
 
+    const aura = publicProf?.totalAura ?? friend.totalAura;
+    const coreId = (publicProf?.core || friend.core || "main-character") as AestheticCore;
+    const aesthetic = aestheticById(coreId);
+    const rank = rankForAura(aura);
+    const streak = publicProf?.streak ?? 0;
+    const duelWins = publicProf?.duelWins ?? 0;
+    const best = publicProf?.bestDailyScore ?? 0;
+    const bp = publicProf?.battlePassLevel ?? 0;
+    const cores = publicProf?.coresCount ?? 0;
+    const bio = publicProf?.bio ?? null;
+    const avatar = publicProf?.avatarUrl ?? friend.avatarUrl;
+    const displayName = publicProf?.displayName || friend.displayName;
+
     container.innerHTML = `
       <button type="button" class="btn btn-plain" id="friend-back" style="align-self:flex-start">← Friends</button>
       ${banner}
       <div class="card profile-hero" style="margin-top:8px">
         <div class="profile-hero-row">
-          ${avatarHtml(friend.avatarUrl, friend.displayName)}
+          ${avatarHtml(avatar, displayName)}
           <div class="profile-hero-meta">
-            <h2 style="margin:0;font-size:1.25rem">${escapeHtml(friend.displayName)}</h2>
+            <h2 style="margin:0;font-size:1.25rem">${escapeHtml(displayName)}</h2>
             <p class="muted" style="margin:4px 0 0">@${escapeHtml(friend.username)}</p>
+            <div class="tag-row" style="margin-top:8px">
+              <span class="tag">${rank.emoji} ${escapeHtml(rank.name)}</span>
+              <span class="tag magenta">${aesthetic.emoji} ${escapeHtml(aesthetic.label)}</span>
+            </div>
             <p class="muted" style="margin:8px 0 0;font-size:0.88rem;font-weight:600;color:var(--accent)">
               ${escapeHtml(formatFriendshipDuration(friend.friendsSince))}
             </p>
-            <p class="muted" style="margin:4px 0 0;font-size:0.84rem">
-              ${formatNumber(friend.totalAura)} aura
-            </p>
             <p class="muted" style="margin:6px 0 0;font-size:0.84rem;font-weight:600">
-              Battle record: ${escapeHtml(wlLabel)}${escapeHtml(wlRatio)}
+              vs you: ${escapeHtml(wlLabel)}${escapeHtml(wlRatio)}
             </p>
           </div>
         </div>
         <div class="friend-bio">
           ${
-            friendBio
-              ? `<p class="friend-bio-text">${escapeHtml(friendBio)}</p>`
+            bio
+              ? `<p class="friend-bio-text">${escapeHtml(bio)}</p>`
               : `<p class="muted" style="margin:0;font-size:0.9rem">No bio yet.</p>`
           }
+        </div>
+        <div class="stat-grid" style="margin-top:14px">
+          <div class="stat"><b>${formatNumber(aura)}</b><span>Aura</span></div>
+          <div class="stat"><b>🔥 ${streak}</b><span>Streak</span></div>
+          <div class="stat"><b>⚔️ ${duelWins}</b><span>Duels</span></div>
+        </div>
+        <div class="stat-grid" style="margin-top:8px">
+          <div class="stat"><b>${best || "—"}</b><span>Best daily</span></div>
+          <div class="stat"><b>${bp}/10</b><span>Pass</span></div>
+          <div class="stat"><b>${cores}</b><span>Cores</span></div>
         </div>
         <div class="friend-quick-actions">
           <button type="button" class="btn btn-fill btn-sm" id="open-dm">Message</button>
@@ -485,17 +535,18 @@ export async function renderFriendPanel(
           const cScore = scoreLocal(
             battle.challengerAnswer,
             ch,
-            state.core as AestheticCore,
+            player.core as AestheticCore,
             0,
           ).score;
-          const oScore = scoreLocal(answer, ch, state.core as AestheticCore, 0).score;
+          const oScore = scoreLocal(answer, ch, player.core as AestheticCore, 0).score;
           await completeFriendBattle(id, cScore, oScore);
         }
         busy = false;
-        showToast("Battle complete");
         battles = (await listFriendBattles()).filter(
           (b) => b.challengerId === friend.userId || b.opponentId === friend.userId,
         );
+        claimPendingRewards();
+        showToast("Battle complete");
         replyBattleId = null;
         resultBattleId = id;
         mode = "battle-result";
@@ -505,6 +556,7 @@ export async function renderFriendPanel(
   };
 
   const paintBattleResult = (banner: string) => {
+    claimPendingRewards();
     const b = battles.find((x) => x.id === resultBattleId);
     if (!b || b.status !== "complete") {
       container.innerHTML = `

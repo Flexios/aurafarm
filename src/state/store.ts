@@ -65,6 +65,7 @@ export function createDefaultState(): PlayerState {
     lastDisplayNameChangeAt: null,
     settings: { ...DEFAULT_SETTINGS },
     avatarUrl: null,
+    claimedFriendBattleIds: [],
   };
 }
 
@@ -87,6 +88,9 @@ export function normalizeState(parsed: Partial<PlayerState> | null | undefined):
     lastDisplayNameChangeAt: parsed.lastDisplayNameChangeAt ?? null,
     settings: { ...DEFAULT_SETTINGS, ...(parsed.settings ?? {}) },
     avatarUrl: parsed.avatarUrl ?? null,
+    claimedFriendBattleIds: Array.isArray(parsed.claimedFriendBattleIds)
+      ? parsed.claimedFriendBattleIds.map(String)
+      : [],
   };
 }
 

@@ -216,3 +216,53 @@ export function applyDuelLoss(state: PlayerState, score: number): PlayerState {
   saveState(next);
   return next;
 }
+
+/**
+ * Apply duel progress for a completed friend battle (once per battle id).
+ * Wins count toward duelWins; losses/ties still grant light aura/sparks.
+ */
+export function claimFriendBattleProgress(
+  state: PlayerState,
+  battleId: string,
+  myScore: number,
+  theirScore: number,
+): { state: PlayerState; claimed: boolean; outcome: "win" | "loss" | "tie" } {
+  const outcome: "win" | "loss" | "tie" =
+    myScore > theirScore ? "win" : myScore < theirScore ? "loss" : "tie";
+
+  if (state.claimedFriendBattleIds.includes(battleId)) {
+    return { state, claimed: false, outcome };
+  }
+
+  let next: PlayerState = {
+    ...state,
+    claimedFriendBattleIds: [...state.claimedFriendBattleIds, battleId].slice(
+      -100,
+    ),
+  };
+
+  if (outcome === "win") {
+    next = {
+      ...next,
+      duelWins: next.duelWins + 1,
+      totalAura: next.totalAura + Math.round(myScore * 0.5),
+      sparks: next.sparks + 25 + Math.floor(myScore / 5),
+    };
+  } else if (outcome === "loss") {
+    next = {
+      ...next,
+      totalAura: next.totalAura + Math.round(myScore * 0.2),
+      sparks: next.sparks + 8,
+    };
+  } else {
+    const mid = Math.round((myScore + theirScore) / 2);
+    next = {
+      ...next,
+      totalAura: next.totalAura + Math.round(mid * 0.2),
+      sparks: next.sparks + 18,
+    };
+  }
+
+  saveState(next);
+  return { state: next, claimed: true, outcome };
+}

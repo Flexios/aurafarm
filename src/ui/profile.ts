@@ -243,10 +243,19 @@ export function renderProfile(
 
   const renderFriends = (body: Element) => {
     if (selectedFriend) {
-      void renderFriendPanel(body as HTMLElement, selectedFriend, state, () => {
-        selectedFriend = null;
-        paint();
-      });
+      void renderFriendPanel(
+        body as HTMLElement,
+        selectedFriend,
+        state,
+        () => {
+          selectedFriend = null;
+          paint();
+        },
+        (s) => {
+          state = s;
+          onState(s);
+        },
+      );
       return;
     }
 
