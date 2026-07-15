@@ -19,6 +19,7 @@ import {
 } from "./state/store";
 import type { PlayerState, Screen } from "./types";
 import { renderAdmin } from "./ui/admin";
+import { ensureAuraField } from "./ui/auraField";
 import { renderCard } from "./ui/card";
 import { renderDuel } from "./ui/duel";
 import { renderHome } from "./ui/home";
@@ -115,6 +116,8 @@ async function handleAuthed(next: Session): Promise<void> {
 }
 
 function render(): void {
+  ensureAuraField();
+
   if (booting) {
     showBoot(bootMessage("boot.connecting"));
     return;

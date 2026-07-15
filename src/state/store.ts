@@ -2,6 +2,7 @@ import { getCachedSession, validateDisplayName } from "../auth/auth";
 import { FREE_DEFAULTS } from "../data/cosmetics";
 import { applyExclusiveCores } from "../data/cores";
 import { isAppLang, setLang, t } from "../i18n";
+import { ensureAuraField, refreshAuraAccent } from "../ui/auraField";
 import { getSupabase, isSupabaseConfigured } from "../lib/supabase";
 import type {
   AestheticCore,
@@ -132,6 +133,13 @@ export function applySettingsToDom(settings: UserSettings): void {
   root.dataset.hideTopCurrency = settings.hideTopCurrency ? "1" : "0";
   if (isAppLang(settings.language)) {
     setLang(settings.language);
+  }
+  // Keep interactive background in sync with motion + accent prefs
+  try {
+    ensureAuraField();
+    refreshAuraAccent();
+  } catch {
+    /* ignore */
   }
 }
 

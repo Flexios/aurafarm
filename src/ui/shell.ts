@@ -3,6 +3,7 @@ import { getSession } from "../auth/auth";
 import { t } from "../i18n";
 import type { PlayerState, Screen } from "../types";
 import { formatNumber } from "../utils/format";
+import { ensureAuraField, refreshAuraAccent } from "./auraField";
 import { icon, type IconName } from "./icons";
 
 function navDesktopBase(): Array<{ id: Screen; label: string; ico: IconName }> {
@@ -55,14 +56,16 @@ function navButtons(
   extraClass = "",
 ): string {
   return items
-    .map(
-      (n) => `
-    <button type="button" data-nav="${n.id}" class="${extraClass} ${n.id === screen ? "active" : ""}${n.id === "home" ? " nav-home" : ""}">
-      ${icon(n.ico)}
+    .map((n) => {
+      const active = n.id === screen;
+      const home = n.id === "home";
+      return `
+    <button type="button" data-nav="${n.id}" class="${extraClass}${active ? " active" : ""}${home ? " nav-home" : ""}" aria-current="${active ? "page" : "false"}">
+      <span class="nav-ico-wrap">${icon(n.ico)}</span>
       <span class="nav-label">${n.label}</span>
-    </button>
-  `,
-    )
+      <span class="nav-glow" aria-hidden="true"></span>
+    </button>`;
+    })
     .join("");
 }
 
@@ -73,17 +76,22 @@ export function renderShell(
   bodyHtml: string,
   onNavigate: (s: Screen) => void,
 ): void {
+  ensureAuraField();
+  refreshAuraAccent();
+
   const session = getSession();
   const nav = navForUser(session?.username);
   const streak = t("currency.streak");
   const sparks = t("currency.sparks");
   const glow = t("currency.glow");
+  const isAdmin = isAdminUsername(session?.username);
+
   root.innerHTML = `
-    <div class="app-shell">
+    <div class="app-shell" data-screen="${screen}">
       <aside class="sidebar" aria-label="Desktop navigation">
         <div class="sidebar-brand">
-          <div class="mark">${icon("spark")}</div>
-          <div>
+          <div class="mark mark-orb">${icon("spark")}</div>
+          <div class="sidebar-brand-text">
             <strong>AuraFarm</strong>
             <span>${t("brand.tagline")}</span>
           </div>
@@ -112,10 +120,10 @@ export function renderShell(
       </aside>
 
       <div class="main-column">
-        <div class="screen" id="screen-root">
+        <div class="screen glass-stage" id="screen-root">
           <div class="topbar">
             <div class="brand">
-              <span class="brand-mobile-only">AuraFarm</span>
+              <span class="brand-mobile-only"><span class="brand-dot"></span>AuraFarm</span>
               <span class="page-title large-title" data-page="${screen}">${pageTitle(screen)}</span>
               <span class="user-line">${escape(state.displayName)}${session ? ` · @${escape(session.username)}` : ""}</span>
             </div>
@@ -129,15 +137,37 @@ export function renderShell(
               }
             </div>
           </div>
-          ${bodyHtml}
+          <div class="screen-body">
+            ${bodyHtml}
+          </div>
         </div>
       </div>
 
-      <nav class="nav nav-bottom ${isAdminUsername(session?.username) ? "nav-bottom-admin" : ""}" aria-label="Mobile navigation">
-        ${navButtons(nav.mobile, screen)}
+      <nav class="nav nav-bottom ${isAdmin ? "nav-bottom-admin" : ""}" aria-label="Mobile navigation">
+        <div class="nav-dock-shell">
+          ${navButtons(nav.mobile, screen)}
+        </div>
       </nav>
     </div>
   `;
+
+  // Magnetic dock hover (desktop fine pointer only)
+  const dock = root.querySelector(".nav-dock-shell");
+  if (dock && matchMedia("(hover: hover) and (pointer: fine)").matches) {
+    dock.querySelectorAll<HTMLButtonElement>("[data-nav]").forEach((btn) => {
+      btn.addEventListener("pointermove", (e) => {
+        const r = btn.getBoundingClientRect();
+        const x = ((e.clientX - r.left) / r.width - 0.5) * 8;
+        const y = ((e.clientY - r.top) / r.height - 0.5) * 6;
+        btn.style.setProperty("--mx", `${x}px`);
+        btn.style.setProperty("--my", `${y}px`);
+      });
+      btn.addEventListener("pointerleave", () => {
+        btn.style.setProperty("--mx", "0px");
+        btn.style.setProperty("--my", "0px");
+      });
+    });
+  }
 
   root.querySelectorAll<HTMLButtonElement>("[data-nav]").forEach((btn) => {
     btn.addEventListener("click", () => onNavigate(btn.dataset.nav as Screen));
