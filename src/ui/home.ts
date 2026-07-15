@@ -2,6 +2,7 @@ import { getSession } from "../auth/auth";
 import { aestheticById } from "../data/aesthetics";
 import { coresFromIds } from "../data/cores";
 import { nextRank, rankForAura } from "../data/ranks";
+import { challengeArtHtml } from "../data/challenges";
 import { getTodaysChallenge } from "../game/daily";
 import { localizeCategory, localizeChallenge, t } from "../i18n";
 import { hasPlayedDaily } from "../state/store";
@@ -36,7 +37,7 @@ export function renderHome(
       <div class="home-cell">
         <div class="section-header">${t("home.today")}</div>
         <div class="card challenge-card home-panel">
-          <div class="challenge-emoji">${challenge.emoji}</div>
+          ${challengeArtHtml(challenge)}
           <h3 style="margin:0 0 4px">${t("home.vibeChallenge")}</h3>
           <strong style="font-size:1.05rem">${escapeHtml(challenge.title)}</strong>
           <p class="muted" style="margin:8px 0 0">${escapeHtml(challenge.prompt)}</p>

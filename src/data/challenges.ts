@@ -371,3 +371,23 @@ export function getChallengePool(includeNsfw: boolean): Challenge[] {
   if (includeNsfw) return CHALLENGES;
   return CHALLENGES.filter((c) => !c.nsfw);
 }
+
+/** Public URL for a challenge illustration (`/challenges/{id}.jpg`). */
+export function challengeImageUrl(challengeId: string): string {
+  return `/challenges/${challengeId}.jpg`;
+}
+
+/** HTML for challenge cover art (falls back to emoji if image fails). */
+export function challengeArtHtml(challenge: {
+  id: string;
+  emoji: string;
+  title: string;
+}): string {
+  const src = challengeImageUrl(challenge.id);
+  const emoji = challenge.emoji || "✨";
+  return `<div class="challenge-art" data-challenge-art="${challenge.id}">
+    <img src="${src}" alt="" loading="lazy" decoding="async"
+      onerror="this.style.display='none';const f=this.nextElementSibling;if(f)f.hidden=false;" />
+    <div class="challenge-art-fallback" hidden aria-hidden="true">${emoji}</div>
+  </div>`;
+}

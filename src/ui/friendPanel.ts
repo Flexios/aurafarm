@@ -1,5 +1,6 @@
 import { getCachedSession } from "../auth/auth";
 import { aestheticById } from "../data/aesthetics";
+import { challengeArtHtml } from "../data/challenges";
 import { rankForAura } from "../data/ranks";
 import { pickChallenge } from "../game/daily";
 import { claimFriendBattleProgress } from "../game/economy";
@@ -411,6 +412,7 @@ export async function renderFriendPanel(
       ${banner}
       <div class="section-header">New battle vs @${escapeHtml(friend.username)}</div>
       <div class="card stack">
+        ${challengeArtHtml(challenge)}
         <div class="battle-task-header">
           <div>
             <p class="muted" style="margin:0"><strong>${escapeHtml(localizeChallenge(challenge).title)}</strong></p>

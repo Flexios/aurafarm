@@ -1,4 +1,5 @@
 import { getCachedSession } from "../auth/auth";
+import { challengeArtHtml } from "../data/challenges";
 import { getTodaysChallenge, pickChallenge } from "../game/daily";
 import {
   applyDuelLoss,
@@ -753,6 +754,7 @@ export function renderDuel(
       ${error ? `<p class="danger-text" style="margin:12px 0">${escapeHtml(error)}</p>` : ""}
       <div class="section-header">Battle @${escapeHtml(f.username)}</div>
       <div class="card stack">
+        ${challengeArtHtml({ ...challengeRaw, emoji: challenge.emoji })}
         <div class="battle-task-header">
           <div>
             <p class="muted" style="margin:0"><strong>${escapeHtml(challenge.title)}</strong></p>
@@ -937,7 +939,7 @@ export function renderDuel(
       <div class="desktop-grid play-grid">
       <div class="card home-panel">
         <div class="muted" style="font-weight:600;font-size:0.84rem">${isP1 ? "Player 1" : "Player 2"} · ${escapeHtml(player.name)}</div>
-        <div class="challenge-emoji">${challenge.emoji}</div>
+        ${challengeArtHtml(challenge)}
         <h2 style="margin:0 0 6px;font-size:1.2rem">${escapeHtml(challenge.title)}</h2>
         <p class="muted" style="margin:0">${escapeHtml(challenge.prompt)}</p>
       </div>
