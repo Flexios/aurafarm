@@ -21,83 +21,82 @@ export function renderLogin(
       <div class="onboarding auth-screen auth-layout">
         <div class="auth-hero">
           <div class="logo">AuraFarm</div>
-          <p class="muted auth-tagline">Farm your aura. Flex your vibe.<br/>Cloud account — play on phone &amp; PC. 13+</p>
-          <ul class="auth-perks muted">
-            <li>Daily vibe challenges</li>
-            <li>Cosmetics & battle pass</li>
-            <li>Sync progress across devices</li>
+          <p class="muted auth-tagline">Farm your aura. Flex your vibe.<br/>One account — phone and PC. 13+</p>
+          <ul class="auth-perks">
+            <li>Daily challenges with clear rewards</li>
+            <li>Cosmetics and season pass</li>
+            <li>Cloud save across devices</li>
           </ul>
         </div>
 
         <div class="auth-panel">
-        ${
-          configError
-            ? `<div class="card"><p class="danger-text" style="margin:0">${escapeHtml(configError)}</p>
-               <p class="muted" style="margin:10px 0 0;font-size:0.82rem">Create a free Supabase project, run <code>supabase/schema.sql</code>, and set env vars (see README). Redeploy / restart dev after.</p></div>`
-            : ""
-        }
+          ${
+            configError
+              ? `<div class="card"><p class="danger-text">${escapeHtml(configError)}</p>
+                 <p class="muted" style="margin:10px 0 0;font-size:0.86rem">Set Supabase env vars (see README).</p></div>`
+              : ""
+          }
 
-        <div class="card stack">
-          <div class="tabs-inline">
-            <button type="button" data-mode="login" class="${mode === "login" ? "active" : ""}">Log in</button>
-            <button type="button" data-mode="register" class="${mode === "register" ? "active" : ""}">Sign up</button>
-          </div>
-
-          <form id="auth-form" class="stack" autocomplete="on">
-            ${
-              mode === "register"
-                ? `
-              <div class="field">
-                <label for="email">Email</label>
-                <input id="email" name="email" type="email" maxlength="120" autocomplete="email" placeholder="you@email.com" required />
-              </div>
-              <div class="field">
-                <label for="username">Username</label>
-                <input id="username" name="username" maxlength="20" autocomplete="username" placeholder="e.g. vibe_curator" spellcheck="false" required />
-              </div>
-            `
-                : `
-              <div class="field">
-                <label for="identifier">Email or username</label>
-                <input id="identifier" name="identifier" maxlength="120" autocomplete="username" placeholder="you@email.com or vibe_curator" spellcheck="false" required />
-              </div>
-            `
-            }
-            <div class="field">
-              <label for="password">Password</label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                maxlength="72"
-                autocomplete="${mode === "register" ? "new-password" : "current-password"}"
-                placeholder="${mode === "register" ? "min 6 characters" : "••••••••"}"
-                required
-              />
+          <div class="card stack">
+            <div class="segmented">
+              <button type="button" data-mode="login" class="${mode === "login" ? "active" : ""}">Log In</button>
+              <button type="button" data-mode="register" class="${mode === "register" ? "active" : ""}">Sign Up</button>
             </div>
-            ${
-              mode === "register"
-                ? `
+
+            <form id="auth-form" class="stack" autocomplete="on">
+              ${
+                mode === "register"
+                  ? `
+                <div class="field">
+                  <label for="email">Email</label>
+                  <input id="email" name="email" type="email" maxlength="120" autocomplete="email" placeholder="name@example.com" required />
+                </div>
+                <div class="field">
+                  <label for="username">Username</label>
+                  <input id="username" name="username" maxlength="20" autocomplete="username" placeholder="vibe_curator" spellcheck="false" required />
+                </div>
+              `
+                  : `
+                <div class="field">
+                  <label for="identifier">Email or Username</label>
+                  <input id="identifier" name="identifier" maxlength="120" autocomplete="username" placeholder="name@example.com" spellcheck="false" required />
+                </div>
+              `
+              }
               <div class="field">
-                <label for="password2">Confirm password</label>
-                <input id="password2" name="password2" type="password" maxlength="72" autocomplete="new-password" placeholder="repeat password" required />
+                <label for="password">Password</label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  maxlength="72"
+                  autocomplete="${mode === "register" ? "new-password" : "current-password"}"
+                  placeholder="${mode === "register" ? "At least 6 characters" : "Required"}"
+                  required
+                />
               </div>
-            `
-                : ""
-            }
+              ${
+                mode === "register"
+                  ? `
+                <div class="field">
+                  <label for="password2">Confirm Password</label>
+                  <input id="password2" name="password2" type="password" maxlength="72" autocomplete="new-password" required />
+                </div>
+              `
+                  : ""
+              }
 
-            ${error ? `<p class="danger-text" role="alert">${escapeHtml(error)}</p>` : ""}
+              ${error ? `<p class="danger-text" role="alert">${escapeHtml(error)}</p>` : ""}
 
-            <button class="btn btn-primary" type="submit" ${busy || !isSupabaseConfigured() ? "disabled" : ""}>
-              ${busy ? "Working..." : mode === "login" ? "Log in →" : "Create account →"}
-            </button>
-          </form>
+              <button class="btn btn-fill" type="submit" ${busy || !isSupabaseConfigured() ? "disabled" : ""}>
+                ${busy ? "Please wait…" : mode === "login" ? "Continue" : "Create Account"}
+              </button>
+            </form>
 
-          <p class="muted" style="font-size:0.78rem;margin:0">
-            Progress syncs online so you can hop between phone and PC.
-            Cosmetics &amp; Glow packs are demo economy (no real charges).
-          </p>
-        </div>
+            <p class="muted" style="font-size:0.82rem;margin:0;text-align:center">
+              Demo economy only — no real purchases.
+            </p>
+          </div>
         </div>
       </div>
     `;
@@ -137,7 +136,6 @@ export function renderLogin(
       error = "";
       paint();
 
-      // restore fields after repaint
       if (mode === "register") {
         const em = root.querySelector("#email") as HTMLInputElement | null;
         const un = root.querySelector("#username") as HTMLInputElement | null;
@@ -163,7 +161,7 @@ export function renderLogin(
       } catch (err) {
         result = {
           ok: false,
-          error: err instanceof Error ? err.message : "Something went wrong. Try again.",
+          error: err instanceof Error ? err.message : "Something went wrong.",
         };
       }
 

@@ -6,6 +6,7 @@ import { getTodaysChallenge } from "../game/daily";
 import { hasPlayedDaily } from "../state/store";
 import type { PlayerState, Screen } from "../types";
 import { escapeHtml, formatNumber } from "../utils/format";
+import { icon } from "./icons";
 
 export function renderHome(
   container: HTMLElement,
@@ -24,82 +25,100 @@ export function renderHome(
   const played = hasPlayedDaily(state);
   const aesthetic = aestheticById(state.core);
   const recentCores = state.ownedCores
-    .slice(-6)
+    .slice(-8)
     .map((id) => coreById(id))
     .filter(Boolean);
 
   container.innerHTML = `
     <div class="desktop-grid home-grid">
-      <div class="card">
-        <div class="rank-row">
-          <div class="rank-emoji">${rank.emoji}</div>
-          <div style="flex:1">
-            <div class="muted" style="font-size:0.78rem;font-weight:600">YOUR RANK</div>
-            <h2 style="margin:0">${escapeHtml(rank.name)}</h2>
-            <div class="muted" style="font-size:0.82rem">${formatNumber(state.totalAura)} total aura${next ? ` · next ${escapeHtml(next.name)} at ${formatNumber(next.minAura)}` : " · max rank"}</div>
-            <div class="progress" aria-hidden="true"><i style="width:${progress}%"></i></div>
+      <div>
+        <div class="section-header">Today</div>
+        <div class="card challenge-card">
+          <div class="challenge-emoji">${challenge.emoji}</div>
+          <h3 style="margin:0 0 4px">Vibe Challenge</h3>
+          <strong style="font-size:1.05rem">${escapeHtml(challenge.title)}</strong>
+          <p class="muted" style="margin:8px 0 0">${escapeHtml(challenge.prompt)}</p>
+          <div class="tag-row">
+            <span class="tag">${escapeHtml(challenge.category)}</span>
+            <span class="tag magenta">${aesthetic.emoji} ${escapeHtml(aesthetic.label)}</span>
+            ${played ? `<span class="tag magenta">Done today</span>` : `<span class="tag">Ready</span>`}
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-fill" id="go-play">${played ? "Practice" : "Start"}</button>
+          </div>
+          <div class="ai-badge ${aiOn ? "on" : ""}">${aiOn ? "● AI Judge available" : "○ Local Judge"}</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-header">Progress</div>
+        <div class="card">
+          <div class="rank-row">
+            <div class="rank-emoji">${rank.emoji}</div>
+            <div style="flex:1">
+              <div class="muted" style="font-size:0.82rem;font-weight:500">Rank</div>
+              <h2 style="margin:0;font-size:1.35rem">${escapeHtml(rank.name)}</h2>
+              <div class="muted" style="font-size:0.86rem;margin-top:2px">
+                ${formatNumber(state.totalAura)} aura${next ? ` · next ${escapeHtml(next.name)}` : " · max rank"}
+              </div>
+              <div class="progress" aria-hidden="true"><i style="width:${progress}%"></i></div>
+            </div>
+          </div>
+          <div class="stat-grid">
+            <div class="stat"><b>${state.streak}</b><span>Streak</span></div>
+            <div class="stat"><b>${state.duelWins}</b><span>Duels</span></div>
+            <div class="stat"><b>${state.bestDailyScore || "—"}</b><span>Best</span></div>
           </div>
         </div>
-        <div class="stat-grid">
-          <div class="stat"><b>${state.streak}🔥</b><span>Streak</span></div>
-          <div class="stat"><b>${state.duelWins}</b><span>Duel W</span></div>
-          <div class="stat"><b>${state.bestDailyScore || "—"}</b><span>Best day</span></div>
-        </div>
       </div>
 
-      <div class="card challenge-card">
-        <div class="challenge-emoji">${challenge.emoji}</div>
-        <h3 style="margin:0 0 4px">Today's Vibe Challenge</h3>
-        <strong>${escapeHtml(challenge.title)}</strong>
-        <p class="muted" style="margin:8px 0 0">${escapeHtml(challenge.prompt)}</p>
-        <div class="tag-row">
-          <span class="tag">${escapeHtml(challenge.category)}</span>
-          <span class="tag magenta">${aesthetic.emoji} ${escapeHtml(aesthetic.label)}</span>
-          ${played ? `<span class="tag">done today ✓</span>` : `<span class="tag">ready</span>`}
+      <div class="home-cores">
+        <div class="section-title">
+          <h3>Collection</h3>
+          <span class="muted">${state.ownedCores.length}</span>
         </div>
-        <div class="btn-row">
-          <button class="btn btn-primary" id="go-play">${played ? "Play practice" : "Farm aura now"}</button>
-        </div>
-        <div class="ai-badge ${aiOn ? "on" : ""}">${aiOn ? "● AI Aura Judge online" : "○ Local Aura Judge (add XAI_API_KEY for AI)"}</div>
-      </div>
-
-      <div class="card home-cores">
-        <div class="section-title" style="margin-top:0">
-          <h3>Your cores</h3>
-          <span class="muted">${state.ownedCores.length} collected</span>
-        </div>
-        <div class="core-list">
-          ${
-            recentCores.length
-              ? recentCores
-                  .map(
-                    (c) =>
-                      `<span class="core-chip" title="${escapeHtml(c!.description)}">${c!.emoji} ${escapeHtml(c!.name)}</span>`,
-                  )
-                  .join("")
-              : `<p class="list-empty">Play challenges to drop rare cores.</p>`
-          }
-        </div>
-      </div>
-
-      <div class="card">
-        <h3>Season 1 Battle Pass</h3>
-        <p class="muted" style="margin:0">Level ${state.battlePassLevel}/10 ${state.battlePassPremium ? "· Premium unlocked" : "· Free track active"}</p>
-        <div class="progress" style="margin-top:10px"><i style="width:${(state.battlePassLevel / 10) * 100}%"></i></div>
-        <div class="btn-row">
-          <button class="btn btn-secondary" id="go-shop">Open shop & pass</button>
-          <button class="btn btn-secondary" id="go-card">Aura card</button>
-        </div>
-      </div>
-
-      <div class="card home-account">
-        <h3 style="margin:0 0 4px">Account</h3>
-        <div class="account-bar">
-          <div class="who">
-            Logged in as <strong>@${escapeHtml(session?.username ?? "—")}</strong>
-            <div style="font-size:0.75rem;margin-top:2px">Progress syncs to the cloud — same account on phone &amp; PC.</div>
+        <div class="card" style="padding:14px 16px">
+          <div class="core-list">
+            ${
+              recentCores.length
+                ? recentCores
+                    .map(
+                      (c) =>
+                        `<span class="core-chip" title="${escapeHtml(c!.description)}">${c!.emoji} ${escapeHtml(c!.name)}</span>`,
+                    )
+                    .join("")
+                : `<p class="list-empty">Play challenges to unlock cores.</p>`
+            }
           </div>
-          <button type="button" class="btn-logout" id="logout-btn">Log out</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-header">Season</div>
+        <div class="card">
+          <h3 style="margin:0">Battle Pass · Season 1</h3>
+          <p class="muted" style="margin:6px 0 0">Level ${state.battlePassLevel}/10 · ${state.battlePassPremium ? "Premium" : "Free track"}</p>
+          <div class="progress"><i style="width:${(state.battlePassLevel / 10) * 100}%"></i></div>
+          <div class="btn-row">
+            <button class="btn btn-secondary" id="go-shop">Shop</button>
+            <button class="btn btn-secondary" id="go-card">Aura Card</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="home-account">
+        <div class="section-header">Account</div>
+        <div class="card">
+          <div class="account-bar" style="margin:0">
+            <div class="who">
+              ${icon("person")}
+              <div style="display:inline-block;vertical-align:middle;margin-left:8px">
+                <strong>@${escapeHtml(session?.username ?? "—")}</strong>
+                <div style="font-size:0.82rem;margin-top:2px">Synced across devices</div>
+              </div>
+            </div>
+            <button type="button" class="btn-logout" id="logout-btn">${icon("logout")} Log Out</button>
+          </div>
         </div>
       </div>
     </div>

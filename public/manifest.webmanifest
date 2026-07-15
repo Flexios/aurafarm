@@ -1,11 +1,11 @@
 {
   "name": "AuraFarm",
   "short_name": "AuraFarm",
-  "description": "Farm your aura. Flex your vibe. Daily aesthetic RPG.",
+  "description": "Farm your aura. Flex your vibe.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0612",
-  "theme_color": "#0a0612",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "orientation": "portrait-primary",
   "icons": [
     {

@@ -207,11 +207,11 @@ export function renderCard(
         <canvas id="aura-card-canvas" width="720" height="1080" aria-label="Aura card preview"></canvas>
       </div>
       <div class="card card-actions">
-        <h2 style="margin:0">Aura Card</h2>
-        <p class="muted" style="margin:8px 0 0">Export a shareable card for Stories / TikTok / group chats. Equipped cosmetics apply automatically.</p>
+        <h2 style="margin:0">Share Card</h2>
+        <p class="muted" style="margin:8px 0 0">Export a PNG for Stories or chats. Equipped cosmetics apply automatically.</p>
         <div class="btn-row" style="flex-direction:column">
-          <button class="btn btn-primary" id="download-card">Download PNG</button>
-          <button class="btn btn-secondary" id="redraw">Refresh preview</button>
+          <button class="btn btn-fill" id="download-card">Download PNG</button>
+          <button class="btn btn-secondary" id="redraw">Refresh</button>
         </div>
       </div>
     </div>
@@ -227,6 +227,6 @@ export function renderCard(
     link.download = `aurafarm-${state.displayName || "card"}.png`;
     link.href = canvas.toDataURL("image/png");
     link.click();
-    showToast("Card downloaded — go flex.");
+    showToast("Saved to downloads");
   });
 }

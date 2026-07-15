@@ -21,18 +21,17 @@ export function renderDuel(
   const paint = () => {
     if (duel.phase === "setup") {
       container.innerHTML = `
-        <div class="card">
-          <h2 style="margin:0 0 8px">Aura Duel</h2>
-          <p class="muted" style="margin:0">Pass-and-play. Same prompt. Higher aura wins Sparks. Perfect for siblings, friends, or chaotic group hangs.</p>
-          <div class="field" style="margin-top:14px">
-            <label for="p1">Player 1 name</label>
+        <div class="card stack">
+          <p class="muted" style="margin:0">Pass-and-play on one device. Same prompt — higher score wins Sparks.</p>
+          <div class="field">
+            <label for="p1">Player 1</label>
             <input id="p1" maxlength="16" value="${escapeHtml(state.displayName || "Player 1")}" />
           </div>
-          <div class="field" style="margin-top:10px">
-            <label for="p2">Player 2 name</label>
+          <div class="field">
+            <label for="p2">Player 2</label>
             <input id="p2" maxlength="16" value="Challenger" />
           </div>
-          <button class="btn btn-primary" id="start-duel" style="margin-top:14px">Start duel</button>
+          <button class="btn btn-fill" id="start-duel">Start</button>
         </div>
       `;
       container.querySelector("#start-duel")?.addEventListener("click", () => {
@@ -53,10 +52,10 @@ export function renderDuel(
     if (duel.phase === "handoff") {
       container.innerHTML = `
         <div class="card handoff">
-          <div class="big">👀</div>
-          <h2>Pass the phone</h2>
-          <p class="muted">${escapeHtml(duel.p1.name)} is done. Hide the screen and hand it to <strong>${escapeHtml(duel.p2.name)}</strong>.</p>
-          <button class="btn btn-primary" id="p2-ready">${escapeHtml(duel.p2.name)} is ready</button>
+          <div class="big">→</div>
+          <h2 style="margin:0">Pass the Device</h2>
+          <p class="muted">${escapeHtml(duel.p1.name)} finished. Hand the device to <strong>${escapeHtml(duel.p2.name)}</strong>.</p>
+          <button class="btn btn-fill" id="p2-ready">Continue as ${escapeHtml(duel.p2.name)}</button>
         </div>
       `;
       container.querySelector("#p2-ready")?.addEventListener("click", () => {
@@ -70,28 +69,24 @@ export function renderDuel(
       const winner = duelWinner(duel);
       container.innerHTML = `
         <div class="card result-panel">
-          <div class="muted" style="font-weight:700">DUEL RESULT</div>
-          <div class="hero-score" style="font-size:2.2rem">
+          <div class="muted" style="font-weight:600;font-size:0.84rem">Result</div>
+          <div class="hero-score" style="font-size:2rem">
             ${
               winner === "tie"
-                ? "TIE"
+                ? "Tie"
                 : winner === "p1"
                   ? escapeHtml(duel.p1.name)
                   : escapeHtml(duel.p2.name)
             }
           </div>
-          <p class="verdict">${winner === "tie" ? "Split aura. Both ate." : "takes the aura crown."}</p>
+          <p class="verdict">${winner === "tie" ? "Even scores." : "wins the duel."}</p>
           <div class="stat-grid">
             <div class="stat"><b>${duel.p1.result.score}</b><span>${escapeHtml(duel.p1.name)}</span></div>
-            <div class="stat"><b>VS</b><span>aura</span></div>
+            <div class="stat"><b>vs</b><span>Score</span></div>
             <div class="stat"><b>${duel.p2.result.score}</b><span>${escapeHtml(duel.p2.name)}</span></div>
           </div>
-          <div class="card" style="margin-top:12px;text-align:left">
-            <p class="muted" style="margin:0 0 6px"><strong>${escapeHtml(duel.p1.name)}</strong> — ${escapeHtml(duel.p1.result.verdict)}</p>
-            <p class="muted" style="margin:0"><strong>${escapeHtml(duel.p2.name)}</strong> — ${escapeHtml(duel.p2.result.verdict)}</p>
-          </div>
           <div class="btn-row">
-            <button class="btn btn-primary" id="rematch">Rematch</button>
+            <button class="btn btn-fill" id="rematch">Rematch</button>
             <button class="btn btn-secondary" id="duel-home">Done</button>
           </div>
         </div>
@@ -112,18 +107,20 @@ export function renderDuel(
     const challenge = duel.challenge!;
 
     container.innerHTML = `
+      <div class="desktop-grid play-grid">
       <div class="card">
-        <div class="muted" style="font-weight:700">${isP1 ? "PLAYER 1" : "PLAYER 2"} · ${escapeHtml(player.name)}</div>
+        <div class="muted" style="font-weight:600;font-size:0.84rem">${isP1 ? "Player 1" : "Player 2"} · ${escapeHtml(player.name)}</div>
         <div class="challenge-emoji">${challenge.emoji}</div>
-        <h2 style="margin:0 0 6px">${escapeHtml(challenge.title)}</h2>
+        <h2 style="margin:0 0 6px;font-size:1.2rem">${escapeHtml(challenge.title)}</h2>
         <p class="muted" style="margin:0">${escapeHtml(challenge.prompt)}</p>
       </div>
-      <div class="card" style="margin-top:12px">
+      <div class="card">
         <div class="field">
-          <label for="duel-answer">Your line</label>
-          <textarea id="duel-answer" maxlength="400" placeholder="Make it hit..."></textarea>
+          <label for="duel-answer">Answer</label>
+          <textarea id="duel-answer" maxlength="400" placeholder="Your response…"></textarea>
         </div>
-        <button class="btn btn-primary" id="lock-in">Lock in answer</button>
+        <button class="btn btn-fill" id="lock-in">Lock In</button>
+      </div>
       </div>
     `;
 

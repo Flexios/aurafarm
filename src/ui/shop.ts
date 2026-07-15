@@ -19,7 +19,7 @@ export function renderShop(
 
   const paint = () => {
     container.innerHTML = `
-      <div class="tabs-inline">
+      <div class="segmented">
         <button type="button" data-tab="cosmetics" class="${tab === "cosmetics" ? "active" : ""}">Cosmetics</button>
         <button type="button" data-tab="glow" class="${tab === "glow" ? "active" : ""}">Glow</button>
         <button type="button" data-tab="pass" class="${tab === "pass" ? "active" : ""}">Pass</button>
@@ -126,34 +126,31 @@ export function renderShop(
 
   const renderGlow = (body: Element) => {
     body.innerHTML = `
-      <div class="card">
-        <h3>Buy Glow (demo)</h3>
-        <p class="muted" style="margin:0">Mock purchases — no real money. This is the monetization path: premium currency for cosmetics & battle pass.</p>
-      </div>
-      <div class="pack-grid" style="margin-top:12px">
+      <div class="section-header">Demo Packs</div>
+      <p class="muted" style="margin:0 0 12px;padding:0 4px">No real charges. Premium currency for cosmetics and pass.</p>
+      <div class="pack-grid">
         <div class="pack">
           <div>
-            <strong>Starter Glow</strong>
-            <span>40 Glow + 50 Sparks · demo $0.99</span>
+            <strong>Starter</strong>
+            <span>40 Glow + 50 Sparks</span>
           </div>
-          <button class="btn btn-primary" style="width:auto" data-pack="starter">Get</button>
+          <button class="btn btn-fill" data-pack="starter">Get</button>
         </div>
         <div class="pack">
           <div>
-            <strong>Hype Pack</strong>
-            <span>120 Glow + 150 Sparks · demo $4.99</span>
+            <strong>Hype</strong>
+            <span>120 Glow + 150 Sparks</span>
           </div>
-          <button class="btn btn-primary" style="width:auto" data-pack="hype">Get</button>
+          <button class="btn btn-fill" data-pack="hype">Get</button>
         </div>
         <div class="pack">
           <div>
-            <strong>Aura Mogul</strong>
-            <span>300 Glow + 400 Sparks · demo $9.99</span>
+            <strong>Mogul</strong>
+            <span>300 Glow + 400 Sparks</span>
           </div>
-          <button class="btn btn-primary" style="width:auto" data-pack="mogul">Get</button>
+          <button class="btn btn-fill" data-pack="mogul">Get</button>
         </div>
       </div>
-      <p class="muted" style="margin-top:14px;font-size:0.8rem">In production: App Store / Play / Stripe. Cosmetics only — never pay-to-win stats.</p>
     `;
 
     body.querySelectorAll<HTMLButtonElement>("[data-pack]").forEach((btn) => {
@@ -180,7 +177,7 @@ export function renderShop(
         ${
           state.battlePassPremium
             ? ""
-            : `<button class="btn btn-primary" id="unlock-bp">Unlock Premium Pass (demo · 50 Glow if available)</button>`
+            : `<button class="btn btn-fill" id="unlock-bp">Unlock Premium (demo)</button>`
         }
         <div class="progress" style="margin-top:12px"><i style="width:${(state.battlePassLevel / 10) * 100}%"></i></div>
       </div>

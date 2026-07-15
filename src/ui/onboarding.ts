@@ -17,23 +17,22 @@ export function renderOnboarding(
   root.innerHTML = `
     <div class="onboarding auth-layout">
       <div class="auth-hero">
-        <div class="logo">AuraFarm</div>
-        <p class="muted auth-tagline">Welcome${session ? `, @${escapeHtml(session.username)}` : ""}.<br/>Set your in-game vibe identity. 13+</p>
+        <div class="logo">Welcome</div>
+        <p class="muted auth-tagline">${session ? `Hi @${escapeHtml(session.username)}.` : "Hi."}<br/>Choose how you show up in AuraFarm.</p>
       </div>
       <div class="auth-panel">
-      <div class="card stack">
-        <div class="field">
-          <label for="display-name">Display name</label>
-          <input id="display-name" maxlength="18" placeholder="e.g. vibe.curator" value="${escapeHtml(defaultName)}" />
+        <div class="card stack">
+          <div class="field">
+            <label for="display-name">Display Name</label>
+            <input id="display-name" maxlength="18" placeholder="Your name" value="${escapeHtml(defaultName)}" />
+          </div>
+          <div>
+            <label class="muted" style="font-weight:500;font-size:0.84rem">Aesthetic Core</label>
+            <div class="core-grid" id="core-grid" style="margin-top:10px"></div>
+          </div>
+          <button class="btn btn-fill" id="start-btn">Continue</button>
+          <button class="btn btn-plain" type="button" id="logout-onboard">Use a different account</button>
         </div>
-        <div>
-          <label class="muted" style="font-weight:600;font-size:0.82rem">Pick your aesthetic core</label>
-          <div class="core-grid" id="core-grid" style="margin-top:10px"></div>
-        </div>
-        <button class="btn btn-primary" id="start-btn">Enter the farm ✨</button>
-        <button class="btn btn-secondary" type="button" id="logout-onboard">Use a different account</button>
-        <p class="muted" style="font-size:0.78rem;margin:0">Progress syncs online to your account. Cosmetics & Glow packs are demo economy (no real charges).</p>
-      </div>
       </div>
     </div>
   `;

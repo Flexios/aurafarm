@@ -27,7 +27,7 @@ let booting = true;
 
 function showBoot(message: string): void {
   app.innerHTML = `
-    <div class="onboarding auth-layout boot-screen" style="justify-content:center;align-items:center;text-align:center;display:flex;flex-direction:column">
+    <div class="onboarding" style="justify-content:center;align-items:center;text-align:center;display:flex;flex-direction:column">
       <div class="logo">AuraFarm</div>
       <p class="muted" style="margin-top:16px">${message}</p>
     </div>

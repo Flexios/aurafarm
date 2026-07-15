@@ -29,17 +29,17 @@ export function renderPlay(
       const core = result.coreDropped ? coreById(result.coreDropped) : null;
       container.innerHTML = `
         <div class="card result-panel">
-          <div class="muted" style="font-weight:700;letter-spacing:0.08em">AURA SCORE</div>
+          <div class="muted" style="font-weight:600;font-size:0.84rem">Score</div>
           <div class="hero-score">+${result.score}</div>
           <div class="verdict">${escapeHtml(result.verdict)}</div>
           <div class="tag-row" style="justify-content:center">
             ${result.tags.map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join("")}
-            <span class="tag magenta">${result.source === "ai" ? "AI Judge" : "Local Judge"}</span>
+            <span class="tag magenta">${result.source === "ai" ? "AI" : "Local"}</span>
           </div>
           <div class="stat-grid">
             <div class="stat"><b>+${result.sparksEarned}</b><span>Sparks</span></div>
             <div class="stat"><b>${Math.round(result.streakBonus * 100)}%</b><span>Streak</span></div>
-            <div class="stat"><b>${core ? core.emoji : "—"}</b><span>${core ? "Core drop" : "No drop"}</span></div>
+            <div class="stat"><b>${core ? core.emoji : "—"}</b><span>${core ? "Core" : "No drop"}</span></div>
           </div>
           ${
             core
@@ -47,8 +47,8 @@ export function renderPlay(
               : ""
           }
           <div class="btn-row">
-            <button class="btn btn-primary" id="again">Play again</button>
-            <button class="btn btn-secondary" id="back-home">Home vibes</button>
+            <button class="btn btn-fill" id="again">Play Again</button>
+            <button class="btn btn-secondary" id="back-home">Home</button>
           </div>
         </div>
       `;
@@ -66,32 +66,32 @@ export function renderPlay(
     }
 
     container.innerHTML = `
-      <div class="tabs-inline play-tabs">
+      <div class="segmented play-tabs">
         <button type="button" data-mode="daily" class="${mode === "daily" ? "active" : ""}">Daily ${dailyDone ? "✓" : ""}</button>
         <button type="button" data-mode="practice" class="${mode === "practice" ? "active" : ""}">Practice</button>
       </div>
       <div class="desktop-grid play-grid">
       <div class="card">
         <div class="challenge-emoji">${challenge.emoji}</div>
-        <h2 style="margin:0 0 6px">${escapeHtml(challenge.title)}</h2>
+        <h2 style="margin:0 0 6px;font-size:1.25rem">${escapeHtml(challenge.title)}</h2>
         <p class="muted" style="margin:0">${escapeHtml(challenge.prompt)}</p>
-        <p class="muted" style="margin:10px 0 0;font-size:0.82rem">Hint: ${escapeHtml(challenge.hint)}</p>
+        <p class="muted" style="margin:10px 0 0;font-size:0.86rem">Hint: ${escapeHtml(challenge.hint)}</p>
         ${
           mode === "daily" && dailyDone
-            ? `<p class="muted" style="margin-top:10px">Daily already farmed — switch to Practice for more Sparks (reduced rewards).</p>`
+            ? `<p class="muted" style="margin-top:10px">Daily complete — use Practice for reduced rewards.</p>`
             : ""
         }
       </div>
       <div class="card">
         <div class="field">
-          <label for="answer">Your answer</label>
-          <textarea id="answer" maxlength="400" placeholder="Drop the line. Make it cinematic..."></textarea>
+          <label for="answer">Your Answer</label>
+          <textarea id="answer" maxlength="400" placeholder="Write something memorable…"></textarea>
         </div>
-        <label class="muted" style="display:flex;align-items:center;gap:8px;margin:10px 0;font-size:0.85rem">
+        <label class="muted" style="display:flex;align-items:center;gap:8px;margin:12px 0;font-size:0.9rem">
           <input type="checkbox" id="use-ai" ${preferAi && aiOn ? "checked" : ""} ${aiOn ? "" : "disabled"} />
-          Use AI Aura Judge ${aiOn ? "" : "(offline — set XAI_API_KEY)"}
+          AI Judge ${aiOn ? "" : "(unavailable)"}
         </label>
-        <button class="btn btn-primary" id="submit" ${mode === "daily" && dailyDone ? "disabled" : ""}>${busy ? "Judging..." : "Submit for aura"}</button>
+        <button class="btn btn-fill" id="submit" ${mode === "daily" && dailyDone ? "disabled" : ""}>${busy ? "Scoring…" : "Submit"}</button>
       </div>
       </div>
     `;
