@@ -25,6 +25,31 @@ $$;
 revoke all on function public.is_app_admin() from public;
 grant execute on function public.is_app_admin() to authenticated;
 
+-- Own ban status (used at login / restore; no admin required)
+create or replace function public.get_own_ban_status()
+returns jsonb
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select coalesce(
+    (
+      select jsonb_build_object(
+        'banned', coalesce(p.banned, false),
+        'reason', p.ban_reason
+      )
+      from public.profiles p
+      where p.user_id = auth.uid()
+      limit 1
+    ),
+    jsonb_build_object('banned', false, 'reason', null)
+  );
+$$;
+
+revoke all on function public.get_own_ban_status() from public;
+grant execute on function public.get_own_ban_status() to authenticated;
+
 create or replace function public.admin_list_users()
 returns table (
   user_id uuid,
@@ -61,7 +86,7 @@ begin
     p.updated_at
   from public.profiles p
   order by lower(p.username)
-  limit 200;
+  limit 500;
 end;
 $$;
 
@@ -81,9 +106,16 @@ as $$
 declare
   target uuid;
   uname text := lower(trim(p_username));
+  rows_updated integer;
 begin
+  if auth.uid() is null then
+    return jsonb_build_object('ok', false, 'error', 'Not signed in');
+  end if;
   if not public.is_app_admin() then
     return jsonb_build_object('ok', false, 'error', 'Admin only');
+  end if;
+  if uname = '' then
+    return jsonb_build_object('ok', false, 'error', 'Username required');
   end if;
   if uname = 'admin' then
     return jsonb_build_object('ok', false, 'error', 'Cannot ban the admin account');
@@ -100,12 +132,20 @@ begin
 
   update public.profiles
   set
-    banned = p_banned,
-    ban_reason = case when p_banned then left(coalesce(p_reason, ''), 200) else null end,
+    banned = coalesce(p_banned, false),
+    ban_reason = case
+      when coalesce(p_banned, false) then nullif(left(trim(coalesce(p_reason, '')), 200), '')
+      else null
+    end,
     updated_at = now()
   where user_id = target;
 
-  return jsonb_build_object('ok', true);
+  get diagnostics rows_updated = row_count;
+  if rows_updated < 1 then
+    return jsonb_build_object('ok', false, 'error', 'Update failed');
+  end if;
+
+  return jsonb_build_object('ok', true, 'username', uname, 'banned', coalesce(p_banned, false));
 end;
 $$;
 
@@ -122,8 +162,14 @@ declare
   target uuid;
   uname text := lower(trim(p_username));
 begin
+  if auth.uid() is null then
+    return jsonb_build_object('ok', false, 'error', 'Not signed in');
+  end if;
   if not public.is_app_admin() then
     return jsonb_build_object('ok', false, 'error', 'Admin only');
+  end if;
+  if uname = '' then
+    return jsonb_build_object('ok', false, 'error', 'Username required');
   end if;
   if uname = 'admin' then
     return jsonb_build_object('ok', false, 'error', 'Cannot delete the admin account');
@@ -138,10 +184,25 @@ begin
     return jsonb_build_object('ok', false, 'error', 'User not found');
   end if;
 
+  -- Profile + cascades for app tables that reference profiles/auth
   delete from public.profiles where user_id = target;
-  delete from auth.users where id = target;
 
-  return jsonb_build_object('ok', true);
+  -- Remove auth identity (must run as security definer owner with rights on auth)
+  begin
+    delete from auth.users where id = target;
+  exception when others then
+    -- Profile already gone; surface auth failure clearly
+    return jsonb_build_object(
+      'ok', false,
+      'error', 'Profile removed but auth user delete failed: ' || SQLERRM
+    );
+  end;
+
+  if exists (select 1 from auth.users where id = target) then
+    return jsonb_build_object('ok', false, 'error', 'Auth user still exists after delete');
+  end if;
+
+  return jsonb_build_object('ok', true, 'username', uname);
 end;
 $$;
 

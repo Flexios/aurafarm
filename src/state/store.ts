@@ -1,4 +1,4 @@
-import { getCachedSession } from "../auth/auth";
+import { getCachedSession, validateDisplayName } from "../auth/auth";
 import { FREE_DEFAULTS } from "../data/cosmetics";
 import { applyExclusiveCores } from "../data/cores";
 import { getSupabase, isSupabaseConfigured } from "../lib/supabase";
@@ -8,6 +8,7 @@ import type {
   PlayerState,
   UserSettings,
 } from "../types";
+import { forbiddenLanguageError } from "../utils/moderation";
 import { todayKey } from "../utils/seed";
 
 const defaultEquipped: EquippedCosmetics = {
@@ -169,8 +170,9 @@ export function updateDisplayName(
   state: PlayerState,
   name: string,
 ): { ok: true; state: PlayerState } | { ok: false; error: string } {
+  const nameErr = validateDisplayName(name);
+  if (nameErr) return { ok: false, error: nameErr };
   const trimmed = name.trim().slice(0, 18);
-  if (trimmed.length < 1) return { ok: false, error: "Display name cannot be empty." };
   if (trimmed === state.displayName) return { ok: false, error: "That's already your display name." };
 
   const wait = msUntil(state.lastDisplayNameChangeAt, DISPLAY_NAME_COOLDOWN_MS);
@@ -362,9 +364,13 @@ export function completeOnboarding(
   name: string,
   core: AestheticCore,
 ): PlayerState {
+  let display = name.trim().slice(0, 18) || "Aura Rookie";
+  if (forbiddenLanguageError(display)) {
+    display = "Aura Rookie";
+  }
   const next: PlayerState = {
     ...state,
-    displayName: name.trim().slice(0, 18) || "Aura Rookie",
+    displayName: display,
     core,
     onboarded: true,
   };

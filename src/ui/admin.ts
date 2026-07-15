@@ -38,6 +38,7 @@ export function renderAdmin(
   let dailyPreview = getTodaysChallenge();
   let deleteTarget: string | null = null;
   let deleteConfirm = "";
+  let userSearch = "";
 
   const paint = () => {
     container.innerHTML = `
@@ -115,16 +116,21 @@ export function renderAdmin(
     });
     container.querySelector("#admin-del-go")?.addEventListener("click", async () => {
       if (!deleteTarget || deleteConfirm.trim().toUpperCase() !== "DELETE") return;
+      const target = deleteTarget;
       busy = true;
+      error = "";
       paint();
-      const res = await adminDeleteUser(deleteTarget);
+      const res = await adminDeleteUser(target);
       busy = false;
       if (!res.ok) {
         error = res.error;
+        success = "";
+        showToast(res.error);
         paint();
         return;
       }
       success = res.message ?? "Deleted.";
+      error = "";
       showToast(success);
       deleteTarget = null;
       deleteConfirm = "";
@@ -264,19 +270,40 @@ export function renderAdmin(
       return;
     }
 
+    const q = userSearch.trim().toLowerCase();
+    const filtered = q
+      ? users.filter(
+          (u) =>
+            u.username.toLowerCase().includes(q) ||
+            u.displayName.toLowerCase().includes(q) ||
+            u.email.toLowerCase().includes(q),
+        )
+      : users;
+
     body.innerHTML = `
-      <div class="section-header">Accounts · ${users.length}</div>
+      <div class="card stack" style="margin-bottom:12px">
+        <div class="field">
+          <label for="admin-user-search">Search accounts</label>
+          <input id="admin-user-search" maxlength="80" placeholder="Username, display name, or email…" value="${escapeHtml(userSearch)}" spellcheck="false" />
+        </div>
+        <p class="field-hint muted" style="margin:0">Showing ${filtered.length} of ${users.length} accounts</p>
+      </div>
+      <div class="section-header">Accounts</div>
       ${
         users.length === 0
           ? `<div class="card"><p class="muted" style="margin:0">No users loaded. Ensure supabase/admin.sql is applied.</p>
              <button type="button" class="btn btn-secondary" id="reload-users" style="margin-top:12px">Retry</button></div>`
-          : `<div class="inset-group">${users
+          : filtered.length === 0
+            ? `<div class="card"><p class="muted" style="margin:0">No accounts match “${escapeHtml(userSearch)}”.</p></div>
+               <button type="button" class="btn btn-plain" id="reload-users" style="margin-top:12px">Refresh list</button>`
+            : `<div class="inset-group">${filtered
               .map(
                 (u) => `
             <div class="list-row admin-user-row">
               <div class="meta">
                 <strong>@${escapeHtml(u.username)}${u.banned ? " · banned" : ""}</strong>
-                <span>${escapeHtml(u.displayName)} · ${formatNumber(u.sparks)} sparks · ${formatNumber(u.glow)} glow · ${formatNumber(u.totalAura)} aura</span>
+                <span>${escapeHtml(u.displayName)} · ${escapeHtml(u.email)}</span>
+                <span>${formatNumber(u.sparks)} sparks · ${formatNumber(u.glow)} glow · ${formatNumber(u.totalAura)} aura</span>
                 ${
                   u.banned && u.banReason
                     ? `<span class="danger-text" style="font-size:0.8rem">Reason: ${escapeHtml(u.banReason)}</span>`
@@ -302,6 +329,23 @@ export function renderAdmin(
       }
     `;
 
+    const searchInput = body.querySelector("#admin-user-search") as HTMLInputElement | null;
+    searchInput?.addEventListener("input", () => {
+      userSearch = searchInput.value;
+      // Re-paint only users body without resetting focus caret badly
+      const pos = searchInput.selectionStart ?? userSearch.length;
+      paint();
+      const again = container.querySelector("#admin-user-search") as HTMLInputElement | null;
+      if (again) {
+        again.focus();
+        try {
+          again.setSelectionRange(pos, pos);
+        } catch {
+          /* ignore */
+        }
+      }
+    });
+
     body.querySelector("#reload-users")?.addEventListener("click", () => void loadUsers());
 
     body.querySelectorAll<HTMLButtonElement>("[data-ban]").forEach((btn) => {
@@ -311,14 +355,18 @@ export function renderAdmin(
         let reason = "";
         if (!currentlyBanned) {
           reason = window.prompt("Ban reason (optional):") ?? "";
+          if (reason === null) return;
         }
         busy = true;
+        error = "";
+        success = "";
         paint();
         const res = await adminSetBan(username, !currentlyBanned, reason);
         busy = false;
         if (!res.ok) {
           error = res.error;
           success = "";
+          showToast(res.error);
           paint();
           return;
         }

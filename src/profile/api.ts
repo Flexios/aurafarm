@@ -1,5 +1,6 @@
 import { getCachedSession } from "../auth/auth";
 import { getSupabase, getSupabaseConfigError, isSupabaseConfigured } from "../lib/supabase";
+import { forbiddenLanguageError } from "../utils/moderation";
 
 export interface PublicProfile {
   userId: string;
@@ -105,6 +106,8 @@ export async function updateBio(bio: string): Promise<{ ok: true } | { ok: false
   if (!session) return { ok: false, error: "Not signed in." };
 
   const trimmed = bio.trim().slice(0, 160);
+  const bad = forbiddenLanguageError(trimmed, "That bio");
+  if (bad) return { ok: false, error: bad };
   const sb = getSupabase();
   const { error } = await sb
     .from("profiles")

@@ -1,4 +1,5 @@
 import { getSupabase, getSupabaseConfigError, isSupabaseConfigured } from "../lib/supabase";
+import { forbiddenLanguageError } from "../utils/moderation";
 
 export interface Session {
   userId: string;
@@ -28,6 +29,17 @@ export function validateUsername(username: string): string | null {
   if (u.length < 3) return "Username must be at least 3 characters.";
   if (u.length > 20) return "Username must be 20 characters or less.";
   if (!/^[a-z0-9_]+$/.test(u)) return "Use letters, numbers, and underscores only.";
+  const bad = forbiddenLanguageError(u, "That username");
+  if (bad) return bad;
+  return null;
+}
+
+export function validateDisplayName(name: string): string | null {
+  const t = name.trim();
+  if (t.length < 1) return "Display name cannot be empty.";
+  if (t.length > 18) return "Display name must be 18 characters or less.";
+  const bad = forbiddenLanguageError(t, "That display name");
+  if (bad) return bad;
   return null;
 }
 
@@ -82,6 +94,17 @@ export async function restoreSession(): Promise<Session | null> {
     return null;
   }
   const user = data.session.user;
+  // Kick banned users even with a valid JWT
+  const ban = await readBanForUser(user.id);
+  if (ban.banned) {
+    try {
+      await sb.auth.signOut();
+    } catch {
+      /* ignore */
+    }
+    cachedSession = null;
+    return null;
+  }
   return sessionFromUser(user.id, user.email ?? "");
 }
 
@@ -187,27 +210,63 @@ export async function login(identifier: string, password: string): Promise<AuthR
     return { ok: false, error: "Invalid email/username or password." };
   }
 
-  // Ban check (column may not exist until admin.sql is applied)
-  try {
-    const { data: prof } = await sb
-      .from("profiles")
-      .select("banned, ban_reason")
-      .eq("user_id", data.user.id)
-      .maybeSingle();
-    if (prof && (prof as { banned?: boolean }).banned) {
-      const reason =
-        ((prof as { ban_reason?: string | null }).ban_reason as string | null) ||
-        "Contact support.";
-      await sb.auth.signOut();
-      cachedSession = null;
-      return { ok: false, error: `This account is banned. ${reason}` };
-    }
-  } catch {
-    /* ignore if column missing */
+  const ban = await readBanForUser(data.user.id);
+  if (ban.banned) {
+    await sb.auth.signOut();
+    cachedSession = null;
+    return {
+      ok: false,
+      error: `This account is banned.${ban.reason ? ` ${ban.reason}` : ""}`,
+    };
   }
 
   const session = await sessionFromUser(data.user.id, data.user.email ?? email);
   return { ok: true, session };
+}
+
+async function readBanForUser(
+  userId: string,
+): Promise<{ banned: boolean; reason: string | null }> {
+  if (!isSupabaseConfigured()) return { banned: false, reason: null };
+  const sb = getSupabase();
+  // Prefer RPC (security definer) so ban always readable
+  try {
+    const { data, error } = await sb.rpc("get_own_ban_status");
+    if (!error && data && typeof data === "object") {
+      const obj = data as Record<string, unknown>;
+      // Only trust RPC if it matches this user session
+      return {
+        banned: Boolean(obj.banned),
+        reason: obj.reason ? String(obj.reason) : null,
+      };
+    }
+  } catch {
+    /* fall through */
+  }
+  const { data: prof, error } = await sb
+    .from("profiles")
+    .select("banned, ban_reason")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error || !prof) return { banned: false, reason: null };
+  return {
+    banned: Boolean((prof as { banned?: boolean }).banned),
+    reason: ((prof as { ban_reason?: string | null }).ban_reason as string | null) ?? null,
+  };
+}
+
+/** Used on boot/session restore to kick banned accounts. */
+export async function ensureNotBanned(): Promise<
+  { ok: true } | { ok: false; error: string }
+> {
+  if (!isSupabaseConfigured() || !cachedSession) return { ok: true };
+  const ban = await readBanForUser(cachedSession.userId);
+  if (!ban.banned) return { ok: true };
+  await logout();
+  return {
+    ok: false,
+    error: `This account is banned.${ban.reason ? ` ${ban.reason}` : ""}`,
+  };
 }
 
 export type SimpleResult = { ok: true; message?: string } | { ok: false; error: string };

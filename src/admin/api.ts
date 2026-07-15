@@ -25,6 +25,32 @@ function requireAdminClient(): AdminResult | null {
   return null;
 }
 
+function parseRpcResult(data: unknown, error: { message: string } | null): AdminResult {
+  if (error) {
+    const msg = error.message || "Request failed";
+    if (msg.includes("function") || msg.includes("does not exist")) {
+      return { ok: false, error: "Admin SQL not applied. Run supabase/admin.sql." };
+    }
+    if (msg.toLowerCase().includes("admin only")) {
+      return { ok: false, error: "Admin only (server rejected). Are you logged in as @admin?" };
+    }
+    return { ok: false, error: msg };
+  }
+  if (data == null) return { ok: false, error: "Empty response from server." };
+  const obj = (typeof data === "object" ? data : {}) as Record<string, unknown>;
+  if (obj.ok === false || obj.ok === "false") {
+    return { ok: false, error: String(obj.error ?? "Failed") };
+  }
+  if (obj.ok === true || obj.ok === "true" || obj.ok === undefined) {
+    // Some RPCs return ok:true; treat missing ok + no error as success when we expect jsonb
+    if (obj.ok === undefined && obj.error) {
+      return { ok: false, error: String(obj.error) };
+    }
+    return { ok: true, message: obj.message ? String(obj.message) : undefined, ...obj } as AdminResult;
+  }
+  return { ok: false, error: String(obj.error ?? "Unexpected response") };
+}
+
 export async function adminListUsers(): Promise<AdminUserRow[]> {
   if (!isCurrentUserAdmin() || !isSupabaseConfigured()) return [];
   const { data, error } = await getSupabase().rpc("admin_list_users");
@@ -57,44 +83,35 @@ export async function adminSetBan(
 ): Promise<AdminResult> {
   const gate = requireAdminClient();
   if (gate) return gate;
-  const { data, error } = await getSupabase().rpc("admin_set_ban", {
-    p_username: username.trim(),
+  const args: Record<string, unknown> = {
+    p_username: username.trim().toLowerCase(),
     p_banned: banned,
-    p_reason: reason.trim().slice(0, 200) || null,
-  });
-  if (error) {
-    return {
-      ok: false,
-      error: error.message.includes("function")
-        ? "Admin SQL not applied. Run supabase/admin.sql."
-        : error.message,
-    };
-  }
-  const obj = data as Record<string, unknown>;
-  if (!obj?.ok) return { ok: false, error: String(obj?.error ?? "Failed") };
+  };
+  // Avoid sending null (PostgREST overload issues); empty string clears on unban via SQL
+  args.p_reason = banned ? reason.trim().slice(0, 200) : "";
+
+  const { data, error } = await getSupabase().rpc("admin_set_ban", args);
+  const parsed = parseRpcResult(data, error);
+  if (!parsed.ok) return parsed;
   return {
     ok: true,
-    message: banned ? `@${username} banned.` : `@${username} unbanned.`,
+    message: banned
+      ? `@${username.trim().toLowerCase()} is now banned.`
+      : `@${username.trim().toLowerCase()} is unbanned.`,
   };
 }
 
 export async function adminDeleteUser(username: string): Promise<AdminResult> {
   const gate = requireAdminClient();
   if (gate) return gate;
+  const uname = username.trim().toLowerCase();
   const { data, error } = await getSupabase().rpc("admin_delete_user", {
-    p_username: username.trim(),
+    p_username: uname,
   });
-  if (error) {
-    return {
-      ok: false,
-      error: error.message.includes("function")
-        ? "Admin SQL not applied. Run supabase/admin.sql."
-        : error.message,
-    };
-  }
-  const obj = data as Record<string, unknown>;
-  if (!obj?.ok) return { ok: false, error: String(obj?.error ?? "Failed") };
-  return { ok: true, message: `Deleted @${username}.` };
+  console.info("admin_delete_user", { uname, data, error });
+  const parsed = parseRpcResult(data, error);
+  if (!parsed.ok) return parsed;
+  return { ok: true, message: `Deleted @${uname}.` };
 }
 
 export async function adminAdjustCurrency(
@@ -104,41 +121,17 @@ export async function adminAdjustCurrency(
 ): Promise<AdminResult> {
   const gate = requireAdminClient();
   if (gate) return gate;
+  const uname = username.trim().toLowerCase();
   const { data, error } = await getSupabase().rpc("admin_adjust_currency", {
-    p_username: username.trim(),
+    p_username: uname,
     p_sparks_delta: Math.trunc(sparksDelta),
     p_glow_delta: Math.trunc(glowDelta),
   });
-  if (error) {
-    return {
-      ok: false,
-      error: error.message.includes("function")
-        ? "Admin SQL not applied. Run supabase/admin.sql."
-        : error.message,
-    };
-  }
-  const obj = data as Record<string, unknown>;
-  if (!obj?.ok) return { ok: false, error: String(obj?.error ?? "Failed") };
+  const parsed = parseRpcResult(data, error);
+  if (!parsed.ok) return parsed;
+  const obj = (data || {}) as Record<string, unknown>;
   return {
     ok: true,
-    message: `Updated @${username}: sparks ${obj.sparks}, glow ${obj.glow}.`,
-  };
-}
-
-/** Check if a user id is banned (used after login). */
-export async function fetchBanStatus(userId: string): Promise<{
-  banned: boolean;
-  reason: string | null;
-}> {
-  if (!isSupabaseConfigured()) return { banned: false, reason: null };
-  const { data, error } = await getSupabase()
-    .from("profiles")
-    .select("banned, ban_reason")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (error || !data) return { banned: false, reason: null };
-  return {
-    banned: Boolean((data as { banned?: boolean }).banned),
-    reason: ((data as { ban_reason?: string | null }).ban_reason as string | null) ?? null,
+    message: `Updated @${uname}: sparks ${obj.sparks ?? "?"}, glow ${obj.glow ?? "?"}.`,
   };
 }
