@@ -1,9 +1,11 @@
-import type { AestheticCore, Challenge } from "../types";
+import { aestheticById } from "../data/aesthetics";
+import type { AestheticCore, Challenge, ScoreBreakdown } from "../types";
 
 export interface AiJudgeResult {
   score: number;
   verdict: string;
   tags: string[];
+  breakdown?: ScoreBreakdown;
 }
 
 export async function checkAiAvailable(): Promise<boolean> {
@@ -21,8 +23,10 @@ export async function judgeWithAi(
   challenge: Challenge,
   answer: string,
   core: AestheticCore,
+  streak = 0,
 ): Promise<AiJudgeResult | null> {
   try {
+    const aesthetic = aestheticById(core);
     const res = await fetch("/api/judge", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -30,6 +34,11 @@ export async function judgeWithAi(
         prompt: challenge.prompt,
         answer,
         core,
+        title: challenge.title,
+        hint: challenge.hint,
+        category: challenge.category,
+        coreLabel: aesthetic.label,
+        streak,
       }),
     });
     if (!res.ok) return null;
@@ -39,6 +48,7 @@ export async function judgeWithAi(
       score: data.score,
       verdict: data.verdict || "AI aura locked in.",
       tags: data.tags?.length ? data.tags : ["ai-judged"],
+      breakdown: data.breakdown,
     };
   } catch {
     return null;

@@ -763,6 +763,37 @@ button {
   color: var(--label-secondary);
 }
 
+.judge-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 14px 0 4px;
+  text-align: left;
+}
+
+.judge-axis-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--label-secondary);
+  margin-bottom: 4px;
+}
+
+.judge-axis-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--fill);
+  overflow: hidden;
+}
+
+.judge-axis-bar > i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), #e8c4ff);
+}
+
 /* ——— Nav bottom ——— */
 .nav-bottom {
   position: fixed;

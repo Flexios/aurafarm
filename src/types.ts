@@ -126,6 +126,14 @@ export interface PlayerState {
   claimedFriendBattleIds: string[];
 }
 
+/** Local / AI judge axes (each ~0–25). */
+export interface ScoreBreakdown {
+  craft: number;
+  fit: number;
+  energy: number;
+  originality: number;
+}
+
 export interface ScoreResult {
   score: number;
   verdict: string;
@@ -134,4 +142,8 @@ export interface ScoreResult {
   sparksEarned: number;
   coreDropped: string | null;
   streakBonus: number;
+  /** Optional multi-axis breakdown from the judge */
+  breakdown?: ScoreBreakdown;
+  /** Letter grade S–F */
+  grade?: string;
 }

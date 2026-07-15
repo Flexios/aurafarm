@@ -5,7 +5,8 @@ import {
   applyDailyResult,
   applyPracticeResult,
 } from "../game/economy";
-import { finalizeRewards, scoreLocal } from "../game/scorer";
+import { gradeFromScore } from "../game/judgeRubric";
+import { blendAiWithLocal, finalizeRewards, scoreLocal } from "../game/scorer";
 import { hasPlayedDaily } from "../state/store";
 import type { Challenge, PlayerState, ScoreResult } from "../types";
 import { escapeHtml } from "../utils/format";
@@ -27,15 +28,27 @@ export function renderPlay(
   const paint = () => {
     if (result) {
       const core = result.coreDropped ? coreById(result.coreDropped) : null;
+      const grade = result.grade || gradeFromScore(result.score);
+      const b = result.breakdown;
       container.innerHTML = `
         <div class="card result-panel">
-          <div class="muted" style="font-weight:600;font-size:0.84rem">Score</div>
+          <div class="muted" style="font-weight:600;font-size:0.84rem">Aura Judge · Grade ${escapeHtml(grade)}</div>
           <div class="hero-score">+${result.score}</div>
           <div class="verdict">${escapeHtml(result.verdict)}</div>
           <div class="tag-row" style="justify-content:center">
             ${result.tags.map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join("")}
-            <span class="tag magenta">${result.source === "ai" ? "AI" : "Local"}</span>
+            <span class="tag magenta">${result.source === "ai" ? "AI Judge" : "Local Judge"}</span>
           </div>
+          ${
+            b
+              ? `<div class="judge-breakdown">
+            ${breakdownRow("Craft", b.craft)}
+            ${breakdownRow("Fit", b.fit)}
+            ${breakdownRow("Energy", b.energy)}
+            ${breakdownRow("Originality", b.originality)}
+          </div>`
+              : ""
+          }
           <div class="stat-grid">
             <div class="stat"><b>+${result.sparksEarned}</b><span>Sparks</span></div>
             <div class="stat"><b>${Math.round(result.streakBonus * 100)}%</b><span>Streak</span></div>
@@ -127,19 +140,27 @@ export function renderPlay(
 
       busy = true;
       paint();
-      // re-query after paint
       const useAi = preferAi && aiOn;
-      let base = scoreLocal(answer, challenge, state.core, state.streak);
+      const local = scoreLocal(answer, challenge, state.core, state.streak);
+      let base = local;
 
       if (useAi) {
-        showToast("AI Judge is reading the room...");
-        const ai = await judgeWithAi(challenge, answer, state.core);
+        showToast("Aura Judge is reading the room…");
+        const ai = await judgeWithAi(
+          challenge,
+          answer,
+          state.core,
+          state.streak,
+        );
         if (ai) {
+          const blended = blendAiWithLocal(ai.score, local.score);
           base = {
-            score: ai.score,
+            score: blended,
             verdict: ai.verdict,
-            tags: ai.tags,
+            tags: ai.tags.length ? ai.tags : local.tags,
             source: "ai",
+            breakdown: ai.breakdown ?? local.breakdown,
+            grade: gradeFromScore(blended),
           };
         } else {
           showToast("AI unavailable — local judge stepped in.");
@@ -160,4 +181,17 @@ export function renderPlay(
   };
 
   paint();
+}
+
+function breakdownRow(label: string, value: number): string {
+  const pct = Math.max(0, Math.min(100, Math.round((value / 25) * 100)));
+  return `
+    <div class="judge-axis">
+      <div class="judge-axis-meta">
+        <span>${escapeHtml(label)}</span>
+        <span>${value}/25</span>
+      </div>
+      <div class="judge-axis-bar"><i style="width:${pct}%"></i></div>
+    </div>
+  `;
 }
