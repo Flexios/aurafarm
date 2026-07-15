@@ -114,6 +114,69 @@ export async function adminDeleteUser(username: string): Promise<AdminResult> {
   return { ok: true, message: `Deleted @${uname}.` };
 }
 
+export interface AdminReportRow {
+  id: string;
+  reporterId: string;
+  reportedId: string;
+  duelId: string | null;
+  reason: string;
+  details: string;
+  status: string;
+  adminNote: string | null;
+  createdAt: string;
+  reporterUsername: string;
+  reportedUsername: string;
+  challengeTitle: string | null;
+  player1Answer: string | null;
+  player2Answer: string | null;
+}
+
+export async function adminListReports(): Promise<AdminReportRow[]> {
+  if (!isCurrentUserAdmin() || !isSupabaseConfigured()) return [];
+  const { data, error } = await getSupabase().rpc("admin_list_reports");
+  if (error) {
+    console.warn("admin_list_reports", error.message);
+    return [];
+  }
+  if (!Array.isArray(data)) return [];
+  return data.map((r) => {
+    const row = r as Record<string, unknown>;
+    return {
+      id: String(row.id ?? ""),
+      reporterId: String(row.reporter_id ?? ""),
+      reportedId: String(row.reported_id ?? ""),
+      duelId: row.duel_id ? String(row.duel_id) : null,
+      reason: String(row.reason ?? ""),
+      details: String(row.details ?? ""),
+      status: String(row.status ?? "open"),
+      adminNote: (row.admin_note as string | null) ?? null,
+      createdAt: String(row.created_at ?? ""),
+      reporterUsername: String(row.reporter_username ?? ""),
+      reportedUsername: String(row.reported_username ?? ""),
+      challengeTitle: (row.challenge_title as string | null) ?? null,
+      player1Answer: (row.player1_answer as string | null) ?? null,
+      player2Answer: (row.player2_answer as string | null) ?? null,
+    };
+  });
+}
+
+export async function adminResolveReport(
+  id: string,
+  status: "open" | "reviewed" | "dismissed" | "actioned",
+  adminNote = "",
+): Promise<AdminResult> {
+  const gate = requireAdminClient();
+  if (gate) return gate;
+  const { data, error } = await getSupabase().rpc("admin_resolve_report", {
+    p_id: id,
+    p_status: status,
+    p_admin_note: adminNote.trim().slice(0, 300),
+  });
+  const parsed = parseRpcResult(data, error);
+  if (!parsed.ok) return parsed;
+  return { ok: true, message: `Report marked ${status}.` };
+}
+
 export async function adminAdjustCurrency(
   username: string,
   sparksDelta: number,

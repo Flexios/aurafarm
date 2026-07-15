@@ -1,8 +1,11 @@
 import {
   adminAdjustCurrency,
   adminDeleteUser,
+  adminListReports,
   adminListUsers,
+  adminResolveReport,
   adminSetBan,
+  type AdminReportRow,
   type AdminUserRow,
 } from "../admin/api";
 import { isCurrentUserAdmin } from "../admin/gate";
@@ -29,9 +32,11 @@ export function renderAdmin(
     return;
   }
 
-  let tab: "tools" | "users" = "tools";
+  let tab: "tools" | "users" | "reports" = "tools";
   let users: AdminUserRow[] = [];
+  let reports: AdminReportRow[] = [];
   let loadingUsers = false;
+  let loadingReports = false;
   let busy = false;
   let error = "";
   let success = "";
@@ -39,15 +44,18 @@ export function renderAdmin(
   let deleteTarget: string | null = null;
   let deleteConfirm = "";
   let userSearch = "";
+  let reportFilter: "open" | "all" = "open";
+  let expandedReportId: string | null = null;
 
   const paint = () => {
     container.innerHTML = `
       <p class="muted" style="margin:0 0 12px;font-size:0.88rem">
-        Owner tools for <strong>@admin</strong>. Server actions require <code>supabase/admin.sql</code>.
+        Owner tools for <strong>@admin</strong>. Server actions require <code>supabase/admin.sql</code> and <code>supabase/reports.sql</code>.
       </p>
       <div class="segmented">
         <button type="button" data-tab="tools" class="${tab === "tools" ? "active" : ""}">Tools</button>
         <button type="button" data-tab="users" class="${tab === "users" ? "active" : ""}">Users</button>
+        <button type="button" data-tab="reports" class="${tab === "reports" ? "active" : ""}">Reports</button>
       </div>
       ${
         error
@@ -84,17 +92,19 @@ export function renderAdmin(
 
     container.querySelectorAll<HTMLButtonElement>("[data-tab]").forEach((btn) => {
       btn.addEventListener("click", () => {
-        tab = btn.dataset.tab as "tools" | "users";
+        tab = btn.dataset.tab as "tools" | "users" | "reports";
         error = "";
         success = "";
         paint();
         if (tab === "users") void loadUsers();
+        if (tab === "reports") void loadReports();
       });
     });
 
     const body = container.querySelector("#admin-body")!;
     if (tab === "tools") paintTools(body);
-    else paintUsers(body);
+    else if (tab === "users") paintUsers(body);
+    else paintReports(body);
 
     container.querySelector("#admin-del-cancel")?.addEventListener("click", () => {
       deleteTarget = null;
@@ -391,6 +401,209 @@ export function renderAdmin(
     paint();
     users = await adminListUsers();
     loadingUsers = false;
+    paint();
+  };
+
+  const reasonLabel = (reason: string) => {
+    const map: Record<string, string> = {
+      spam: "Spam",
+      harassment: "Harassment",
+      inappropriate: "Inappropriate",
+      cheating: "Cheating",
+      other: "Other",
+    };
+    return map[reason] ?? reason;
+  };
+
+  const statusLabel = (status: string) => {
+    const map: Record<string, string> = {
+      open: "Open",
+      reviewed: "Reviewed",
+      dismissed: "Dismissed",
+      actioned: "Actioned",
+    };
+    return map[status] ?? status;
+  };
+
+  const paintReports = (body: Element) => {
+    if (loadingReports) {
+      body.innerHTML = `<p class="muted">Loading reports…</p>`;
+      return;
+    }
+
+    const openCount = reports.filter((r) => r.status === "open").length;
+    const filtered =
+      reportFilter === "open" ? reports.filter((r) => r.status === "open") : reports;
+
+    body.innerHTML = `
+      <div class="card stack" style="margin-bottom:12px">
+        <p class="muted" style="margin:0">
+          Player reports from online duels. Open: <strong>${openCount}</strong> · Total loaded: <strong>${reports.length}</strong>
+        </p>
+        <div class="segmented">
+          <button type="button" data-report-filter="open" class="${reportFilter === "open" ? "active" : ""}">Open</button>
+          <button type="button" data-report-filter="all" class="${reportFilter === "all" ? "active" : ""}">All</button>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" id="reload-reports" ${busy ? "disabled" : ""}>Refresh</button>
+      </div>
+      <div class="section-header">Reports</div>
+      ${
+        reports.length === 0
+          ? `<div class="card"><p class="muted" style="margin:0">No reports yet. Ensure <code>supabase/reports.sql</code> is applied, or players haven't reported anyone.</p></div>`
+          : filtered.length === 0
+            ? `<div class="card"><p class="muted" style="margin:0">No open reports.</p></div>`
+            : `<div class="inset-group">${filtered
+                .map((r) => {
+                  const expanded = expandedReportId === r.id;
+                  const when = r.createdAt
+                    ? new Date(r.createdAt).toLocaleString()
+                    : "—";
+                  return `
+              <div class="list-row admin-report-row" style="flex-direction:column;align-items:stretch;gap:8px">
+                <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">
+                  <div class="meta">
+                    <strong>@${escapeHtml(r.reportedUsername)} · ${escapeHtml(reasonLabel(r.reason))}</strong>
+                    <span>by @${escapeHtml(r.reporterUsername)} · ${escapeHtml(statusLabel(r.status))} · ${escapeHtml(when)}</span>
+                    ${
+                      r.details
+                        ? `<span style="font-size:0.85rem">${escapeHtml(r.details)}</span>`
+                        : ""
+                    }
+                    ${
+                      r.challengeTitle
+                        ? `<span class="muted" style="font-size:0.8rem">Duel: ${escapeHtml(r.challengeTitle)}</span>`
+                        : ""
+                    }
+                  </div>
+                  <div class="friend-actions">
+                    <button type="button" class="btn btn-secondary btn-sm" data-expand-report="${escapeHtml(r.id)}">
+                      ${expanded ? "Hide" : "Details"}
+                    </button>
+                  </div>
+                </div>
+                ${
+                  expanded
+                    ? `<div class="card stack" style="margin:0;background:var(--bg-elevated, transparent)">
+                  ${
+                    r.player1Answer != null || r.player2Answer != null
+                      ? `<div class="battle-answers">
+                    <div class="battle-answer-card">
+                      <div class="battle-answer-label">Player 1 answer</div>
+                      <p class="battle-answer-body">${escapeHtml(r.player1Answer || "—")}</p>
+                    </div>
+                    <div class="battle-answer-card">
+                      <div class="battle-answer-label">Player 2 answer</div>
+                      <p class="battle-answer-body">${escapeHtml(r.player2Answer || "—")}</p>
+                    </div>
+                  </div>`
+                      : `<p class="muted" style="margin:0;font-size:0.88rem">No duel answers attached.</p>`
+                  }
+                  ${
+                    r.adminNote
+                      ? `<p class="muted" style="margin:0;font-size:0.88rem">Note: ${escapeHtml(r.adminNote)}</p>`
+                      : ""
+                  }
+                  <div class="field">
+                    <label for="note-${escapeHtml(r.id)}">Admin note</label>
+                    <input id="note-${escapeHtml(r.id)}" maxlength="300" placeholder="Optional note…" value="${escapeHtml(r.adminNote ?? "")}" />
+                  </div>
+                  <div class="btn-row" style="flex-wrap:wrap">
+                    ${
+                      r.status !== "open"
+                        ? `<button type="button" class="btn btn-secondary btn-sm" data-resolve="${escapeHtml(r.id)}" data-status="open" ${busy ? "disabled" : ""}>Reopen</button>`
+                        : ""
+                    }
+                    <button type="button" class="btn btn-secondary btn-sm" data-resolve="${escapeHtml(r.id)}" data-status="reviewed" ${busy ? "disabled" : ""}>Mark reviewed</button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-resolve="${escapeHtml(r.id)}" data-status="dismissed" ${busy ? "disabled" : ""}>Dismiss</button>
+                    <button type="button" class="btn btn-fill btn-sm" data-resolve="${escapeHtml(r.id)}" data-status="actioned" ${busy ? "disabled" : ""}>Actioned</button>
+                    ${
+                      r.reportedUsername.toLowerCase() !== "admin"
+                        ? `<button type="button" class="btn btn-danger btn-sm" data-report-ban="${escapeHtml(r.reportedUsername)}" ${busy ? "disabled" : ""}>Ban @${escapeHtml(r.reportedUsername)}</button>`
+                        : ""
+                    }
+                  </div>
+                </div>`
+                    : ""
+                }
+              </div>`;
+                })
+                .join("")}</div>`
+      }
+    `;
+
+    body.querySelectorAll<HTMLButtonElement>("[data-report-filter]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        reportFilter = btn.dataset.reportFilter as "open" | "all";
+        paint();
+      });
+    });
+
+    body.querySelector("#reload-reports")?.addEventListener("click", () => void loadReports());
+
+    body.querySelectorAll<HTMLButtonElement>("[data-expand-report]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.expandReport!;
+        expandedReportId = expandedReportId === id ? null : id;
+        paint();
+      });
+    });
+
+    body.querySelectorAll<HTMLButtonElement>("[data-resolve]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = btn.dataset.resolve!;
+        const status = btn.dataset.status as "open" | "reviewed" | "dismissed" | "actioned";
+        const noteEl = body.querySelector(`#note-${id}`) as HTMLInputElement | null;
+        const note = noteEl?.value ?? "";
+        busy = true;
+        error = "";
+        success = "";
+        paint();
+        const res = await adminResolveReport(id, status, note);
+        busy = false;
+        if (!res.ok) {
+          error = res.error;
+          success = "";
+          showToast(res.error);
+          paint();
+          return;
+        }
+        success = res.message ?? "Updated.";
+        error = "";
+        showToast(success);
+        void loadReports();
+      });
+    });
+
+    body.querySelectorAll<HTMLButtonElement>("[data-report-ban]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const username = btn.dataset.reportBan!;
+        const reason = window.prompt("Ban reason (optional):") ?? "";
+        busy = true;
+        error = "";
+        success = "";
+        paint();
+        const res = await adminSetBan(username, true, reason || "Reported by player");
+        busy = false;
+        if (!res.ok) {
+          error = res.error;
+          success = "";
+          showToast(res.error);
+          paint();
+          return;
+        }
+        success = res.message ?? "Banned.";
+        error = "";
+        showToast(success);
+        paint();
+      });
+    });
+  };
+
+  const loadReports = async () => {
+    loadingReports = true;
+    paint();
+    reports = await adminListReports();
+    loadingReports = false;
     paint();
   };
 

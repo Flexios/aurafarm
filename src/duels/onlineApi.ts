@@ -152,3 +152,36 @@ export async function completeOnlineDuel(
   if (!obj?.ok) return { ok: false, error: String(obj?.error ?? "Failed") };
   return { ok: true };
 }
+
+export type ReportReason =
+  | "spam"
+  | "harassment"
+  | "inappropriate"
+  | "cheating"
+  | "other";
+
+export async function reportUser(opts: {
+  reportedUsername: string;
+  reason: ReportReason;
+  details?: string;
+  duelId?: string | null;
+}): Promise<SimpleOk> {
+  if (!isSupabaseConfigured()) return { ok: false, error: "Cloud not configured." };
+  const { data, error } = await getSupabase().rpc("report_user", {
+    p_reported_username: opts.reportedUsername.trim(),
+    p_reason: opts.reason,
+    p_details: (opts.details ?? "").trim().slice(0, 500),
+    p_duel_id: opts.duelId || null,
+  });
+  if (error) {
+    return {
+      ok: false,
+      error: error.message.includes("function")
+        ? "Reports not set up. Run supabase/reports.sql."
+        : error.message,
+    };
+  }
+  const obj = data as Record<string, unknown>;
+  if (!obj?.ok) return { ok: false, error: String(obj?.error ?? "Failed") };
+  return { ok: true };
+}

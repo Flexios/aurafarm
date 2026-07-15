@@ -16,8 +16,10 @@ import {
   completeOnlineDuel,
   findOnlineDuel,
   listMyOnlineDuels,
+  reportUser,
   submitOnlineDuelAnswer,
   type OnlineDuel,
+  type ReportReason,
 } from "../duels/onlineApi";
 import {
   createFriendBattle,
@@ -63,6 +65,8 @@ export function renderDuel(
   let onlineSearching = false;
   let onlineLoading = false;
   let onlineAnswerId: string | null = null;
+  let onlineResultId: string | null = null;
+  let reportDuelId: string | null = null;
   let pollTimer: ReturnType<typeof setInterval> | null = null;
   const me = getCachedSession();
   const myId = me?.userId ?? "";
@@ -203,6 +207,8 @@ export function renderDuel(
         challengeFriend = null;
         replyBattleId = null;
         onlineAnswerId = null;
+        onlineResultId = null;
+        reportDuelId = null;
         if (tab !== "online") stopPoll();
         paint();
         if (tab === "friends") void loadFriends();
@@ -224,6 +230,16 @@ export function renderDuel(
 
     if (onlineAnswerId) {
       paintOnlineAnswer(body);
+      return;
+    }
+
+    if (reportDuelId) {
+      paintOnlineReport(body);
+      return;
+    }
+
+    if (onlineResultId) {
+      paintOnlineResult(body);
       return;
     }
 
@@ -298,6 +314,7 @@ export function renderDuel(
                   <strong>${escapeHtml(d.challengeTitle)}</strong>
                   <span>vs @${escapeHtml(opp)} · ${escapeHtml(result)} · ${myScore ?? "—"}–${theirScore ?? "—"}</span>
                 </div>
+                <button type="button" class="btn btn-secondary btn-sm" data-online-view="${escapeHtml(d.id)}">View</button>
               </div>`;
               })
               .join("")}</div>`
@@ -345,6 +362,131 @@ export function renderDuel(
         onlineAnswerId = btn.dataset.onlineAns!;
         paint();
       });
+    });
+
+    body.querySelectorAll<HTMLButtonElement>("[data-online-view]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        onlineResultId = btn.dataset.onlineView!;
+        paint();
+      });
+    });
+  };
+
+  const paintOnlineResult = (body: Element) => {
+    const d = onlineDuels.find((x) => x.id === onlineResultId && x.status === "complete");
+    if (!d) {
+      onlineResultId = null;
+      paint();
+      return;
+    }
+    const iAmP1 = d.player1Id === myId;
+    const opp = iAmP1 ? d.player2Username : d.player1Username;
+    const myAnswer = iAmP1 ? d.player1Answer : d.player2Answer;
+    const theirAnswer = iAmP1 ? d.player2Answer : d.player1Answer;
+    const myScore = iAmP1 ? d.player1Score : d.player2Score;
+    const theirScore = iAmP1 ? d.player2Score : d.player1Score;
+    let outcome = "Tie";
+    if (myScore != null && theirScore != null) {
+      if (myScore > theirScore) outcome = "You won";
+      else if (myScore < theirScore) outcome = "They won";
+    }
+
+    body.innerHTML = `
+      <button type="button" class="btn btn-plain" id="online-back">← Back</button>
+      <div class="section-header">Online result</div>
+      <div class="card stack">
+        <p style="margin:0;font-weight:600;font-size:1.05rem">${escapeHtml(outcome)}</p>
+        <p class="muted" style="margin:0"><strong>${escapeHtml(d.challengeTitle)}</strong></p>
+        <p class="muted" style="margin:0">${escapeHtml(d.challengePrompt)}</p>
+        <div class="battle-answers">
+          <div class="battle-answer-card mine">
+            <div class="battle-answer-label">You · ${myScore ?? "—"} pts</div>
+            <p class="battle-answer-body">${escapeHtml(myAnswer || "—")}</p>
+          </div>
+          <div class="battle-answer-card theirs">
+            <div class="battle-answer-label">@${escapeHtml(opp)} · ${theirScore ?? "—"} pts</div>
+            <p class="battle-answer-body">${escapeHtml(theirAnswer || "—")}</p>
+          </div>
+        </div>
+        <button type="button" class="btn btn-secondary" id="online-report" ${busy ? "disabled" : ""}>
+          Report @${escapeHtml(opp)}
+        </button>
+      </div>
+    `;
+
+    body.querySelector("#online-back")?.addEventListener("click", () => {
+      onlineResultId = null;
+      paint();
+    });
+    body.querySelector("#online-report")?.addEventListener("click", () => {
+      reportDuelId = d.id;
+      onlineResultId = null;
+      paint();
+    });
+  };
+
+  const paintOnlineReport = (body: Element) => {
+    const d = onlineDuels.find((x) => x.id === reportDuelId);
+    if (!d) {
+      reportDuelId = null;
+      paint();
+      return;
+    }
+    const iAmP1 = d.player1Id === myId;
+    const opp = iAmP1 ? d.player2Username : d.player1Username;
+
+    body.innerHTML = `
+      <button type="button" class="btn btn-plain" id="online-back">← Back</button>
+      <div class="section-header">Report @${escapeHtml(opp)}</div>
+      <div class="card stack">
+        <p class="muted" style="margin:0">Reports go to the admin panel. False reports may be dismissed.</p>
+        <div class="field">
+          <label for="report-reason">Reason</label>
+          <select id="report-reason">
+            <option value="spam">Spam</option>
+            <option value="harassment">Harassment</option>
+            <option value="inappropriate">Inappropriate content</option>
+            <option value="cheating">Cheating / exploit</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="report-details">Details (optional)</label>
+          <textarea id="report-details" maxlength="500" rows="3" placeholder="What happened?"></textarea>
+        </div>
+        <button type="button" class="btn btn-danger" id="report-send" ${busy ? "disabled" : ""}>Submit report</button>
+      </div>
+    `;
+
+    body.querySelector("#online-back")?.addEventListener("click", () => {
+      reportDuelId = null;
+      onlineResultId = d.id;
+      paint();
+    });
+    body.querySelector("#report-send")?.addEventListener("click", async () => {
+      const reason = (body.querySelector("#report-reason") as HTMLSelectElement)
+        .value as ReportReason;
+      const details = (body.querySelector("#report-details") as HTMLTextAreaElement).value;
+      busy = true;
+      error = "";
+      paint();
+      const res = await reportUser({
+        reportedUsername: opp,
+        reason,
+        details,
+        duelId: d.id,
+      });
+      busy = false;
+      if (!res.ok) {
+        error = res.error;
+        reportDuelId = d.id;
+        paint();
+        return;
+      }
+      showToast("Report submitted");
+      reportDuelId = null;
+      onlineResultId = d.id;
+      paint();
     });
   };
 
