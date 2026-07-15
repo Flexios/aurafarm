@@ -1,6 +1,7 @@
 import { getCachedSession, validateDisplayName } from "../auth/auth";
 import { FREE_DEFAULTS } from "../data/cosmetics";
 import { applyExclusiveCores } from "../data/cores";
+import { isAppLang, setLang, t } from "../i18n";
 import { getSupabase, isSupabaseConfigured } from "../lib/supabase";
 import type {
   AestheticCore,
@@ -32,6 +33,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
     typeof Intl !== "undefined"
       ? Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
       : "UTC",
+  language: "en",
 };
 
 export const USERNAME_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
@@ -95,7 +97,13 @@ export function normalizeState(
     history: parsed.history ?? [],
     lastUsernameChangeAt: parsed.lastUsernameChangeAt ?? null,
     lastDisplayNameChangeAt: parsed.lastDisplayNameChangeAt ?? null,
-    settings: { ...DEFAULT_SETTINGS, ...(parsed.settings ?? {}) },
+    settings: {
+      ...DEFAULT_SETTINGS,
+      ...(parsed.settings ?? {}),
+      language: isAppLang(parsed.settings?.language)
+        ? parsed.settings!.language
+        : DEFAULT_SETTINGS.language,
+    },
     avatarUrl: parsed.avatarUrl ?? null,
     claimedFriendBattleIds: Array.isArray(parsed.claimedFriendBattleIds)
       ? parsed.claimedFriendBattleIds.map(String)
@@ -121,6 +129,9 @@ export function applySettingsToDom(settings: UserSettings): void {
   root.dataset.largeText = settings.largeText ? "1" : "0";
   root.dataset.reduceMotion = settings.reduceMotion ? "1" : "0";
   root.dataset.hideTopCurrency = settings.hideTopCurrency ? "1" : "0";
+  if (isAppLang(settings.language)) {
+    setLang(settings.language);
+  }
 }
 
 export function msUntil(lastAt: string | null, cooldownMs: number): number {
@@ -130,13 +141,13 @@ export function msUntil(lastAt: string | null, cooldownMs: number): number {
 }
 
 export function formatCooldown(ms: number): string {
-  if (ms <= 0) return "available now";
+  if (ms <= 0) return t("settings.availableNow");
   const days = Math.floor(ms / (24 * 60 * 60 * 1000));
   const hours = Math.floor((ms % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
-  if (days > 0) return `${days}d ${hours}h left`;
+  if (days > 0) return `${days}d ${hours}h`;
   const mins = Math.ceil(ms / (60 * 1000));
-  if (hours > 0) return `${hours}h ${mins % 60}m left`;
-  return `${mins}m left`;
+  if (hours > 0) return `${hours}h ${mins % 60}m`;
+  return `${mins}m`;
 }
 
 export function updateSettings(
@@ -152,6 +163,9 @@ export function updateSettings(
       typeof Intl !== "undefined"
         ? Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
         : "UTC";
+  }
+  if (isAppLang(merged.language)) {
+    setLang(merged.language);
   }
   const next: PlayerState = {
     ...state,

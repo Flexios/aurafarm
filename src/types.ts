@@ -20,6 +20,9 @@ export type Screen =
 
 export type AccentTheme = "purple" | "blue" | "pink" | "green";
 
+/** UI language — see src/i18n */
+export type AppLang = "en" | "de" | "fr" | "zh" | "es";
+
 export interface UserSettings {
   /** Prefer AI judge when available */
   preferAiJudge: boolean;
@@ -41,6 +44,8 @@ export interface UserSettings {
   streakEmailTime: string;
   /** IANA timezone, e.g. Europe/Berlin (auto-detected) */
   timezone: string;
+  /** UI language (English default) */
+  language: AppLang;
 }
 
 export type ChallengeCategory =

@@ -32,6 +32,7 @@ import {
   type FriendRow,
 } from "../friends/api";
 import { CHALLENGES } from "../data/challenges";
+import { t } from "../i18n";
 import { loadState, saveState } from "../state/store";
 import type { AestheticCore, Challenge, PlayerState } from "../types";
 import { pickDaily } from "../utils/seed";
@@ -214,12 +215,12 @@ export function renderDuel(
 
     container.innerHTML = `
       <div class="segmented">
-        <button type="button" data-tab="online" class="${tab === "online" ? "active" : ""}">Online</button>
-        <button type="button" data-tab="friends" class="${tab === "friends" ? "active" : ""}">Friends</button>
-        <button type="button" data-tab="local" class="${tab === "local" ? "active" : ""}">Local</button>
+        <button type="button" data-tab="online" class="${tab === "online" ? "active" : ""}">${t("duel.online")}</button>
+        <button type="button" data-tab="friends" class="${tab === "friends" ? "active" : ""}">${t("duel.friends")}</button>
+        <button type="button" data-tab="local" class="${tab === "local" ? "active" : ""}">${t("duel.local")}</button>
       </div>
       <p class="muted" style="margin:0 0 12px;font-size:0.88rem">
-        Online & friend wins count toward your <strong>${state.duelWins}</strong> duel total.
+        ${t("duel.winsLine", { n: state.duelWins })}
       </p>
       ${error ? `<p class="danger-text" style="margin:0 0 12px">${escapeHtml(error)}</p>` : ""}
       <div id="duel-body"></div>
@@ -274,43 +275,40 @@ export function renderDuel(
 
     body.innerHTML = `
       <div class="card stack">
-        <p class="muted" style="margin:0">
-          Match with a <strong>random</strong> player also looking for a duel. Same prompt — both answer async, higher score wins.
-        </p>
+        <p class="muted" style="margin:0">${t("duel.onlineBlurb")}</p>
         <p class="muted" style="margin:0;font-size:0.88rem">
-          Today's vibe: <strong>${escapeHtml(challenge.emoji)} ${escapeHtml(challenge.title)}</strong>
+          ${t("duel.todaysVibe", { emoji: challenge.emoji, title: challenge.title })}
         </p>
         ${
           onlineSearching
-            ? `<p class="success-text" style="margin:0">Searching for an opponent… stay on this tab.</p>
-               <button type="button" class="btn btn-secondary" id="cancel-queue" ${busy ? "disabled" : ""}>Cancel search</button>`
-            : `<button type="button" class="btn btn-fill" id="find-match" ${busy ? "disabled" : ""}>Find random opponent</button>`
+            ? `<p class="success-text" style="margin:0">${t("duel.searching")}</p>
+               <button type="button" class="btn btn-secondary" id="cancel-queue" ${busy ? "disabled" : ""}>${t("duel.cancelSearch")}</button>`
+            : `<button type="button" class="btn btn-fill" id="find-match" ${busy ? "disabled" : ""}>${t("duel.find")}</button>`
         }
       </div>
 
-      <div class="section-header">Active online duels</div>
+      <div class="section-header">${t("duel.active")}</div>
       ${
         open.length === 0
-          ? `<div class="card"><p class="muted" style="margin:0">No open online matches.</p></div>`
+          ? `<div class="card"><p class="muted" style="margin:0">${t("duel.noOpen")}</p></div>`
           : `<div class="inset-group">${open
               .map((d) => {
                 const iAmP1 = d.player1Id === myId;
                 const opp = iAmP1 ? d.player2Username : d.player1Username;
                 const myAns = iAmP1 ? d.player1Answer : d.player2Answer;
-                const theirAns = iAmP1 ? d.player2Answer : d.player1Answer;
-                let status = "your turn";
-                if (myAns && !theirAns) status = "waiting on them";
-                else if (!myAns && theirAns) status = "your turn";
-                else if (myAns && theirAns) status = "scoring…";
+                let status = t("duel.yourTurn");
+                if (myAns && !(iAmP1 ? d.player2Answer : d.player1Answer)) status = t("duel.waiting");
+                else if (!myAns && (iAmP1 ? d.player2Answer : d.player1Answer)) status = t("duel.yourTurn");
+                else if (myAns && (iAmP1 ? d.player2Answer : d.player1Answer)) status = t("duel.scoring");
                 return `
               <div class="list-row">
                 <div class="meta">
                   <strong>${escapeHtml(d.challengeTitle)}</strong>
-                  <span>vs @${escapeHtml(opp)} · ${escapeHtml(status)}</span>
+                  <span>${t("duel.vs", { user: opp })} · ${escapeHtml(status)}</span>
                 </div>
                 ${
                   !myAns
-                    ? `<button type="button" class="btn btn-fill btn-sm" data-online-ans="${escapeHtml(d.id)}">Answer</button>`
+                    ? `<button type="button" class="btn btn-fill btn-sm" data-online-ans="${escapeHtml(d.id)}">${t("duel.answer")}</button>`
                     : ""
                 }
               </div>`;
@@ -318,28 +316,28 @@ export function renderDuel(
               .join("")}</div>`
       }
 
-      <div class="section-header">Recent online results</div>
+      <div class="section-header">${t("duel.recent")}</div>
       ${
         done.length === 0
-          ? `<div class="card"><p class="muted" style="margin:0">No completed online duels yet.</p></div>`
+          ? `<div class="card"><p class="muted" style="margin:0">${t("duel.noRecent")}</p></div>`
           : `<div class="inset-group">${done
               .map((d) => {
                 const iAmP1 = d.player1Id === myId;
                 const opp = iAmP1 ? d.player2Username : d.player1Username;
                 const myScore = iAmP1 ? d.player1Score : d.player2Score;
                 const theirScore = iAmP1 ? d.player2Score : d.player1Score;
-                let result = "Tie";
+                let result = t("duel.tie");
                 if (myScore != null && theirScore != null) {
-                  if (myScore > theirScore) result = "You won";
-                  else if (myScore < theirScore) result = "They won";
+                  if (myScore > theirScore) result = t("duel.youWon");
+                  else if (myScore < theirScore) result = t("duel.theyWon");
                 }
                 return `
               <div class="list-row">
                 <div class="meta">
                   <strong>${escapeHtml(d.challengeTitle)}</strong>
-                  <span>vs @${escapeHtml(opp)} · ${escapeHtml(result)} · ${myScore ?? "—"}–${theirScore ?? "—"}</span>
+                  <span>${t("duel.vs", { user: opp })} · ${escapeHtml(result)} · ${myScore ?? "—"}–${theirScore ?? "—"}</span>
                 </div>
-                <button type="button" class="btn btn-secondary btn-sm" data-online-view="${escapeHtml(d.id)}">View</button>
+                <button type="button" class="btn btn-secondary btn-sm" data-online-view="${escapeHtml(d.id)}">${t("duel.view")}</button>
               </div>`;
               })
               .join("")}</div>`
@@ -410,22 +408,22 @@ export function renderDuel(
     const theirAnswer = iAmP1 ? d.player2Answer : d.player1Answer;
     const myScore = iAmP1 ? d.player1Score : d.player2Score;
     const theirScore = iAmP1 ? d.player2Score : d.player1Score;
-    let outcome = "Tie";
+    let outcome = t("duel.tie");
     if (myScore != null && theirScore != null) {
-      if (myScore > theirScore) outcome = "You won";
-      else if (myScore < theirScore) outcome = "They won";
+      if (myScore > theirScore) outcome = t("duel.youWon");
+      else if (myScore < theirScore) outcome = t("duel.theyWon");
     }
 
     body.innerHTML = `
-      <button type="button" class="btn btn-plain" id="online-back">← Back</button>
-      <div class="section-header">Online result</div>
+      <button type="button" class="btn btn-plain" id="online-back">${t("duel.back")}</button>
+      <div class="section-header">${t("duel.result")}</div>
       <div class="card stack">
         <p style="margin:0;font-weight:600;font-size:1.05rem">${escapeHtml(outcome)}</p>
         <p class="muted" style="margin:0"><strong>${escapeHtml(d.challengeTitle)}</strong></p>
         <p class="muted" style="margin:0">${escapeHtml(d.challengePrompt)}</p>
         <div class="battle-answers">
           <div class="battle-answer-card mine">
-            <div class="battle-answer-label">You · ${myScore ?? "—"} pts</div>
+            <div class="battle-answer-label">${t("common.you")} · ${myScore ?? "—"} pts</div>
             <p class="battle-answer-body">${escapeHtml(myAnswer || "—")}</p>
           </div>
           <div class="battle-answer-card theirs">
@@ -434,7 +432,7 @@ export function renderDuel(
           </div>
         </div>
         <button type="button" class="btn btn-secondary" id="online-report" ${busy ? "disabled" : ""}>
-          Report @${escapeHtml(opp)}
+          ${t("duel.report", { user: opp })}
         </button>
       </div>
     `;
@@ -461,25 +459,25 @@ export function renderDuel(
     const opp = iAmP1 ? d.player2Username : d.player1Username;
 
     body.innerHTML = `
-      <button type="button" class="btn btn-plain" id="online-back">← Back</button>
-      <div class="section-header">Report @${escapeHtml(opp)}</div>
+      <button type="button" class="btn btn-plain" id="online-back">${t("duel.back")}</button>
+      <div class="section-header">${t("duel.reportTitle", { user: opp })}</div>
       <div class="card stack">
-        <p class="muted" style="margin:0">Reports go to the admin panel. False reports may be dismissed.</p>
+        <p class="muted" style="margin:0">${t("duel.reportBlurb")}</p>
         <div class="field">
-          <label for="report-reason">Reason</label>
+          <label for="report-reason">${t("duel.reason")}</label>
           <select id="report-reason">
             <option value="spam">Spam</option>
             <option value="harassment">Harassment</option>
-            <option value="inappropriate">Inappropriate content</option>
-            <option value="cheating">Cheating / exploit</option>
+            <option value="inappropriate">Inappropriate</option>
+            <option value="cheating">Cheating</option>
             <option value="other">Other</option>
           </select>
         </div>
         <div class="field">
-          <label for="report-details">Details (optional)</label>
-          <textarea id="report-details" maxlength="500" rows="3" placeholder="What happened?"></textarea>
+          <label for="report-details">${t("duel.details")}</label>
+          <textarea id="report-details" maxlength="500" rows="3"></textarea>
         </div>
-        <button type="button" class="btn btn-danger" id="report-send" ${busy ? "disabled" : ""}>Submit report</button>
+        <button type="button" class="btn btn-danger" id="report-send" ${busy ? "disabled" : ""}>${t("duel.submitReport")}</button>
       </div>
     `;
 

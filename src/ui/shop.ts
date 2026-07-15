@@ -6,24 +6,28 @@ import {
   equipCosmetic,
   unlockBattlePassPremium,
 } from "../game/economy";
+import { t } from "../i18n";
 import type { CosmeticSlot, PlayerState } from "../types";
 import { escapeHtml } from "../utils/format";
 import { icon, type IconName } from "./icons";
 import { showToast } from "./toast";
 
-const SLOT_META: Record<CosmeticSlot, { label: string; ico: IconName }> = {
-  frame: { label: "Frames", ico: "frame" },
-  aura: { label: "Auras", ico: "aura" },
-  nameplate: { label: "Nameplates", ico: "nameplate" },
-  background: { label: "Backgrounds", ico: "background" },
-};
+function slotMeta(slot: CosmeticSlot): { label: string; ico: IconName } {
+  const map: Record<CosmeticSlot, { label: string; ico: IconName }> = {
+    frame: { label: t("shop.frames"), ico: "frame" },
+    aura: { label: t("shop.auras"), ico: "aura" },
+    nameplate: { label: t("shop.nameplates"), ico: "nameplate" },
+    background: { label: t("shop.backgrounds"), ico: "background" },
+  };
+  return map[slot];
+}
 
 function priceHtml(item: {
   free?: boolean;
   priceSparks: number;
   priceGlow: number;
 }): string {
-  if (item.free) return `<span class="price-line muted">Free starter</span>`;
+  if (item.free) return `<span class="price-line muted">${t("shop.free")}</span>`;
   const parts: string[] = [];
   if (item.priceSparks > 0) {
     parts.push(
@@ -48,9 +52,9 @@ export function renderShop(
   const paint = () => {
     container.innerHTML = `
       <div class="segmented">
-        <button type="button" data-tab="cosmetics" class="${tab === "cosmetics" ? "active" : ""}">${icon("shop", "icon icon-sm")} Cosmetics</button>
-        <button type="button" data-tab="glow" class="${tab === "glow" ? "active" : ""}">${icon("glow", "icon icon-sm")} Glow</button>
-        <button type="button" data-tab="pass" class="${tab === "pass" ? "active" : ""}">${icon("pass", "icon icon-sm")} Pass</button>
+        <button type="button" data-tab="cosmetics" class="${tab === "cosmetics" ? "active" : ""}">${icon("shop", "icon icon-sm")} ${t("shop.cosmetics")}</button>
+        <button type="button" data-tab="glow" class="${tab === "glow" ? "active" : ""}">${icon("glow", "icon icon-sm")} ${t("shop.glow")}</button>
+        <button type="button" data-tab="pass" class="${tab === "pass" ? "active" : ""}">${icon("pass", "icon icon-sm")} ${t("shop.pass")}</button>
       </div>
       <div id="shop-body"></div>
     `;
@@ -72,7 +76,7 @@ export function renderShop(
     const slots = ["frame", "aura", "nameplate", "background"] as const;
     body.innerHTML = slots
       .map((slot) => {
-        const meta = SLOT_META[slot];
+        const meta = slotMeta(slot);
         const items = COSMETICS.filter((c) => c.slot === slot);
         return `
           <div class="section-title">

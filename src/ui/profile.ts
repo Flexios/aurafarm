@@ -30,6 +30,7 @@ import {
   type ProfileSearchHit,
   type PublicProfile,
 } from "../profile/api";
+import { t } from "../i18n";
 import type { AestheticCore, PlayerState } from "../types";
 import { escapeHtml, formatNumber } from "../utils/format";
 import { showToast } from "./toast";
@@ -100,9 +101,9 @@ export function renderProfile(
   const paint = () => {
     container.innerHTML = `
       <div class="segmented">
-        <button type="button" data-tab="me" class="${tab === "me" ? "active" : ""}">My Profile</button>
-        <button type="button" data-tab="friends" class="${tab === "friends" ? "active" : ""}">Friends${incoming.length ? ` (${incoming.length})` : ""}</button>
-        <button type="button" data-tab="lookup" class="${tab === "lookup" ? "active" : ""}">Lookup</button>
+        <button type="button" data-tab="me" class="${tab === "me" ? "active" : ""}">${t("profile.me")}</button>
+        <button type="button" data-tab="friends" class="${tab === "friends" ? "active" : ""}">${t("profile.friends")}${incoming.length ? ` (${incoming.length})` : ""}</button>
+        <button type="button" data-tab="lookup" class="${tab === "lookup" ? "active" : ""}">${t("profile.lookup")}</button>
       </div>
       <div id="profile-body"></div>
     `;
@@ -152,8 +153,8 @@ export function renderProfile(
           ? `${Math.round((wins / matches) * 100)}%`
           : "—";
     const accountStatus = stats?.banned
-      ? `Banned${stats.banReason ? ` · ${stats.banReason}` : ""}`
-      : "Good standing";
+      ? `${t("profile.banned")}${stats.banReason ? ` · ${stats.banReason}` : ""}`
+      : t("profile.goodStanding");
 
     body.innerHTML = `
       ${banner()}
@@ -174,94 +175,94 @@ export function renderProfile(
               <span class="tag magenta">${aesthetic.emoji} ${escapeHtml(aesthetic.label)}</span>
               ${
                 stats?.banned
-                  ? `<span class="tag" style="background:rgba(255,80,80,0.18);color:var(--danger, #ff6b6b)">Banned</span>`
-                  : `<span class="tag">Active</span>`
+                  ? `<span class="tag" style="background:rgba(255,80,80,0.18);color:var(--danger, #ff6b6b)">${t("profile.banned")}</span>`
+                  : `<span class="tag">${t("profile.active")}</span>`
               }
             </div>
           </div>
         </div>
         <div class="stat-grid" style="margin-top:16px">
-          <div class="stat"><b>${formatNumber(state.totalAura)}</b><span>Aura</span></div>
-          <div class="stat"><b>🔥 ${state.streak}</b><span>Streak</span></div>
-          <div class="stat"><b>${state.duelWins}</b><span>Wins</span></div>
+          <div class="stat"><b>${formatNumber(state.totalAura)}</b><span>${t("common.aura")}</span></div>
+          <div class="stat"><b>🔥 ${state.streak}</b><span>${t("home.streak")}</span></div>
+          <div class="stat"><b>${state.duelWins}</b><span>${t("profile.wins")}</span></div>
         </div>
         ${
           ownAvatar
-            ? `<button type="button" class="btn btn-plain" id="remove-avatar" style="margin-top:8px" ${busy ? "disabled" : ""}>Remove photo</button>`
+            ? `<button type="button" class="btn btn-plain" id="remove-avatar" style="margin-top:8px" ${busy ? "disabled" : ""}>${t("profile.removePhoto")}</button>`
             : ""
         }
       </div>
 
-      <div class="section-header">Stats</div>
+      <div class="section-header">${t("profile.stats")}</div>
       <div class="card stack">
         ${
           statsLoading
-            ? `<p class="muted" style="margin:0">Loading account stats…</p>`
+            ? `<p class="muted" style="margin:0">${t("profile.statsLoading")}</p>`
             : `
         <div class="stat-grid">
-          <div class="stat"><b>${escapeHtml(joined)}</b><span>Joined</span></div>
-          <div class="stat"><b>${formatNumber(matches)}</b><span>Matches</span></div>
-          <div class="stat"><b>${escapeHtml(wr)}</b><span>Win rate</span></div>
+          <div class="stat"><b>${escapeHtml(joined)}</b><span>${t("profile.joined")}</span></div>
+          <div class="stat"><b>${formatNumber(matches)}</b><span>${t("profile.matches")}</span></div>
+          <div class="stat"><b>${escapeHtml(wr)}</b><span>${t("profile.winRate")}</span></div>
         </div>
         <div class="stat-grid">
-          <div class="stat"><b>${formatNumber(wins)}</b><span>Wins</span></div>
-          <div class="stat"><b>${formatNumber(losses)}</b><span>Losses</span></div>
-          <div class="stat"><b>${formatNumber(ties)}</b><span>Ties</span></div>
+          <div class="stat"><b>${formatNumber(wins)}</b><span>${t("profile.wins")}</span></div>
+          <div class="stat"><b>${formatNumber(losses)}</b><span>${t("profile.losses")}</span></div>
+          <div class="stat"><b>${formatNumber(ties)}</b><span>${t("profile.ties")}</span></div>
         </div>
         <div class="inset-group" style="margin:0">
           <div class="list-row">
             <div class="meta">
-              <strong>Account status</strong>
+              <strong>${t("profile.accountStatus")}</strong>
               <span class="${stats?.banned ? "danger-text" : ""}">${escapeHtml(accountStatus)}</span>
             </div>
           </div>
           <div class="list-row">
             <div class="meta">
-              <strong>Registry date</strong>
+              <strong>${t("profile.registry")}</strong>
               <span>${escapeHtml(joined)}</span>
             </div>
           </div>
           <div class="list-row">
             <div class="meta">
-              <strong>Record</strong>
+              <strong>${t("profile.record")}</strong>
               <span>${formatNumber(wins)}W – ${formatNumber(losses)}L – ${formatNumber(ties)}T</span>
             </div>
           </div>
           <div class="list-row">
             <div class="meta">
-              <strong>Best daily</strong>
+              <strong>${t("profile.bestDaily")}</strong>
               <span>${state.bestDailyScore ? formatNumber(state.bestDailyScore) : "—"}</span>
             </div>
           </div>
           <div class="list-row">
             <div class="meta">
-              <strong>Battle pass</strong>
-              <span>Lv ${state.battlePassLevel}${state.battlePassPremium ? " · Premium" : ""}</span>
+              <strong>${t("profile.battlePass")}</strong>
+              <span>Lv ${state.battlePassLevel}${state.battlePassPremium ? ` · ${t("home.premium")}` : ""}</span>
             </div>
           </div>
         </div>
-        <p class="field-hint muted" style="margin:0">Matches = completed online + friend duels. Profile wins may differ until cloud sync.</p>
+        <p class="field-hint muted" style="margin:0">${t("profile.statsHint")}</p>
         `
         }
       </div>
 
-      <div class="section-header">About</div>
+      <div class="section-header">${t("profile.about")}</div>
       <div class="card stack">
         <div class="field">
-          <label for="bio">Bio</label>
-          <textarea id="bio" maxlength="160" placeholder="A short vibe line…">${escapeHtml(ownBio)}</textarea>
-          <p class="field-hint muted">Max 160 characters. Visible on your public profile.</p>
+          <label for="bio">${t("profile.bio")}</label>
+          <textarea id="bio" maxlength="160" placeholder="…">${escapeHtml(ownBio)}</textarea>
+          <p class="field-hint muted">${t("profile.bioHint")}</p>
         </div>
-        <button class="btn btn-fill" id="save-bio" ${busy ? "disabled" : ""}>Save Bio</button>
+        <button class="btn btn-fill" id="save-bio" ${busy ? "disabled" : ""}>${t("profile.saveBio")}</button>
       </div>
 
-      <div class="section-header">Collectibles · ${state.ownedCores.length}</div>
-      ${collectiblesHtml(state.ownedCores, "Play challenges to unlock collectible cores.")}
+      <div class="section-header">${t("profile.collectibles", { n: state.ownedCores.length })}</div>
+      ${collectiblesHtml(state.ownedCores, t("home.collectionEmpty"))}
 
-      <div class="section-header">Friends</div>
+      <div class="section-header">${t("profile.friends")}</div>
       <div class="card">
-        <p class="muted" style="margin:0 0 12px">Find people in Lookup and send friend requests. Manage friends in the Friends tab.</p>
-        <button type="button" class="btn btn-secondary" id="go-friends-tab">Open Friends</button>
+        <p class="muted" style="margin:0 0 12px">${t("profile.lookup")} · ${t("profile.friends")}</p>
+        <button type="button" class="btn btn-secondary" id="go-friends-tab">${t("profile.friends")}</button>
       </div>
     `;
 

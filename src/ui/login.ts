@@ -4,6 +4,7 @@ import {
   type AuthResult,
   type Session,
 } from "../auth/auth";
+import { getLang, LANG_META, setLang, t, type AppLang } from "../i18n";
 import { getSupabaseConfigError, isSupabaseConfigured } from "../lib/supabase";
 import { escapeHtml } from "../utils/format";
 
@@ -17,11 +18,13 @@ export function renderLogin(
   const configError = getSupabaseConfigError();
 
   const paint = () => {
+    const lang = getLang();
+    const tagline = t("auth.tagline").replace(/\n/g, "<br/>");
     root.innerHTML = `
       <div class="auth-screen auth-layout">
         <div class="auth-hero">
           <div class="logo">AuraFarm</div>
-          <p class="muted auth-tagline">Farm your aura. Flex your vibe.<br/>One account for phone and PC. 13+</p>
+          <p class="muted auth-tagline">${tagline}</p>
         </div>
 
         ${
@@ -33,9 +36,19 @@ export function renderLogin(
 
         <div class="auth-panel">
           <div class="card stack">
+            <div class="field">
+              <label for="auth-lang">${t("auth.language")}</label>
+              <select id="auth-lang">
+                ${LANG_META.map(
+                  (m) =>
+                    `<option value="${m.id}" ${m.id === lang ? "selected" : ""}>${escapeHtml(m.native)} — ${escapeHtml(m.name)}</option>`,
+                ).join("")}
+              </select>
+            </div>
+
             <div class="segmented">
-              <button type="button" data-mode="login" class="${mode === "login" ? "active" : ""}">Log In</button>
-              <button type="button" data-mode="register" class="${mode === "register" ? "active" : ""}">Sign Up</button>
+              <button type="button" data-mode="login" class="${mode === "login" ? "active" : ""}">${t("auth.login")}</button>
+              <button type="button" data-mode="register" class="${mode === "register" ? "active" : ""}">${t("auth.signup")}</button>
             </div>
 
             <form id="auth-form" class="stack" autocomplete="on">
@@ -43,30 +56,30 @@ export function renderLogin(
                 mode === "register"
                   ? `
                 <div class="field">
-                  <label for="email">Email</label>
+                  <label for="email">${t("auth.email")}</label>
                   <input id="email" name="email" type="email" maxlength="120" autocomplete="email" placeholder="name@example.com" required />
                 </div>
                 <div class="field">
-                  <label for="username">Username</label>
+                  <label for="username">${t("auth.username")}</label>
                   <input id="username" name="username" maxlength="20" autocomplete="username" placeholder="vibe_curator" spellcheck="false" required />
                 </div>
               `
                   : `
                 <div class="field">
-                  <label for="identifier">Email or Username</label>
+                  <label for="identifier">${t("auth.emailOrUsername")}</label>
                   <input id="identifier" name="identifier" maxlength="120" autocomplete="username" placeholder="name@example.com" spellcheck="false" required />
                 </div>
               `
               }
               <div class="field">
-                <label for="password">Password</label>
+                <label for="password">${t("auth.password")}</label>
                 <input
                   id="password"
                   name="password"
                   type="password"
                   maxlength="72"
                   autocomplete="${mode === "register" ? "new-password" : "current-password"}"
-                  placeholder="${mode === "register" ? "At least 6 characters" : "Required"}"
+                  placeholder="${mode === "register" ? t("auth.passwordHintNew") : t("auth.passwordHint")}"
                   required
                 />
               </div>
@@ -74,7 +87,7 @@ export function renderLogin(
                 mode === "register"
                   ? `
                 <div class="field">
-                  <label for="password2">Confirm Password</label>
+                  <label for="password2">${t("auth.confirmPassword")}</label>
                   <input id="password2" name="password2" type="password" maxlength="72" autocomplete="new-password" required />
                 </div>
               `
@@ -84,17 +97,19 @@ export function renderLogin(
               ${error ? `<p class="danger-text" role="alert">${escapeHtml(error)}</p>` : ""}
 
               <button class="btn btn-fill" type="submit" ${busy || !isSupabaseConfigured() ? "disabled" : ""}>
-                ${busy ? "Please wait…" : mode === "login" ? "Continue" : "Create Account"}
+                ${busy ? t("auth.busy") : mode === "login" ? t("auth.submitLogin") : t("auth.submitSignup")}
               </button>
             </form>
-
-            <p class="muted" style="font-size:0.82rem;margin:0;text-align:center">
-              Demo economy only — no real purchases.
-            </p>
           </div>
         </div>
       </div>
     `;
+
+    root.querySelector("#auth-lang")?.addEventListener("change", (e) => {
+      const v = (e.target as HTMLSelectElement).value as AppLang;
+      setLang(v);
+      paint();
+    });
 
     root.querySelectorAll<HTMLButtonElement>("[data-mode]").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -156,7 +171,7 @@ export function renderLogin(
       } catch (err) {
         result = {
           ok: false,
-          error: err instanceof Error ? err.message : "Something went wrong.",
+          error: err instanceof Error ? err.message : t("common.error"),
         };
       }
 

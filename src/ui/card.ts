@@ -1,6 +1,7 @@
 import { aestheticById } from "../data/aesthetics";
 import { cosmeticById } from "../data/cosmetics";
 import { rankForAura } from "../data/ranks";
+import { t } from "../i18n";
 import type { PlayerState } from "../types";
 import { showToast } from "./toast";
 
@@ -268,11 +269,11 @@ export function renderCard(
         <canvas id="aura-card-canvas" width="720" height="1080" aria-label="Aura card preview"></canvas>
       </div>
       <div class="card card-actions home-panel">
-        <h2 style="margin:0">Share Card</h2>
-        <p class="muted" style="margin:8px 0 0">Export a PNG for Stories or chats. Your profile photo, rank, and cosmetics apply automatically.</p>
+        <h2 style="margin:0">${t("card.title")}</h2>
+        <p class="muted" style="margin:8px 0 0">${t("card.blurb")}</p>
         <div class="btn-row card-actions-btns">
-          <button class="btn btn-fill" id="download-card">Download PNG</button>
-          <button class="btn btn-secondary" id="redraw">Refresh</button>
+          <button class="btn btn-fill" id="download-card">${t("card.download")}</button>
+          <button class="btn btn-secondary" id="redraw">${t("card.refresh")}</button>
         </div>
       </div>
     </div>

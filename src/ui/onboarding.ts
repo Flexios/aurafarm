@@ -1,5 +1,6 @@
 import { getSession } from "../auth/auth";
 import { AESTHETICS } from "../data/aesthetics";
+import { t } from "../i18n";
 import type { AestheticCore, PlayerState } from "../types";
 import { completeOnboarding } from "../state/store";
 import { escapeHtml } from "../utils/format";
@@ -13,25 +14,28 @@ export function renderOnboarding(
   let selected: AestheticCore = state.core || "main-character";
   const session = getSession();
   const defaultName = state.displayName || session?.username || "";
+  const hi = session
+    ? t("onboard.hi", { user: session.username })
+    : t("onboard.hiGuest");
 
   root.innerHTML = `
     <div class="auth-layout onboarding">
       <div class="auth-hero">
-        <div class="logo">Welcome</div>
-        <p class="muted auth-tagline">${session ? `Hi @${escapeHtml(session.username)}.` : "Hi."}<br/>Choose how you show up in AuraFarm.</p>
+        <div class="logo">${t("onboard.welcome")}</div>
+        <p class="muted auth-tagline">${escapeHtml(hi)}<br/>${t("onboard.subtitle")}</p>
       </div>
       <div class="auth-panel">
         <div class="card stack">
           <div class="field">
-            <label for="display-name">Display Name</label>
-            <input id="display-name" maxlength="18" placeholder="Your name" value="${escapeHtml(defaultName)}" />
+            <label for="display-name">${t("onboard.displayName")}</label>
+            <input id="display-name" maxlength="18" placeholder="${t("onboard.displayPlaceholder")}" value="${escapeHtml(defaultName)}" />
           </div>
           <div>
-            <label class="muted" style="font-weight:500;font-size:0.84rem">Aesthetic Core</label>
+            <label class="muted" style="font-weight:500;font-size:0.84rem">${t("onboard.core")}</label>
             <div class="core-grid" id="core-grid" style="margin-top:10px"></div>
           </div>
-          <button class="btn btn-fill" id="start-btn">Continue</button>
-          <button class="btn btn-plain" type="button" id="logout-onboard">Use a different account</button>
+          <button class="btn btn-fill" id="start-btn">${t("onboard.continue")}</button>
+          <button class="btn btn-plain" type="button" id="logout-onboard">${t("onboard.switchAccount")}</button>
         </div>
       </div>
     </div>

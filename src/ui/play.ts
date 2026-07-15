@@ -7,6 +7,7 @@ import {
 } from "../game/economy";
 import { gradeFromScore } from "../game/judgeRubric";
 import { blendAiWithLocal, finalizeRewards, scoreLocal } from "../game/scorer";
+import { t } from "../i18n";
 import { hasPlayedDaily } from "../state/store";
 import type { Challenge, PlayerState, ScoreResult } from "../types";
 import { escapeHtml } from "../utils/format";
@@ -32,36 +33,36 @@ export function renderPlay(
       const b = result.breakdown;
       container.innerHTML = `
         <div class="card result-panel">
-          <div class="muted" style="font-weight:600;font-size:0.84rem">Aura Judge · Grade ${escapeHtml(grade)}</div>
+          <div class="muted" style="font-weight:600;font-size:0.84rem">${t("play.judgeTitle", { grade })}</div>
           <div class="hero-score">+${result.score}</div>
           <div class="verdict">${escapeHtml(result.verdict)}</div>
           <div class="tag-row" style="justify-content:center">
-            ${result.tags.map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join("")}
-            <span class="tag magenta">${result.source === "ai" ? "AI Judge" : "Local Judge"}</span>
+            ${result.tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}
+            <span class="tag magenta">${result.source === "ai" ? t("play.aiJudge") : t("play.localJudge")}</span>
           </div>
           ${
             b
               ? `<div class="judge-breakdown">
-            ${breakdownRow("Craft", b.craft)}
-            ${breakdownRow("Fit", b.fit)}
-            ${breakdownRow("Energy", b.energy)}
-            ${breakdownRow("Originality", b.originality)}
+            ${breakdownRow(t("play.axis.craft"), b.craft)}
+            ${breakdownRow(t("play.axis.fit"), b.fit)}
+            ${breakdownRow(t("play.axis.energy"), b.energy)}
+            ${breakdownRow(t("play.axis.originality"), b.originality)}
           </div>`
               : ""
           }
           <div class="stat-grid">
-            <div class="stat"><b>+${result.sparksEarned}</b><span>Sparks</span></div>
-            <div class="stat"><b>${Math.round(result.streakBonus * 100)}%</b><span>Streak</span></div>
-            <div class="stat"><b>${core ? core.emoji : "—"}</b><span>${core ? "Core" : "No drop"}</span></div>
+            <div class="stat"><b>+${result.sparksEarned}</b><span>${t("currency.sparks")}</span></div>
+            <div class="stat"><b>${Math.round(result.streakBonus * 100)}%</b><span>${t("currency.streak")}</span></div>
+            <div class="stat"><b>${core ? core.emoji : "—"}</b><span>${core ? t("play.core") : t("play.noDrop")}</span></div>
           </div>
           ${
             core
-              ? `<p class="muted" style="margin-top:12px">Unlocked <strong>${escapeHtml(core.name)}</strong> — ${escapeHtml(core.description)}</p>`
+              ? `<p class="muted" style="margin-top:12px">${t("play.unlocked", { name: core.name, desc: core.description })}</p>`
               : ""
           }
           <div class="btn-row">
-            <button class="btn btn-fill" id="again">Play Again</button>
-            <button class="btn btn-secondary" id="back-home">Home</button>
+            <button class="btn btn-fill" id="again">${t("play.again")}</button>
+            <button class="btn btn-secondary" id="back-home">${t("play.home")}</button>
           </div>
         </div>
       `;
@@ -80,31 +81,31 @@ export function renderPlay(
 
     container.innerHTML = `
       <div class="segmented play-tabs">
-        <button type="button" data-mode="daily" class="${mode === "daily" ? "active" : ""}">Daily ${dailyDone ? "✓" : ""}</button>
-        <button type="button" data-mode="practice" class="${mode === "practice" ? "active" : ""}">Practice</button>
+        <button type="button" data-mode="daily" class="${mode === "daily" ? "active" : ""}">${t("play.daily")} ${dailyDone ? "✓" : ""}</button>
+        <button type="button" data-mode="practice" class="${mode === "practice" ? "active" : ""}">${t("play.practice")}</button>
       </div>
       <div class="desktop-grid play-grid">
       <div class="card home-panel">
         <div class="challenge-emoji">${challenge.emoji}</div>
         <h2 style="margin:0 0 6px;font-size:1.25rem">${escapeHtml(challenge.title)}</h2>
         <p class="muted" style="margin:0">${escapeHtml(challenge.prompt)}</p>
-        <p class="muted" style="margin:10px 0 0;font-size:0.86rem">Hint: ${escapeHtml(challenge.hint)}</p>
+        <p class="muted" style="margin:10px 0 0;font-size:0.86rem">${t("play.hint", { hint: challenge.hint })}</p>
         ${
           mode === "daily" && dailyDone
-            ? `<p class="muted" style="margin-top:10px">Daily complete — use Practice for reduced rewards.</p>`
+            ? `<p class="muted" style="margin-top:10px">${t("play.dailyDone")}</p>`
             : ""
         }
       </div>
       <div class="card home-panel">
         <div class="field">
-          <label for="answer">Your Answer</label>
-          <textarea id="answer" maxlength="400" placeholder="Write something memorable…"></textarea>
+          <label for="answer">${t("play.yourAnswer")}</label>
+          <textarea id="answer" maxlength="400" placeholder="${t("play.placeholder")}"></textarea>
         </div>
         <label class="muted" style="display:flex;align-items:center;gap:8px;margin:12px 0;font-size:0.9rem">
           <input type="checkbox" id="use-ai" ${preferAi && aiOn ? "checked" : ""} ${aiOn ? "" : "disabled"} />
-          AI Judge ${aiOn ? "" : "(unavailable)"}
+          ${t("play.preferAi")}${aiOn ? "" : " · —"}
         </label>
-        <button class="btn btn-fill" id="submit" style="margin-top:auto" ${mode === "daily" && dailyDone ? "disabled" : ""}>${busy ? "Scoring…" : "Submit"}</button>
+        <button class="btn btn-fill" id="submit" style="margin-top:auto" ${mode === "daily" && dailyDone ? "disabled" : ""}>${busy ? t("play.judging") : t("play.submit")}</button>
       </div>
       </div>
     `;

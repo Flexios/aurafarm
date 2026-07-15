@@ -1,50 +1,51 @@
 import { isAdminUsername } from "../admin/gate";
 import { getSession } from "../auth/auth";
+import { t } from "../i18n";
 import type { PlayerState, Screen } from "../types";
 import { formatNumber } from "../utils/format";
 import { icon, type IconName } from "./icons";
 
-const NAV_DESKTOP_BASE: Array<{ id: Screen; label: string; ico: IconName }> = [
-  { id: "home", label: "Home", ico: "home" },
-  { id: "play", label: "Play", ico: "play" },
-  { id: "shop", label: "Shop", ico: "shop" },
-  { id: "card", label: "Card", ico: "card" },
-  { id: "profile", label: "Profile", ico: "person" },
-  { id: "duel", label: "Duel", ico: "duel" },
-  { id: "settings", label: "Settings", ico: "settings" },
-];
+function navDesktopBase(): Array<{ id: Screen; label: string; ico: IconName }> {
+  return [
+    { id: "home", label: t("nav.home"), ico: "home" },
+    { id: "play", label: t("nav.play"), ico: "play" },
+    { id: "shop", label: t("nav.shop"), ico: "shop" },
+    { id: "card", label: t("nav.card"), ico: "card" },
+    { id: "profile", label: t("nav.profile"), ico: "person" },
+    { id: "duel", label: t("nav.duel"), ico: "duel" },
+    { id: "settings", label: t("nav.settings"), ico: "settings" },
+  ];
+}
 
-/** Mobile bottom nav — Home sits in the center (4th of 7). */
-const NAV_MOBILE_BASE: Array<{ id: Screen; label: string; ico: IconName }> = [
-  { id: "play", label: "Play", ico: "play" },
-  { id: "shop", label: "Shop", ico: "shop" },
-  { id: "card", label: "Card", ico: "card" },
-  { id: "home", label: "Home", ico: "home" },
-  { id: "profile", label: "Profile", ico: "person" },
-  { id: "duel", label: "Duel", ico: "duel" },
-  { id: "settings", label: "Settings", ico: "settings" },
-];
+function navMobileBase(): Array<{ id: Screen; label: string; ico: IconName }> {
+  return [
+    { id: "play", label: t("nav.play"), ico: "play" },
+    { id: "shop", label: t("nav.shop"), ico: "shop" },
+    { id: "card", label: t("nav.card"), ico: "card" },
+    { id: "home", label: t("nav.home"), ico: "home" },
+    { id: "profile", label: t("nav.profile"), ico: "person" },
+    { id: "duel", label: t("nav.duel"), ico: "duel" },
+    { id: "settings", label: t("nav.settings"), ico: "settings" },
+  ];
+}
 
 function navForUser(username: string | undefined): {
   desktop: Array<{ id: Screen; label: string; ico: IconName }>;
   mobile: Array<{ id: Screen; label: string; ico: IconName }>;
 } {
+  const desktop = navDesktopBase();
+  const mobile = navMobileBase();
   const adminItem: { id: Screen; label: string; ico: IconName } = {
     id: "admin",
-    label: "Admin",
+    label: t("nav.admin"),
     ico: "admin",
   };
   if (!isAdminUsername(username)) {
-    return { desktop: NAV_DESKTOP_BASE, mobile: NAV_MOBILE_BASE };
+    return { desktop, mobile };
   }
   return {
-    desktop: [...NAV_DESKTOP_BASE, adminItem],
-    // Keep Home centered: insert Admin before Settings
-    mobile: [
-      ...NAV_MOBILE_BASE.slice(0, 6),
-      adminItem,
-      NAV_MOBILE_BASE[6]!,
-    ],
+    desktop: [...desktop, adminItem],
+    mobile: [...mobile.slice(0, 6), adminItem, mobile[6]!],
   };
 }
 
@@ -74,6 +75,9 @@ export function renderShell(
 ): void {
   const session = getSession();
   const nav = navForUser(session?.username);
+  const streak = t("currency.streak");
+  const sparks = t("currency.sparks");
+  const glow = t("currency.glow");
   root.innerHTML = `
     <div class="app-shell">
       <aside class="sidebar" aria-label="Desktop navigation">
@@ -81,7 +85,7 @@ export function renderShell(
           <div class="mark">${icon("spark")}</div>
           <div>
             <strong>AuraFarm</strong>
-            <span>Daily vibe RPG</span>
+            <span>${t("brand.tagline")}</span>
           </div>
         </div>
         <nav class="nav nav-side">
@@ -89,9 +93,9 @@ export function renderShell(
         </nav>
         <div class="sidebar-foot">
           <div class="currency-pill sidebar-currency">
-            <div class="pill streak-pill" data-tip="Streak" title="Streak" aria-label="Streak ${formatNumber(state.streak)}">🔥 ${formatNumber(state.streak)}</div>
-            <div class="pill" data-tip="Sparks" title="Sparks" aria-label="Sparks ${formatNumber(state.sparks)}">${icon("spark", "icon icon-sm")} ${formatNumber(state.sparks)}</div>
-            <div class="pill glow" data-tip="Glow" title="Glow" aria-label="Glow ${formatNumber(state.glow)}">${icon("glow", "icon icon-sm")} ${formatNumber(state.glow)}</div>
+            <div class="pill streak-pill" data-tip="${streak}" title="${streak}" aria-label="${streak} ${formatNumber(state.streak)}">🔥 ${formatNumber(state.streak)}</div>
+            <div class="pill" data-tip="${sparks}" title="${sparks}" aria-label="${sparks} ${formatNumber(state.sparks)}">${icon("spark", "icon icon-sm")} ${formatNumber(state.sparks)}</div>
+            <div class="pill glow" data-tip="${glow}" title="${glow}" aria-label="${glow} ${formatNumber(state.glow)}">${icon("glow", "icon icon-sm")} ${formatNumber(state.glow)}</div>
           </div>
           <button type="button" class="sidebar-user" data-nav="profile">
             ${
@@ -116,11 +120,11 @@ export function renderShell(
               <span class="user-line">${escape(state.displayName)}${session ? ` · @${escape(session.username)}` : ""}</span>
             </div>
             <div class="currency-pill topbar-currency">
-              <div class="pill streak-pill" data-tip="Streak" title="Streak" aria-label="Streak ${formatNumber(state.streak)}">🔥 ${formatNumber(state.streak)}</div>
+              <div class="pill streak-pill" data-tip="${streak}" title="${streak}" aria-label="${streak} ${formatNumber(state.streak)}">🔥 ${formatNumber(state.streak)}</div>
               ${
                 !state.settings.hideTopCurrency
-                  ? `<div class="pill" data-tip="Sparks" title="Sparks" aria-label="Sparks ${formatNumber(state.sparks)}">${icon("spark", "icon icon-sm")} ${formatNumber(state.sparks)}</div>
-              <div class="pill glow" data-tip="Glow" title="Glow" aria-label="Glow ${formatNumber(state.glow)}">${icon("glow", "icon icon-sm")} ${formatNumber(state.glow)}</div>`
+                  ? `<div class="pill" data-tip="${sparks}" title="${sparks}" aria-label="${sparks} ${formatNumber(state.sparks)}">${icon("spark", "icon icon-sm")} ${formatNumber(state.sparks)}</div>
+              <div class="pill glow" data-tip="${glow}" title="${glow}" aria-label="${glow} ${formatNumber(state.glow)}">${icon("glow", "icon icon-sm")} ${formatNumber(state.glow)}</div>`
                   : ""
               }
             </div>
@@ -142,14 +146,14 @@ export function renderShell(
 
 function pageTitle(screen: Screen): string {
   const map: Record<Screen, string> = {
-    home: "Home",
-    play: "Challenge",
-    shop: "Shop",
-    card: "Aura Card",
-    duel: "Duel",
-    profile: "Profile",
-    settings: "Settings",
-    admin: "Admin",
+    home: t("page.home"),
+    play: t("page.play"),
+    shop: t("page.shop"),
+    card: t("page.card"),
+    duel: t("page.duel"),
+    profile: t("page.profile"),
+    settings: t("page.settings"),
+    admin: t("page.admin"),
   };
   return map[screen];
 }

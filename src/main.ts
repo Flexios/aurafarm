@@ -7,6 +7,7 @@ import {
   restoreSession,
   type Session,
 } from "./auth/auth";
+import { getLang, initLocale, t } from "./i18n";
 import {
   applySettingsToDom,
   createDefaultState,
@@ -14,6 +15,7 @@ import {
   loadState,
   refreshStreak,
   resetState,
+  updateSettings,
 } from "./state/store";
 import type { PlayerState, Screen } from "./types";
 import { renderAdmin } from "./ui/admin";
@@ -45,6 +47,10 @@ function showBoot(message: string): void {
   `;
 }
 
+function bootMessage(key: "boot.connecting" | "boot.loading" | "boot.signingOut" | "boot.deleted"): string {
+  return t(key);
+}
+
 async function initAi(): Promise<void> {
   aiOn = await checkAiAvailable();
   if (!booting && session && state.onboarded && screen === "home") render();
@@ -71,28 +77,38 @@ function navigate(next: Screen): void {
 }
 
 async function handleLogout(): Promise<void> {
-  showBoot("Signing out…");
+  showBoot(bootMessage("boot.signingOut"));
   await flushSave();
   await logout();
   session = null;
   state = createDefaultState();
+  // Keep language preference after logout
+  state = updateSettings(state, { language: getLang() });
   screen = "home";
   render();
 }
 
 /** After permanent account deletion — do not flush cloud save. */
 async function handleAccountDeleted(): Promise<void> {
-  showBoot("Account deleted…");
+  showBoot(bootMessage("boot.deleted"));
   session = null;
   state = createDefaultState();
+  state = updateSettings(state, { language: getLang() });
   screen = "home";
   render();
 }
 
 async function handleAuthed(next: Session): Promise<void> {
   session = next;
-  showBoot("Loading your farm…");
+  showBoot(bootMessage("boot.loading"));
   state = refreshStreak(await loadState());
+  // Prefer account language; if still default en and local has another, keep local
+  if (!state.settings.language || state.settings.language === "en") {
+    const local = getLang();
+    if (local !== "en") {
+      state = updateSettings(state, { language: local });
+    }
+  }
   applySettingsToDom(state.settings);
   screen = "home";
   render();
@@ -100,7 +116,7 @@ async function handleAuthed(next: Session): Promise<void> {
 
 function render(): void {
   if (booting) {
-    showBoot("Connecting…");
+    showBoot(bootMessage("boot.connecting"));
     return;
   }
 
@@ -210,7 +226,8 @@ window.addEventListener("aurafarm:nav", ((e: CustomEvent<Screen>) => {
 };
 
 async function boot(): Promise<void> {
-  showBoot("Connecting…");
+  initLocale();
+  showBoot(bootMessage("boot.connecting"));
   try {
     session = await restoreSession();
     if (session) {
@@ -218,11 +235,14 @@ async function boot(): Promise<void> {
       applySettingsToDom(state.settings);
     } else {
       state = createDefaultState();
+      state = updateSettings(state, { language: getLang() });
+      applySettingsToDom(state.settings);
     }
   } catch (e) {
     console.error(e);
     session = null;
     state = createDefaultState();
+    state = updateSettings(state, { language: getLang() });
   }
   booting = false;
   render();
