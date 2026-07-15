@@ -71,7 +71,7 @@ export function renderPlay(
         <button type="button" data-mode="practice" class="${mode === "practice" ? "active" : ""}">Practice</button>
       </div>
       <div class="desktop-grid play-grid">
-      <div class="card">
+      <div class="card home-panel">
         <div class="challenge-emoji">${challenge.emoji}</div>
         <h2 style="margin:0 0 6px;font-size:1.25rem">${escapeHtml(challenge.title)}</h2>
         <p class="muted" style="margin:0">${escapeHtml(challenge.prompt)}</p>
@@ -82,7 +82,7 @@ export function renderPlay(
             : ""
         }
       </div>
-      <div class="card">
+      <div class="card home-panel">
         <div class="field">
           <label for="answer">Your Answer</label>
           <textarea id="answer" maxlength="400" placeholder="Write something memorable…"></textarea>
@@ -91,7 +91,7 @@ export function renderPlay(
           <input type="checkbox" id="use-ai" ${preferAi && aiOn ? "checked" : ""} ${aiOn ? "" : "disabled"} />
           AI Judge ${aiOn ? "" : "(unavailable)"}
         </label>
-        <button class="btn btn-fill" id="submit" ${mode === "daily" && dailyDone ? "disabled" : ""}>${busy ? "Scoring…" : "Submit"}</button>
+        <button class="btn btn-fill" id="submit" style="margin-top:auto" ${mode === "daily" && dailyDone ? "disabled" : ""}>${busy ? "Scoring…" : "Submit"}</button>
       </div>
       </div>
     `;

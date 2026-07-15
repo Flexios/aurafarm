@@ -203,13 +203,13 @@ export function renderCard(
 ): void {
   container.innerHTML = `
     <div class="desktop-grid card-layout">
-      <div class="card card-preview-wrap">
+      <div class="card card-preview-wrap home-panel">
         <canvas id="aura-card-canvas" width="720" height="1080" aria-label="Aura card preview"></canvas>
       </div>
-      <div class="card card-actions">
+      <div class="card card-actions home-panel">
         <h2 style="margin:0">Share Card</h2>
         <p class="muted" style="margin:8px 0 0">Export a PNG for Stories or chats. Equipped cosmetics apply automatically.</p>
-        <div class="btn-row" style="flex-direction:column">
+        <div class="btn-row card-actions-btns">
           <button class="btn btn-fill" id="download-card">Download PNG</button>
           <button class="btn btn-secondary" id="redraw">Refresh</button>
         </div>

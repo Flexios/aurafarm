@@ -69,11 +69,13 @@ button {
   min-height: 100dvh;
   display: flex;
   justify-content: center;
+  width: 100%;
 }
 
 /* ——— Shell ——— */
 .app-shell {
-  width: min(100%, 430px);
+  width: 100%;
+  max-width: 430px;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -592,10 +594,9 @@ button {
   transform: translateX(-50%);
   width: min(100%, 430px);
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  /* Profile replaced Card in primary nav; Card still openable from Home */
+  grid-template-columns: repeat(7, 1fr);
   gap: 0;
-  padding: 6px 4px calc(6px + var(--safe-bottom));
+  padding: 6px 2px calc(6px + var(--safe-bottom));
   background: rgba(28, 28, 30, 0.86);
   border-top: var(--hairline);
   backdrop-filter: saturate(180%) blur(20px);
@@ -609,16 +610,16 @@ button {
   align-items: center;
   gap: 2px;
   min-height: 48px;
-  padding: 6px 2px;
+  padding: 6px 1px;
   border-radius: 8px;
   color: var(--label-secondary);
-  font-size: 0.62rem;
+  font-size: 0.58rem;
   font-weight: 500;
 }
 
 .nav-bottom button .icon {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
 }
 
 .nav-bottom button.active {
@@ -819,21 +820,55 @@ button {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  width: 100%;
+}
+
+.home-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+}
+
+.home-cell {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.home-cell-full {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .card-preview-wrap {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 14px;
 }
 
 #aura-card-canvas {
   width: 100%;
-  max-width: 320px;
+  max-width: 360px;
+  height: auto;
   border-radius: 18px;
   background: #111;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+.card-actions-btns {
+  flex-direction: column;
+  margin-top: auto;
+  width: 100%;
+}
+
+.card-actions-btns .btn {
+  width: 100%;
+  max-width: none;
 }
 
 /* Auth / onboarding — always centered single column (no empty desktop void) */
@@ -1020,11 +1055,13 @@ button {
 /* ——— Tablet ——— */
 @media (min-width: 720px) {
   .app-shell {
-    width: min(100%, 720px);
+    max-width: 100%;
+    width: 100%;
   }
 
   .nav-bottom {
-    width: min(100%, 720px);
+    width: 100%;
+    max-width: none;
   }
 
   .core-grid {
@@ -1050,15 +1087,57 @@ button {
     display: grid;
     grid-template-columns: 1fr 1fr;
   }
+
+  .home-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .home-grid .home-cell-full {
+    grid-column: 1 / -1;
+  }
+
+  .home-grid > .home-cell {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .home-grid .home-panel {
+    flex: 1;
+  }
+
+  .play-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .play-grid > * {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .play-grid .card {
+    flex: 1;
+  }
 }
 
 /* ——— Desktop ——— */
 @media (min-width: 960px) {
+  #app {
+    justify-content: stretch;
+  }
+
   .app-shell {
-    width: min(100%, 1120px);
+    width: 100%;
+    max-width: none;
     flex-direction: row;
     padding-bottom: 0;
-    margin: 0 auto;
+    margin: 0;
     background: transparent;
   }
 
@@ -1168,6 +1247,7 @@ button {
 
   .main-column {
     flex: 1;
+    min-width: 0;
     min-height: 100dvh;
     overflow: auto;
     background: var(--bg);
@@ -1175,7 +1255,8 @@ button {
 
   .screen {
     padding: 28px 40px 48px;
-    max-width: 760px;
+    max-width: none;
+    width: 100%;
   }
 
   .brand-mobile-only {
@@ -1194,9 +1275,11 @@ button {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px;
-    align-items: start;
+    align-items: stretch;
+    width: 100%;
   }
 
+  .home-grid .home-cell-full,
   .home-grid .home-cores,
   .home-grid .home-account {
     grid-column: 1 / -1;
@@ -1206,28 +1289,39 @@ button {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px;
-    align-items: start;
+    align-items: stretch;
+    width: 100%;
   }
 
   .play-tabs {
-    max-width: 320px;
+    max-width: none;
+    width: 100%;
   }
 
   .card-layout {
     display: grid;
-    grid-template-columns: minmax(260px, 320px) 1fr;
-    gap: 28px;
-    align-items: start;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .card-layout > .card {
+    min-height: 420px;
+  }
+
+  #aura-card-canvas {
+    max-width: min(100%, 420px);
   }
 
   .card-actions .btn-row {
     flex-direction: column;
-    margin-top: 20px;
+    margin-top: auto;
   }
 
   .card-actions .btn {
     width: 100%;
-    max-width: 280px;
+    max-width: none;
   }
 
   .shop-grid {
@@ -1240,6 +1334,12 @@ button {
 
   .core-grid {
     grid-template-columns: repeat(4, 1fr);
+  }
+
+  .btn-primary,
+  .btn-fill,
+  .btn-secondary {
+    max-width: none;
   }
 
   .onboarding,
@@ -1270,12 +1370,6 @@ button {
     margin: 0 auto;
   }
 
-  .btn-primary,
-  .btn-fill,
-  .btn-secondary {
-    max-width: 360px;
-  }
-
   .auth-panel .btn-fill,
   .auth-panel .btn-primary,
   .auth-panel .btn-secondary {
@@ -1293,7 +1387,7 @@ button {
   }
 
   .toast {
-    left: calc(50% + 130px);
+    left: 50%;
     bottom: 28px;
   }
 
@@ -1304,12 +1398,26 @@ button {
 
 @media (min-width: 1200px) {
   .app-shell {
-    width: min(100%, 1200px);
+    width: 100%;
+    max-width: none;
   }
 
   .screen {
-    max-width: 820px;
-    padding-left: 48px;
+    max-width: none;
+    width: 100%;
+    padding: 32px 48px 56px;
+  }
+
+  .home-grid,
+  .play-grid,
+  .card-layout {
+    gap: 20px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .screen {
+    padding: 36px 56px 64px;
   }
 }
 

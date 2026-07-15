@@ -31,9 +31,9 @@ export function renderHome(
 
   container.innerHTML = `
     <div class="desktop-grid home-grid">
-      <div>
+      <div class="home-cell">
         <div class="section-header">Today</div>
-        <div class="card challenge-card">
+        <div class="card challenge-card home-panel">
           <div class="challenge-emoji">${challenge.emoji}</div>
           <h3 style="margin:0 0 4px">Vibe Challenge</h3>
           <strong style="font-size:1.05rem">${escapeHtml(challenge.title)}</strong>
@@ -43,16 +43,16 @@ export function renderHome(
             <span class="tag magenta">${aesthetic.emoji} ${escapeHtml(aesthetic.label)}</span>
             ${played ? `<span class="tag magenta">Done today</span>` : `<span class="tag">Ready</span>`}
           </div>
-          <div class="btn-row">
+          <div class="btn-row" style="margin-top:auto">
             <button class="btn btn-fill" id="go-play">${played ? "Practice" : "Start"}</button>
           </div>
           <div class="ai-badge ${aiOn ? "on" : ""}">${aiOn ? "● AI Judge available" : "○ Local Judge"}</div>
         </div>
       </div>
 
-      <div>
+      <div class="home-cell">
         <div class="section-header">Progress</div>
-        <div class="card">
+        <div class="card home-panel">
           <div class="rank-row">
             <div class="rank-emoji">${rank.emoji}</div>
             <div style="flex:1">
@@ -64,7 +64,7 @@ export function renderHome(
               <div class="progress" aria-hidden="true"><i style="width:${progress}%"></i></div>
             </div>
           </div>
-          <div class="stat-grid">
+          <div class="stat-grid" style="margin-top:auto">
             <div class="stat"><b>${state.streak}</b><span>Streak</span></div>
             <div class="stat"><b>${state.duelWins}</b><span>Duels</span></div>
             <div class="stat"><b>${state.bestDailyScore || "—"}</b><span>Best</span></div>
@@ -72,12 +72,12 @@ export function renderHome(
         </div>
       </div>
 
-      <div class="home-cores">
+      <div class="home-cores home-cell-full">
         <div class="section-title">
           <h3>Collection</h3>
           <span class="muted">${state.ownedCores.length}</span>
         </div>
-        <div class="card" style="padding:14px 16px">
+        <div class="card home-panel" style="padding:14px 16px">
           <div class="core-list">
             ${
               recentCores.length
@@ -93,22 +93,32 @@ export function renderHome(
         </div>
       </div>
 
-      <div>
+      <div class="home-cell">
         <div class="section-header">Season</div>
-        <div class="card">
+        <div class="card home-panel">
           <h3 style="margin:0">Battle Pass · Season 1</h3>
           <p class="muted" style="margin:6px 0 0">Level ${state.battlePassLevel}/10 · ${state.battlePassPremium ? "Premium" : "Free track"}</p>
           <div class="progress"><i style="width:${(state.battlePassLevel / 10) * 100}%"></i></div>
-          <div class="btn-row">
+          <div class="btn-row" style="margin-top:auto">
             <button class="btn btn-secondary" id="go-shop">Shop</button>
-            <button class="btn btn-secondary" id="go-card">Aura Card</button>
           </div>
         </div>
       </div>
 
-      <div class="home-account">
+      <div class="home-cell">
+        <div class="section-header">Profile Card</div>
+        <div class="card home-panel">
+          <h3 style="margin:0">Aura Card</h3>
+          <p class="muted" style="margin:6px 0 0">Share your rank, core, and cosmetics as a PNG for Stories or chats.</p>
+          <div class="btn-row" style="margin-top:auto">
+            <button class="btn btn-fill" id="go-card">Open Card</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="home-account home-cell-full">
         <div class="section-header">Account</div>
-        <div class="card">
+        <div class="card home-panel">
           <div class="account-bar" style="margin:0">
             <div class="who">
               ${icon("person")}
@@ -117,7 +127,7 @@ export function renderHome(
                 <div style="font-size:0.82rem;margin-top:2px">Synced across devices</div>
               </div>
             </div>
-            <div style="display:flex;gap:8px;flex-shrink:0">
+            <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap">
               <button type="button" class="btn btn-secondary" id="go-profile" style="width:auto;min-height:36px;padding:0 12px;font-size:0.86rem">Profile</button>
               <button type="button" class="btn btn-secondary" id="go-settings" style="width:auto;min-height:36px;padding:0 12px;font-size:0.86rem">Settings</button>
               <button type="button" class="btn-logout" id="logout-btn">${icon("logout")} Log Out</button>

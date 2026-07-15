@@ -7,6 +7,7 @@ const NAV: Array<{ id: Screen; label: string; ico: IconName }> = [
   { id: "home", label: "Home", ico: "home" },
   { id: "play", label: "Play", ico: "play" },
   { id: "shop", label: "Shop", ico: "shop" },
+  { id: "card", label: "Card", ico: "card" },
   { id: "profile", label: "Profile", ico: "person" },
   { id: "duel", label: "Duel", ico: "duel" },
   { id: "settings", label: "Settings", ico: "settings" },
