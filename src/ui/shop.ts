@@ -6,9 +6,37 @@ import {
   equipCosmetic,
   unlockBattlePassPremium,
 } from "../game/economy";
-import type { PlayerState } from "../types";
+import type { CosmeticSlot, PlayerState } from "../types";
 import { escapeHtml } from "../utils/format";
+import { icon, type IconName } from "./icons";
 import { showToast } from "./toast";
+
+const SLOT_META: Record<CosmeticSlot, { label: string; ico: IconName }> = {
+  frame: { label: "Frames", ico: "frame" },
+  aura: { label: "Auras", ico: "aura" },
+  nameplate: { label: "Nameplates", ico: "nameplate" },
+  background: { label: "Backgrounds", ico: "background" },
+};
+
+function priceHtml(item: {
+  free?: boolean;
+  priceSparks: number;
+  priceGlow: number;
+}): string {
+  if (item.free) return `<span class="price-line muted">Free starter</span>`;
+  const parts: string[] = [];
+  if (item.priceSparks > 0) {
+    parts.push(
+      `<span class="price-chip" title="Sparks">${icon("spark", "icon icon-sm")} ${item.priceSparks}</span>`,
+    );
+  }
+  if (item.priceGlow > 0) {
+    parts.push(
+      `<span class="price-chip glow" title="Glow">${icon("glow", "icon icon-sm")} ${item.priceGlow}</span>`,
+    );
+  }
+  return `<span class="price-line">${parts.join("")}</span>`;
+}
 
 export function renderShop(
   container: HTMLElement,
@@ -20,9 +48,9 @@ export function renderShop(
   const paint = () => {
     container.innerHTML = `
       <div class="segmented">
-        <button type="button" data-tab="cosmetics" class="${tab === "cosmetics" ? "active" : ""}">Cosmetics</button>
-        <button type="button" data-tab="glow" class="${tab === "glow" ? "active" : ""}">Glow</button>
-        <button type="button" data-tab="pass" class="${tab === "pass" ? "active" : ""}">Pass</button>
+        <button type="button" data-tab="cosmetics" class="${tab === "cosmetics" ? "active" : ""}">${icon("shop", "icon icon-sm")} Cosmetics</button>
+        <button type="button" data-tab="glow" class="${tab === "glow" ? "active" : ""}">${icon("glow", "icon icon-sm")} Glow</button>
+        <button type="button" data-tab="pass" class="${tab === "pass" ? "active" : ""}">${icon("pass", "icon icon-sm")} Pass</button>
       </div>
       <div id="shop-body"></div>
     `;
@@ -44,9 +72,12 @@ export function renderShop(
     const slots = ["frame", "aura", "nameplate", "background"] as const;
     body.innerHTML = slots
       .map((slot) => {
+        const meta = SLOT_META[slot];
         const items = COSMETICS.filter((c) => c.slot === slot);
         return `
-          <div class="section-title"><h3>${slot}</h3></div>
+          <div class="section-title">
+            <h3 class="section-title-with-icon">${icon(meta.ico, "icon icon-sm")} ${meta.label}</h3>
+          </div>
           <div class="shop-grid">
           ${items
             .map((item) => {
@@ -54,25 +85,33 @@ export function renderShop(
               const equipped = state.equipped[slot] === item.id;
               return `
                 <div class="shop-item">
-                  <div class="swatch" style="background:${item.preview}"></div>
+                  <div class="swatch" style="background:${item.preview}" aria-hidden="true">
+                    ${icon(meta.ico, "icon icon-swatch")}
+                  </div>
                   <div class="meta">
                     <strong>${escapeHtml(item.name)}</strong>
                     <span class="rarity ${item.rarity}">${item.rarity}</span>
-                    <span>${
-                      item.free
-                        ? "Free starter"
-                        : item.priceSparks > 0
-                          ? `✦ ${item.priceSparks}${item.priceGlow ? ` · ◆ ${item.priceGlow}` : ""}`
-                          : `◆ ${item.priceGlow}`
-                    }</span>
+                    ${priceHtml(item)}
                   </div>
                   <div class="mini-actions">
                     ${
                       owned
                         ? `<button type="button" class="btn ${equipped ? "owned" : ""}" data-equip="${item.id}">${equipped ? "Equipped" : "Equip"}</button>`
                         : `
-                          ${item.priceSparks > 0 || item.free ? `<button type="button" class="btn" data-buy-sparks="${item.id}" ${item.free ? "disabled" : ""}>${item.free ? "Owned" : "Buy ✦"}</button>` : ""}
-                          ${item.priceGlow > 0 ? `<button type="button" class="btn" data-buy-glow="${item.id}">Buy ◆</button>` : ""}
+                          ${
+                            item.priceSparks > 0 || item.free
+                              ? `<button type="button" class="btn" data-buy-sparks="${item.id}" ${item.free ? "disabled" : ""} title="Buy with Sparks">${
+                                  item.free
+                                    ? "Owned"
+                                    : `${icon("spark", "icon icon-sm")} Buy`
+                                }</button>`
+                              : ""
+                          }
+                          ${
+                            item.priceGlow > 0
+                              ? `<button type="button" class="btn" data-buy-glow="${item.id}" title="Buy with Glow">${icon("glow", "icon icon-sm")} Buy</button>`
+                              : ""
+                          }
                         `
                     }
                   </div>
@@ -130,23 +169,35 @@ export function renderShop(
       <p class="muted" style="margin:0 0 12px;padding:0 4px">No real charges. Premium currency for cosmetics and pass.</p>
       <div class="pack-grid">
         <div class="pack">
+          <div class="pack-icon" aria-hidden="true">${icon("glow")}</div>
           <div>
             <strong>Starter</strong>
-            <span>40 Glow + 50 Sparks</span>
+            <span class="price-line">
+              <span class="price-chip glow" title="Glow">${icon("glow", "icon icon-sm")} 40</span>
+              <span class="price-chip" title="Sparks">${icon("spark", "icon icon-sm")} 50</span>
+            </span>
           </div>
           <button class="btn btn-fill" data-pack="starter">Get</button>
         </div>
         <div class="pack">
+          <div class="pack-icon" aria-hidden="true">${icon("star")}</div>
           <div>
             <strong>Hype</strong>
-            <span>120 Glow + 150 Sparks</span>
+            <span class="price-line">
+              <span class="price-chip glow" title="Glow">${icon("glow", "icon icon-sm")} 120</span>
+              <span class="price-chip" title="Sparks">${icon("spark", "icon icon-sm")} 150</span>
+            </span>
           </div>
           <button class="btn btn-fill" data-pack="hype">Get</button>
         </div>
         <div class="pack">
+          <div class="pack-icon" aria-hidden="true">${icon("pass")}</div>
           <div>
             <strong>Mogul</strong>
-            <span>300 Glow + 400 Sparks</span>
+            <span class="price-line">
+              <span class="price-chip glow" title="Glow">${icon("glow", "icon icon-sm")} 300</span>
+              <span class="price-chip" title="Sparks">${icon("spark", "icon icon-sm")} 400</span>
+            </span>
           </div>
           <button class="btn btn-fill" data-pack="mogul">Get</button>
         </div>
@@ -168,7 +219,7 @@ export function renderShop(
   const renderPass = (body: Element) => {
     body.innerHTML = `
       <div class="card">
-        <h3>Season 1 — Soft Launch</h3>
+        <h3 class="section-title-with-icon">${icon("pass", "icon icon-sm")} Season 1 — Soft Launch</h3>
         <p class="muted" style="margin:0 0 10px">Level ${state.battlePassLevel}/10. Play dailies to level up. ${
           state.battlePassPremium
             ? "Premium track unlocked."

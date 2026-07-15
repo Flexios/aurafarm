@@ -22,7 +22,13 @@ export type IconName =
   | "refresh"
   | "logout"
   | "star"
-  | "settings";
+  | "settings"
+  | "frame"
+  | "aura"
+  | "nameplate"
+  | "background"
+  | "streak"
+  | "pass";
 
 const ICONS: Record<IconName, string> = {
   home: `<path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5z"/>`,
@@ -40,4 +46,10 @@ const ICONS: Record<IconName, string> = {
   logout: `<path d="M10 12h9"/><path d="M15 8l4 4-4 4"/><path d="M13 5H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h6"/>`,
   star: `<path d="M12 3.5 14.5 9l6 .5-4.5 4 1.5 5.5L12 16.5 6.5 19l1.5-5.5L3.5 9.5 9.5 9 12 3.5z"/>`,
   settings: `<circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M3 12h2M19 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>`,
+  frame: `<rect x="4" y="4" width="16" height="16" rx="3"/><rect x="7.5" y="7.5" width="9" height="9" rx="1.5"/>`,
+  aura: `<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7" stroke-dasharray="3 3"/>`,
+  nameplate: `<rect x="3" y="8" width="18" height="8" rx="2"/><path d="M7 12h10"/>`,
+  background: `<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 14l4.5-3.5L12 14l4-3 5 4"/>`,
+  streak: `<path d="M12 3c1.5 3 2 5 2 7a4 4 0 1 1-8 0c0-2 .5-4 2-7 1 2 2 3 4 0z"/><path d="M10 17c0 2 1 3 2 3s2-1 2-3"/>`,
+  pass: `<path d="M4 7h16v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7z"/><path d="M8 7V5.5A2.5 2.5 0 0 1 10.5 3h3A2.5 2.5 0 0 1 16 5.5V7"/><path d="M9 12h6"/>`,
 };

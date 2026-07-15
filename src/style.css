@@ -159,6 +159,7 @@ button {
 
 .pill,
 .badge {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -186,6 +187,126 @@ button {
 .badge .icon {
   width: 14px;
   height: 14px;
+}
+
+/* Hover label for currency / streak pills */
+.pill[data-tip]:hover::after,
+.pill[data-tip]:focus-visible::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  padding: 5px 9px;
+  border-radius: 8px;
+  background: rgba(44, 44, 46, 0.96);
+  border: var(--hairline);
+  color: var(--label);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 50;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.pill[data-tip]:hover::before,
+.pill[data-tip]:focus-visible::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 2px);
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: rgba(44, 44, 46, 0.96);
+  pointer-events: none;
+  z-index: 50;
+}
+
+.icon-sm {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.icon-swatch {
+  width: 18px;
+  height: 18px;
+  color: rgba(255, 255, 255, 0.9);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+}
+
+.section-title-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.section-title-with-icon .icon {
+  opacity: 0.85;
+  color: var(--accent);
+}
+
+.price-line {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.price-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--label-secondary);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.price-chip.glow {
+  color: var(--gold);
+  background: rgba(255, 214, 10, 0.12);
+}
+
+.price-chip .icon {
+  width: 12px;
+  height: 12px;
+}
+
+.pack-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.pack-icon .icon {
+  width: 22px;
+  height: 22px;
+}
+
+.segmented button .icon {
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
+  margin-right: 2px;
+}
+
+.mini-actions .btn .icon {
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
 }
 
 /* ——— Typography helpers ——— */
@@ -727,6 +848,9 @@ button {
   width: 40px;
   height: 40px;
   border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
   flex-shrink: 0;
   border: 1px solid var(--separator);
 }
@@ -784,14 +908,18 @@ button {
   background: var(--bg-elevated);
 }
 
+.pack > div:not(.pack-icon) {
+  flex: 1;
+  min-width: 0;
+}
+
 .pack strong {
   display: block;
   font-weight: 600;
 }
 
-.pack span {
-  color: var(--label-secondary);
-  font-size: 0.86rem;
+.pack .price-line {
+  margin-top: 6px;
 }
 
 .pack .btn {
@@ -799,6 +927,7 @@ button {
   min-height: 36px;
   padding: 0 14px;
   font-size: 0.9rem;
+  flex-shrink: 0;
 }
 
 /* Battle pass */
