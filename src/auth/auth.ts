@@ -191,6 +191,8 @@ export async function login(identifier: string, password: string): Promise<AuthR
   return { ok: true, session };
 }
 
+export type SimpleResult = { ok: true; message?: string } | { ok: false; error: string };
+
 export async function logout(): Promise<void> {
   cachedSession = null;
   if (!isSupabaseConfigured()) return;
@@ -199,6 +201,49 @@ export async function logout(): Promise<void> {
   } catch {
     /* ignore */
   }
+}
+
+/**
+ * Permanently delete the signed-in user and related data (via RPC).
+ * Requires supabase/delete_account.sql applied on the project.
+ */
+export async function deleteAccount(): Promise<SimpleResult> {
+  const cfg = getSupabaseConfigError();
+  if (cfg) return { ok: false, error: cfg };
+  const session = getCachedSession();
+  if (!session) return { ok: false, error: "Not signed in." };
+
+  const sb = getSupabase();
+  const { data, error } = await sb.rpc("delete_own_account");
+  if (error) {
+    return {
+      ok: false,
+      error: error.message.includes("function") || error.message.includes("does not exist")
+        ? "Delete account is not set up yet. Run supabase/delete_account.sql in Supabase."
+        : error.message,
+    };
+  }
+  const obj = data as Record<string, unknown> | null;
+  if (obj && obj.ok === false) {
+    return { ok: false, error: String(obj.error ?? "Could not delete account.") };
+  }
+
+  // Clear local cache for this user
+  try {
+    const key = `aurafarm.cloudcache.v1:${session.userId}`;
+    localStorage.removeItem(key);
+  } catch {
+    /* ignore */
+  }
+
+  cachedSession = null;
+  try {
+    await sb.auth.signOut();
+  } catch {
+    /* user may already be gone */
+  }
+
+  return { ok: true, message: "Account deleted." };
 }
 
 function friendlyAuthError(message: string): string {
@@ -211,8 +256,6 @@ function friendlyAuthError(message: string): string {
   if (m.includes("same")) return message;
   return message;
 }
-
-export type SimpleResult = { ok: true; message?: string } | { ok: false; error: string };
 
 export async function changePassword(newPassword: string): Promise<SimpleResult> {
   const cfg = getSupabaseConfigError();

@@ -195,7 +195,7 @@ export async function drawAuraCard(
   ctx.font = "600 26px Outfit, system-ui, sans-serif";
   ctx.fillStyle = "rgba(255,255,255,0.65)";
   ctx.fillText(
-    `🔥 ${state.streak} day streak   ·   ⚔️ ${state.duelWins} duel wins`,
+    `🔥 ${state.streak} day streak   ·   ${state.duelWins} duel wins`,
     cx,
     740,
   );

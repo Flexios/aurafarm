@@ -357,6 +357,42 @@ button {
   background: rgba(255, 69, 58, 0.12);
 }
 
+.btn-danger {
+  width: 100%;
+  background: rgba(255, 69, 58, 0.18);
+  color: var(--red);
+  font-weight: 600;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: rgba(255, 69, 58, 0.28);
+}
+
+/* Modal */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.modal-card {
+  width: min(100%, 400px);
+  max-height: min(90dvh, 560px);
+  overflow: auto;
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+  border: var(--hairline);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+}
+
 /* ——— Forms ——— */
 .stack {
   display: flex;
@@ -1249,6 +1285,11 @@ button {
     display: flex;
     flex-direction: column;
     gap: 12px;
+  }
+
+  /* Streak + currency only in sidebar on desktop (not also top-right) */
+  .topbar-currency {
+    display: none !important;
   }
 
   .sidebar-user .name {

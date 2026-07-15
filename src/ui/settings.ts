@@ -2,6 +2,7 @@ import {
   changeEmail,
   changePassword,
   changeUsername,
+  deleteAccount,
   getCachedSession,
   validateEmail,
   validatePassword,
@@ -37,11 +38,14 @@ export function renderSettings(
   onState: (s: PlayerState) => void,
   onSessionRefresh: () => void,
   onLogout: () => void,
+  onAccountDeleted: () => void,
 ): void {
   let tab: SettingsTab = "account";
   let busy = false;
   let error = "";
   let success = "";
+  let showDeleteModal = false;
+  let deleteConfirmText = "";
 
   const paint = () => {
     const session = getCachedSession();
@@ -128,7 +132,89 @@ export function renderSettings(
       <div class="card">
         <button class="btn btn-logout" id="settings-logout" style="width:100%">Log Out</button>
       </div>
+
+      <div class="section-header">Danger zone</div>
+      <div class="card stack">
+        <p class="muted" style="margin:0;font-size:0.9rem">
+          Permanently delete your account, profile, saves, friends data, and messages. This cannot be undone.
+        </p>
+        <button class="btn btn-danger" id="open-delete" ${busy ? "disabled" : ""} style="width:100%">Delete Account</button>
+      </div>
+
+      ${
+        showDeleteModal
+          ? `<div class="modal-backdrop" id="delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+        <div class="modal-card stack">
+          <h2 id="delete-title" style="margin:0;font-size:1.2rem">Delete account?</h2>
+          <p class="muted" style="margin:0">
+            This will <strong>permanently</strong> remove <strong>@${escapeHtml(session?.username ?? "you")}</strong>
+            and all associated data (progress, friends, DMs, battles, avatar).
+          </p>
+          <p class="danger-text" style="margin:0">There is no recovery after this.</p>
+          <div class="field">
+            <label for="delete-confirm">Type <strong>DELETE</strong> to confirm</label>
+            <input id="delete-confirm" maxlength="20" autocomplete="off" spellcheck="false" placeholder="DELETE" value="${escapeHtml(deleteConfirmText)}" />
+          </div>
+          <div class="btn-row" style="margin-top:4px">
+            <button type="button" class="btn btn-secondary" id="cancel-delete" ${busy ? "disabled" : ""}>Cancel</button>
+            <button type="button" class="btn btn-danger" id="confirm-delete" ${busy || deleteConfirmText.trim().toUpperCase() !== "DELETE" ? "disabled" : ""}>
+              ${busy ? "Deleting…" : "Yes, delete forever"}
+            </button>
+          </div>
+        </div>
+      </div>`
+          : ""
+      }
     `;
+
+    body.querySelector("#open-delete")?.addEventListener("click", () => {
+      showDeleteModal = true;
+      deleteConfirmText = "";
+      error = "";
+      success = "";
+      paint();
+    });
+
+    body.querySelector("#cancel-delete")?.addEventListener("click", () => {
+      showDeleteModal = false;
+      deleteConfirmText = "";
+      paint();
+    });
+
+    body.querySelector("#delete-modal")?.addEventListener("click", (e) => {
+      if ((e.target as HTMLElement).id === "delete-modal") {
+        showDeleteModal = false;
+        deleteConfirmText = "";
+        paint();
+      }
+    });
+
+    const confirmInput = body.querySelector("#delete-confirm") as HTMLInputElement | null;
+    confirmInput?.addEventListener("input", () => {
+      deleteConfirmText = confirmInput.value;
+      const btn = body.querySelector("#confirm-delete") as HTMLButtonElement | null;
+      if (btn) {
+        btn.disabled = busy || deleteConfirmText.trim().toUpperCase() !== "DELETE";
+      }
+    });
+
+    body.querySelector("#confirm-delete")?.addEventListener("click", async () => {
+      if (busy || deleteConfirmText.trim().toUpperCase() !== "DELETE") return;
+      busy = true;
+      error = "";
+      success = "";
+      paint();
+      const res = await deleteAccount();
+      busy = false;
+      if (!res.ok) {
+        error = res.error;
+        showDeleteModal = true;
+        paint();
+        return;
+      }
+      showToast("Account deleted");
+      onAccountDeleted();
+    });
 
     body.querySelector("#save-display")?.addEventListener("click", () => {
       const name = (body.querySelector("#set-display") as HTMLInputElement).value;

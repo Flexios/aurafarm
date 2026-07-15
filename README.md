@@ -15,6 +15,7 @@ Daily aesthetic RPG for **Gen Z** & **Gen Alpha** — cloud accounts, online sav
    - [`supabase/friends.sql`](./supabase/friends.sql) (friend requests + lists)
    - [`supabase/friends_social.sql`](./supabase/friends_social.sql) (DMs, battles, private notes)
    - [`supabase/streak_reminders.sql`](./supabase/streak_reminders.sql) (email streak reminder prefs)
+   - [`supabase/delete_account.sql`](./supabase/delete_account.sql) (Settings → Delete Account)
 3. **Authentication → Providers → Email**
    - Enable Email
    - For instant play MVP: **turn off “Confirm email”**

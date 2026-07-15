@@ -74,6 +74,15 @@ async function handleLogout(): Promise<void> {
   render();
 }
 
+/** After permanent account deletion — do not flush cloud save. */
+async function handleAccountDeleted(): Promise<void> {
+  showBoot("Account deleted…");
+  session = null;
+  state = createDefaultState();
+  screen = "home";
+  render();
+}
+
 async function handleAuthed(next: Session): Promise<void> {
   session = next;
   showBoot("Loading your farm…");
@@ -155,6 +164,9 @@ function render(): void {
             refreshSessionFromCache,
             () => {
               void handleLogout();
+            },
+            () => {
+              void handleAccountDeleted();
             },
           );
           break;

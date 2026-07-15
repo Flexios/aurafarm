@@ -116,7 +116,7 @@ export async function renderFriendPanel(
         player = res.state;
         onState?.(player);
         if (res.outcome === "win") {
-          showToast("⚔️ Friend battle win counted toward Duels!");
+          showToast("Friend battle win counted toward Duels!");
         }
       }
     }
@@ -208,7 +208,7 @@ export async function renderFriendPanel(
         <div class="stat-grid" style="margin-top:14px">
           <div class="stat"><b>${formatNumber(aura)}</b><span>Aura</span></div>
           <div class="stat"><b>🔥 ${streak}</b><span>Streak</span></div>
-          <div class="stat"><b>⚔️ ${duelWins}</b><span>Duels</span></div>
+          <div class="stat"><b>${duelWins}</b><span>Duels</span></div>
         </div>
         <div class="stat-grid" style="margin-top:8px">
           <div class="stat"><b>${best || "—"}</b><span>Best daily</span></div>
@@ -530,7 +530,7 @@ export async function renderFriendPanel(
             title: battle.challengeTitle,
             prompt: battle.challengePrompt,
             hint: "",
-            emoji: "⚔️",
+            emoji: "🎯",
           };
           const cScore = scoreLocal(
             battle.challengerAnswer,

@@ -102,7 +102,7 @@ export function renderDuel(
         <button type="button" data-tab="local" class="${tab === "local" ? "active" : ""}">Local</button>
       </div>
       <p class="muted" style="margin:0 0 12px;font-size:0.88rem">
-        Friend battle wins count toward your <strong>⚔️ ${state.duelWins}</strong> duel total.
+        Friend battle wins count toward your <strong>${state.duelWins}</strong> duel total.
       </p>
       <div id="duel-body"></div>
     `;
@@ -398,7 +398,7 @@ export function renderDuel(
           title: b.challengeTitle,
           prompt: b.challengePrompt,
           hint: "",
-          emoji: "⚔️",
+          emoji: "🎯",
         };
         const cScore = scoreLocal(
           b.challengerAnswer,
@@ -464,7 +464,7 @@ export function renderDuel(
             <div class="stat"><b>vs</b><span>Score</span></div>
             <div class="stat"><b>${duel.p2.result.score}</b><span>${escapeHtml(duel.p2.name)}</span></div>
           </div>
-          <p class="muted" style="margin:12px 0 0;font-size:0.88rem">Your duel total: ⚔️ ${state.duelWins}</p>
+          <p class="muted" style="margin:12px 0 0;font-size:0.88rem">Your duel total: ${state.duelWins}</p>
           <div class="btn-row">
             <button class="btn btn-fill" id="rematch">Rematch</button>
             <button class="btn btn-secondary" id="duel-done">Done</button>
