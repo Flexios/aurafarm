@@ -1,11 +1,12 @@
 import { getSession } from "../auth/auth";
 import { aestheticById } from "../data/aesthetics";
-import { coreById } from "../data/cores";
+import { coresFromIds } from "../data/cores";
 import { nextRank, rankForAura } from "../data/ranks";
 import { getTodaysChallenge } from "../game/daily";
 import { hasPlayedDaily } from "../state/store";
 import type { PlayerState, Screen } from "../types";
 import { escapeHtml, formatNumber } from "../utils/format";
+import { coreChipHtml } from "./collectibles";
 import { icon } from "./icons";
 
 export function renderHome(
@@ -24,10 +25,7 @@ export function renderHome(
   const challenge = getTodaysChallenge();
   const played = hasPlayedDaily(state);
   const aesthetic = aestheticById(state.core);
-  const recentCores = state.ownedCores
-    .slice(-8)
-    .map((id) => coreById(id))
-    .filter(Boolean);
+  const collectionCores = coresFromIds(state.ownedCores);
 
   container.innerHTML = `
     <div class="desktop-grid home-grid">
@@ -80,13 +78,8 @@ export function renderHome(
         <div class="card home-panel" style="padding:14px 16px">
           <div class="core-list">
             ${
-              recentCores.length
-                ? recentCores
-                    .map(
-                      (c) =>
-                        `<span class="core-chip" title="${escapeHtml(c!.description)}">${c!.emoji} ${escapeHtml(c!.name)}</span>`,
-                    )
-                    .join("")
+              collectionCores.length
+                ? collectionCores.map((c) => coreChipHtml(c)).join("")
                 : `<p class="list-empty">Play challenges to unlock cores.</p>`
             }
           </div>

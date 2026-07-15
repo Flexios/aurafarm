@@ -671,6 +671,21 @@ button {
   font-weight: 500;
 }
 
+.core-chip-exclusive {
+  background: linear-gradient(
+    135deg,
+    rgba(191, 90, 242, 0.28),
+    rgba(255, 214, 10, 0.18)
+  );
+  border: 1px solid rgba(191, 90, 242, 0.45);
+  color: #f0d4ff;
+  font-weight: 600;
+}
+
+.core-chip.rarity-legendary:not(.core-chip-exclusive) {
+  border: 1px solid rgba(255, 214, 10, 0.25);
+}
+
 .core-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

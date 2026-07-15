@@ -17,6 +17,7 @@ import {
   type FriendshipStatusInfo,
 } from "../friends/api";
 import { renderFriendPanel } from "./friendPanel";
+import { collectiblesHtml } from "./collectibles";
 import {
   fetchPublicProfile,
   loadOwnBio,
@@ -167,6 +168,9 @@ export function renderProfile(
         </div>
         <button class="btn btn-fill" id="save-bio" ${busy ? "disabled" : ""}>Save Bio</button>
       </div>
+
+      <div class="section-header">Collectibles · ${state.ownedCores.length}</div>
+      ${collectiblesHtml(state.ownedCores, "Play challenges to unlock collectible cores.")}
 
       <div class="section-header">Friends</div>
       <div class="card">
@@ -581,9 +585,11 @@ export function renderProfile(
           <div class="stat-grid" style="margin-top:1px">
             <div class="stat"><b>${viewed.bestDailyScore || "—"}</b><span>Best day</span></div>
             <div class="stat"><b>${viewed.battlePassLevel}</b><span>Pass lvl</span></div>
-            <div class="stat"><b>${viewed.coresCount}</b><span>Cores</span></div>
+            <div class="stat"><b>${viewed.coresCount || viewed.ownedCores.length}</b><span>Cores</span></div>
           </div>
         </div>
+        <div class="section-header">Collectibles · ${viewed.ownedCores.length || viewed.coresCount}</div>
+        ${collectiblesHtml(viewed.ownedCores, "No collectibles shown yet.")}
       `;
       bindFriendActions(viewed.username);
     };

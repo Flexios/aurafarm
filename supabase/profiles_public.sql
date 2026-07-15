@@ -19,6 +19,7 @@ create policy "profiles_select_authenticated"
 -- Keep own insert/update policies from schema.sql
 
 -- Public profile by username (no email)
+-- If return type changes, run: drop function if exists public.get_public_profile(text);
 create or replace function public.get_public_profile(p_username text)
 returns table (
   user_id uuid,
@@ -32,7 +33,8 @@ returns table (
   core text,
   best_daily_score integer,
   battle_pass_level integer,
-  cores_count integer
+  cores_count integer,
+  owned_cores jsonb
 )
 language sql
 security definer
@@ -51,7 +53,8 @@ as $$
     coalesce(p.game_state->>'core', 'main-character') as core,
     coalesce((p.game_state->>'bestDailyScore')::integer, 0) as best_daily_score,
     coalesce((p.game_state->>'battlePassLevel')::integer, 0) as battle_pass_level,
-    coalesce(jsonb_array_length(p.game_state->'ownedCores'), 0) as cores_count
+    coalesce(jsonb_array_length(p.game_state->'ownedCores'), 0) as cores_count,
+    coalesce(p.game_state->'ownedCores', '[]'::jsonb) as owned_cores
   from public.profiles p
   where lower(p.username) = lower(trim(p_username))
   limit 1;

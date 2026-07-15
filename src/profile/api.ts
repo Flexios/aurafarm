@@ -14,6 +14,8 @@ export interface PublicProfile {
   bestDailyScore: number;
   battlePassLevel: number;
   coresCount: number;
+  /** Collectible core ids from game_state */
+  ownedCores: string[];
 }
 
 export interface ProfileSearchHit {
@@ -25,7 +27,21 @@ export interface ProfileSearchHit {
   core: string;
 }
 
+function mapOwnedCores(raw: unknown): string[] {
+  if (Array.isArray(raw)) return raw.map(String);
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      return Array.isArray(parsed) ? parsed.map(String) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 function mapProfile(row: Record<string, unknown>): PublicProfile {
+  const ownedCores = mapOwnedCores(row.owned_cores);
   return {
     userId: String(row.user_id ?? ""),
     username: String(row.username ?? ""),
@@ -38,7 +54,8 @@ function mapProfile(row: Record<string, unknown>): PublicProfile {
     core: String(row.core ?? "main-character"),
     bestDailyScore: Number(row.best_daily_score ?? 0),
     battlePassLevel: Number(row.battle_pass_level ?? 0),
-    coresCount: Number(row.cores_count ?? 0),
+    coresCount: Number(row.cores_count ?? ownedCores.length ?? 0),
+    ownedCores,
   };
 }
 

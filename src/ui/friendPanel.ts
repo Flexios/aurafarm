@@ -22,6 +22,7 @@ import { fetchPublicProfile, type PublicProfile } from "../profile/api";
 import type { AestheticCore, Challenge, PlayerState } from "../types";
 import { pickDaily } from "../utils/seed";
 import { escapeHtml, formatNumber } from "../utils/format";
+import { collectiblesHtml } from "./collectibles";
 import { showToast } from "./toast";
 
 function avatarHtml(url: string | null | undefined, name: string): string {
@@ -220,6 +221,9 @@ export async function renderFriendPanel(
           <button type="button" class="btn btn-secondary btn-sm" id="open-battle">New battle</button>
         </div>
       </div>
+
+      <div class="section-header">Collectibles · ${publicProf?.ownedCores?.length ?? cores}</div>
+      ${collectiblesHtml(publicProf?.ownedCores, "No collectibles yet.")}
 
       <div class="section-header">Private note</div>
       <div class="card stack">

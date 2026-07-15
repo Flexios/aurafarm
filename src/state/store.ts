@@ -1,5 +1,6 @@
 import { getCachedSession } from "../auth/auth";
 import { FREE_DEFAULTS } from "../data/cosmetics";
+import { applyExclusiveCores } from "../data/cores";
 import { getSupabase, isSupabaseConfigured } from "../lib/supabase";
 import type {
   AestheticCore,
@@ -69,10 +70,15 @@ export function createDefaultState(): PlayerState {
   };
 }
 
-export function normalizeState(parsed: Partial<PlayerState> | null | undefined): PlayerState {
+export function normalizeState(
+  parsed: Partial<PlayerState> | null | undefined,
+  username?: string | null,
+): PlayerState {
   const base = createDefaultState();
-  if (!parsed || typeof parsed !== "object") return base;
-  return {
+  if (!parsed || typeof parsed !== "object") {
+    return withExclusiveCores(base, username);
+  }
+  const next: PlayerState = {
     ...base,
     ...parsed,
     version: 1,
@@ -92,6 +98,13 @@ export function normalizeState(parsed: Partial<PlayerState> | null | undefined):
       ? parsed.claimedFriendBattleIds.map(String)
       : [],
   };
+  return withExclusiveCores(next, username ?? getCachedSession()?.username);
+}
+
+function withExclusiveCores(state: PlayerState, username?: string | null): PlayerState {
+  const owned = applyExclusiveCores(state.ownedCores, username);
+  if (owned === state.ownedCores) return state;
+  return { ...state, ownedCores: owned };
 }
 
 /** Apply UI prefs to document root. */
@@ -178,7 +191,10 @@ function readLocalCache(userId: string): PlayerState | null {
   try {
     const raw = localStorage.getItem(cacheKey(userId));
     if (!raw) return null;
-    return normalizeState(JSON.parse(raw) as Partial<PlayerState>);
+    return normalizeState(
+      JSON.parse(raw) as Partial<PlayerState>,
+      getCachedSession()?.username,
+    );
   } catch {
     return null;
   }
@@ -203,8 +219,10 @@ export async function loadState(): Promise<PlayerState> {
 
   const cached = readLocalCache(session.userId);
 
+  const uname = session.username;
+
   if (!isSupabaseConfigured()) {
-    return cached ?? createDefaultState();
+    return withExclusiveCores(cached ?? createDefaultState(), uname);
   }
 
   try {
@@ -218,23 +236,28 @@ export async function loadState(): Promise<PlayerState> {
     if (error) {
       console.warn("loadState cloud error", error.message);
       cloudSyncError = error.message;
-      return cached ?? createDefaultState();
+      return withExclusiveCores(cached ?? createDefaultState(), uname);
     }
 
     if (!data) {
-      const fresh = cached ?? createDefaultState();
+      const fresh = withExclusiveCores(cached ?? createDefaultState(), uname);
       writeLocalCache(session.userId, fresh);
-      await pushStateToCloud(session.userId, fresh, session.username);
+      await pushStateToCloud(session.userId, fresh, uname);
       return fresh;
     }
 
-    const remote = normalizeState(data.game_state as Partial<PlayerState>);
+    const profileUser = (data.username as string | undefined) || uname;
+    const remote = normalizeState(
+      data.game_state as Partial<PlayerState>,
+      profileUser,
+    );
     // Prefer non-empty cloud state; if cloud is empty default, keep cache if more advanced
     const remoteEmpty = !remote.onboarded && remote.totalAura === 0 && remote.sparks === 80;
     if (remoteEmpty && cached && (cached.onboarded || cached.totalAura > 0)) {
-      await pushStateToCloud(session.userId, cached, session.username);
+      const kept = withExclusiveCores(cached, profileUser);
+      await pushStateToCloud(session.userId, kept, uname);
       cloudSyncError = null;
-      return cached;
+      return kept;
     }
 
     if (!remote.displayName && data.display_name) {
@@ -243,12 +266,19 @@ export async function loadState(): Promise<PlayerState> {
     if (data.avatar_url) {
       remote.avatarUrl = data.avatar_url as string;
     }
+
+    // Persist exclusive grants if newly added
+    const before = (data.game_state as { ownedCores?: string[] } | null)?.ownedCores ?? [];
+    if (remote.ownedCores.length !== before.length || remote.ownedCores.some((id) => !before.includes(id))) {
+      await pushStateToCloud(session.userId, remote, uname);
+    }
+
     writeLocalCache(session.userId, remote);
     cloudSyncError = null;
     return remote;
   } catch (e) {
     cloudSyncError = e instanceof Error ? e.message : "Cloud load failed";
-    return cached ?? createDefaultState();
+    return withExclusiveCores(cached ?? createDefaultState(), uname);
   }
 }
 

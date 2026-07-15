@@ -57,6 +57,8 @@ export interface CoreDef {
   emoji: string;
   rarity: "common" | "rare" | "epic" | "legendary";
   description: string;
+  /** Not obtainable from drops; granted only to specific accounts */
+  exclusive?: boolean;
 }
 
 export type CosmeticSlot = "frame" | "aura" | "nameplate" | "background";

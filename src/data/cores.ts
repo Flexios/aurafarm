@@ -57,8 +57,53 @@ export const CORES: CoreDef[] = [
     rarity: "legendary",
     description: "Soft silence that somehow screams status.",
   },
+  {
+    id: "owner-seal",
+    name: "Owner Seal",
+    emoji: "🏛️",
+    rarity: "legendary",
+    description: "Founder of AuraFarm. Unique to @admin — not farmable.",
+    exclusive: true,
+  },
 ];
+
+/** Username (lowercase) → exclusive core ids granted automatically */
+export const EXCLUSIVE_CORE_GRANTS: Record<string, string[]> = {
+  admin: ["owner-seal"],
+};
 
 export function coreById(id: string): CoreDef | undefined {
   return CORES.find((c) => c.id === id);
+}
+
+/** Cores that can drop from challenges (excludes exclusive owner items). */
+export function droppableCores(): CoreDef[] {
+  return CORES.filter((c) => !c.exclusive);
+}
+
+/** Resolve owned core ids to defs (unknown ids skipped). */
+export function coresFromIds(ids: string[] | null | undefined): CoreDef[] {
+  if (!ids?.length) return [];
+  return ids.map((id) => coreById(id)).filter((c): c is CoreDef => Boolean(c));
+}
+
+/**
+ * Ensure exclusive collectibles for reserved accounts (e.g. Owner Seal for @admin).
+ */
+export function applyExclusiveCores(
+  ownedCores: string[],
+  username: string | null | undefined,
+): string[] {
+  if (!username) return ownedCores;
+  const grants = EXCLUSIVE_CORE_GRANTS[username.trim().toLowerCase()];
+  if (!grants?.length) return ownedCores;
+  const next = new Set(ownedCores);
+  let changed = false;
+  for (const id of grants) {
+    if (!next.has(id)) {
+      next.add(id);
+      changed = true;
+    }
+  }
+  return changed ? Array.from(next) : ownedCores;
 }

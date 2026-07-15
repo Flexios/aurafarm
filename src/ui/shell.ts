@@ -64,7 +64,7 @@ export function renderShell(
         </nav>
         <div class="sidebar-foot">
           <div class="currency-pill sidebar-currency">
-            <div class="pill streak-pill" data-tip="Streak" title="Streak" aria-label="Streak ${formatNumber(state.streak)}">${icon("streak", "icon icon-sm")} ${formatNumber(state.streak)}</div>
+            <div class="pill streak-pill" data-tip="Streak" title="Streak" aria-label="Streak ${formatNumber(state.streak)}">🔥 ${formatNumber(state.streak)}</div>
             <div class="pill" data-tip="Sparks" title="Sparks" aria-label="Sparks ${formatNumber(state.sparks)}">${icon("spark", "icon icon-sm")} ${formatNumber(state.sparks)}</div>
             <div class="pill glow" data-tip="Glow" title="Glow" aria-label="Glow ${formatNumber(state.glow)}">${icon("glow", "icon icon-sm")} ${formatNumber(state.glow)}</div>
           </div>
@@ -91,7 +91,7 @@ export function renderShell(
               <span class="user-line">${escape(state.displayName)}${session ? ` · @${escape(session.username)}` : ""}</span>
             </div>
             <div class="currency-pill topbar-currency">
-              <div class="pill streak-pill" data-tip="Streak" title="Streak" aria-label="Streak ${formatNumber(state.streak)}">${icon("streak", "icon icon-sm")} ${formatNumber(state.streak)}</div>
+              <div class="pill streak-pill" data-tip="Streak" title="Streak" aria-label="Streak ${formatNumber(state.streak)}">🔥 ${formatNumber(state.streak)}</div>
               ${
                 !state.settings.hideTopCurrency
                   ? `<div class="pill" data-tip="Sparks" title="Sparks" aria-label="Sparks ${formatNumber(state.sparks)}">${icon("spark", "icon icon-sm")} ${formatNumber(state.sparks)}</div>

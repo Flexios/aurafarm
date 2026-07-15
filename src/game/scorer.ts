@@ -1,5 +1,5 @@
 import { aestheticById } from "../data/aesthetics";
-import { CORES } from "../data/cores";
+import { droppableCores } from "../data/cores";
 import type { AestheticCore, Challenge, ScoreResult } from "../types";
 import { clamp } from "../utils/format";
 import { hashString, mulberry32 } from "../utils/seed";
@@ -164,15 +164,18 @@ export function finalizeRewards(
     base.score >= 90 ? 0.55 : base.score >= 75 ? 0.28 : base.score >= 55 ? 0.12 : 0.04;
 
   if (dropRoll < dropChance) {
+    const farmable = droppableCores();
     const pool =
       base.score >= 92
-        ? CORES.filter((c) => c.rarity === "legendary" || c.rarity === "epic")
+        ? farmable.filter((c) => c.rarity === "legendary" || c.rarity === "epic")
         : base.score >= 80
-          ? CORES.filter((c) => c.rarity === "epic" || c.rarity === "rare")
-          : CORES.filter((c) => c.rarity === "rare" || c.rarity === "common");
+          ? farmable.filter((c) => c.rarity === "epic" || c.rarity === "rare")
+          : farmable.filter((c) => c.rarity === "rare" || c.rarity === "common");
     const unowned = pool.filter((c) => !ownedCores.includes(c.id));
     const pickFrom = unowned.length ? unowned : pool;
-    coreDropped = pickFrom[Math.floor(dropRoll * pickFrom.length * 10) % pickFrom.length]!.id;
+    if (pickFrom.length) {
+      coreDropped = pickFrom[Math.floor(dropRoll * pickFrom.length * 10) % pickFrom.length]!.id;
+    }
   }
 
   return {
