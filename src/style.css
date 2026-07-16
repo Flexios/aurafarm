@@ -3345,3 +3345,161 @@ html[data-hide-top-currency="1"] .topbar-currency {
     max-width: 360px !important;
   }
 }
+
+/* ——— Rizz fill-screen desktop (final overrides) ——— */
+.rizz-settings-genders {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.rizz-settings-genders .btn {
+  width: 100%;
+  max-width: none;
+}
+
+.rizz-home-row {
+  display: flex;
+  gap: 14px;
+  align-items: stretch;
+}
+.rizz-home-thumb {
+  width: 88px;
+  height: 118px;
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: linear-gradient(160deg, var(--rizz-a, var(--accent)), #141210);
+  border: 1px solid var(--separator);
+}
+.rizz-home-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+}
+
+@media (min-width: 960px) {
+  .app-shell[data-screen="rizz"] .screen {
+    padding-bottom: 24px;
+  }
+
+  .app-shell[data-screen="rizz"] .screen-body {
+    height: calc(100dvh - 120px);
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .app-shell[data-screen="rizz"] .screen-body > .rizz-story,
+  .app-shell[data-screen="rizz"] .screen-body > .rizz-chat,
+  .app-shell[data-screen="rizz"] .screen-body > .rizz-pick,
+  .app-shell[data-screen="rizz"] .screen-body > .rizz-gate,
+  .app-shell[data-screen="rizz"] .screen-body > .rizz-result {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .rizz-story-chrome {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .rizz-story-stage {
+    display: grid !important;
+    grid-template-columns: min(42vh, 420px) minmax(0, 1fr) !important;
+    gap: 24px 40px !important;
+    align-items: stretch !important;
+    flex: 1;
+    min-height: 0;
+    width: 100% !important;
+  }
+
+  .rizz-story-art {
+    width: 100% !important;
+    max-width: min(42vh, 420px) !important;
+    height: auto !important;
+    max-height: min(78vh, 720px) !important;
+    aspect-ratio: 3 / 4 !important;
+    margin: 0 !important;
+  }
+
+  .rizz-story-side {
+    max-width: none !important;
+    width: 100% !important;
+    justify-content: center;
+    padding: 12px 8px 12px 0 !important;
+  }
+
+  .rizz-story-side-card {
+    max-width: 640px;
+  }
+
+  .rizz-story-composer {
+    max-width: 640px;
+  }
+
+  .rizz-chat-layout {
+    display: grid !important;
+    grid-template-columns: min(40vh, 400px) minmax(0, 1fr) !important;
+    gap: 24px 36px !important;
+    align-items: stretch !important;
+    flex: 1;
+    min-height: 0;
+    width: 100% !important;
+    height: 100%;
+  }
+
+  .rizz-chat-photo {
+    display: flex !important;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .rizz-chat-art {
+    width: 100% !important;
+    max-width: min(40vh, 400px) !important;
+    max-height: min(78vh, 720px) !important;
+    aspect-ratio: 3 / 4 !important;
+    height: auto !important;
+    flex: 0 1 auto;
+  }
+
+  .rizz-chat-main {
+    max-width: none !important;
+    width: 100% !important;
+    height: 100%;
+    min-height: 0;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .rizz-bubbles {
+    flex: 1 1 auto !important;
+    max-height: none !important;
+    min-height: 200px !important;
+    height: 100%;
+  }
+
+  .rizz-chat-composer {
+    margin-top: auto;
+  }
+
+  .rizz-settings-genders {
+    flex-direction: row;
+  }
+  .rizz-settings-genders .btn {
+    flex: 1;
+  }
+}
+
+@media (min-width: 1200px) {
+  .rizz-story-stage {
+    grid-template-columns: min(46vh, 460px) minmax(0, 1fr) !important;
+  }
+  .rizz-chat-layout {
+    grid-template-columns: min(44vh, 440px) minmax(0, 1fr) !important;
+  }
+}

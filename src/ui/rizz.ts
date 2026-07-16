@@ -1,11 +1,11 @@
 import { rizzTurn } from "../ai/rizz";
 import {
-  loadRizzGender,
+  clearRizzGenderSession,
+  loadRizzGenderSession,
   personaById,
   personasByGender,
   pickDailyPersona,
   pickRandomPersona,
-  saveRizzGender,
   type RizzPersona,
 } from "../data/rizzScenarios";
 import { applyRizzResult } from "../game/economy";
@@ -16,6 +16,7 @@ import {
   type RizzOutcome,
 } from "../game/rizzLocal";
 import { t } from "../i18n";
+import { updateSettings } from "../state/store";
 import type { PlayerState, RizzGender } from "../types";
 import { escapeHtml } from "../utils/format";
 import { showToast } from "./toast";
@@ -43,8 +44,8 @@ let live: {
   result: SessionResult | null;
   storyReplySent: boolean;
 } = {
-  gender: loadRizzGender(),
-  phase: loadRizzGender() ? "pick" : "gate",
+  gender: null,
+  phase: "gate",
   personaId: null,
   messages: [],
   interest: 42,
@@ -53,6 +54,19 @@ let live: {
   result: null,
   storyReplySent: false,
 };
+
+/** Home / external: open straight into a persona story */
+export function queueRizzStory(personaId: string, gender: RizzGender): void {
+  live.gender = gender;
+  live.personaId = personaId;
+  live.messages = [];
+  live.interest = 42;
+  live.turn = 0;
+  live.busy = false;
+  live.result = null;
+  live.storyReplySent = false;
+  live.phase = "story";
+}
 
 function interestLabel(n: number): string {
   if (n >= RIZZ_LIKE_AT) return t("rizz.meter.locked");
@@ -92,16 +106,33 @@ export function renderRizz(
   aiOn: boolean,
   onState: (s: PlayerState) => void,
 ): void {
-  // Re-sync gender from session storage if gate was never opened this tab
-  if (!live.gender) {
-    const g = loadRizzGender();
-    if (g) {
-      live.gender = g;
-      if (live.phase === "gate") live.phase = "pick";
+  // Prefer cloud-persisted gender; migrate legacy session key once
+  let settingsGender = state.settings.rizzTargetGender ?? null;
+  if (!settingsGender) {
+    const legacy = loadRizzGenderSession();
+    if (legacy) {
+      settingsGender = legacy;
+      clearRizzGenderSession();
+      state = updateSettings(state, { rizzTargetGender: legacy });
+      queueMicrotask(() => onState(state));
     }
+  }
+  // Keep live gender in sync (don't clobber mid-story if settings already set)
+  if (settingsGender) live.gender = settingsGender;
+  if (settingsGender && live.phase === "gate") {
+    live.phase = "pick";
+  } else if (!settingsGender && !live.personaId) {
+    live.phase = "gate";
+    live.gender = null;
   }
 
   const preferAi = aiOn && state.settings.preferAiJudge;
+
+  const persistGender = (g: RizzGender | null) => {
+    live.gender = g;
+    const next = updateSettings(state, { rizzTargetGender: g });
+    onState(next);
+  };
 
   const paint = () => {
     const phase = live.phase;
@@ -131,10 +162,9 @@ export function renderRizz(
         </div>`;
       container.querySelectorAll<HTMLButtonElement>("[data-gender]").forEach((btn) => {
         btn.addEventListener("click", () => {
-          live.gender = btn.dataset.gender as RizzGender;
-          saveRizzGender(live.gender);
+          const g = btn.dataset.gender as RizzGender;
           live.phase = "pick";
-          paint();
+          persistGender(g);
         });
       });
       return;
@@ -182,11 +212,9 @@ export function renderRizz(
           <p class="muted" style="font-size:0.8rem;margin-top:10px">${aiOn ? t("rizz.aiOn") : t("rizz.aiOff")}</p>
         </div>`;
       container.querySelector("#rizz-change-gender")?.addEventListener("click", () => {
-        live.gender = null;
-        saveRizzGender(null);
-        live.phase = "gate";
         resetRun();
-        paint();
+        live.phase = "gate";
+        persistGender(null);
       });
       const startWith = (p: RizzPersona) => {
         resetRun();

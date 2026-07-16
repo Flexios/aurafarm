@@ -36,6 +36,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
       : "UTC",
   language: "en",
   nsfwChallenges: false,
+  rizzTargetGender: null,
 };
 
 export const USERNAME_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
@@ -105,6 +106,13 @@ export function normalizeState(
       language: isAppLang(parsed.settings?.language)
         ? parsed.settings!.language
         : DEFAULT_SETTINGS.language,
+      rizzTargetGender:
+        parsed.settings?.rizzTargetGender === "male" ||
+        parsed.settings?.rizzTargetGender === "female"
+          ? parsed.settings.rizzTargetGender
+          : parsed.settings?.rizzTargetGender === null
+            ? null
+            : DEFAULT_SETTINGS.rizzTargetGender,
     },
     avatarUrl: parsed.avatarUrl ?? null,
     claimedFriendBattleIds: Array.isArray(parsed.claimedFriendBattleIds)

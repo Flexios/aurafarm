@@ -69,7 +69,7 @@ export async function rizzTurn(
     if (ai) return { ...ai, source: "ai" };
   }
   return {
-    ...rizzLocalTurn(persona, playerMessage, interest, turn, isStoryReply),
+    ...rizzLocalTurn(persona, playerMessage, interest, turn, isStoryReply, history),
     source: "local",
   };
 }

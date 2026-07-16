@@ -55,6 +55,11 @@ export interface UserSettings {
    * Default off; only for users who opt in.
    */
   nsfwChallenges: boolean;
+  /**
+   * Rizz Trainer target gender (who you practice on).
+   * Persists forever; changeable in Settings. null = not chosen yet.
+   */
+  rizzTargetGender: RizzGender | null;
 }
 
 export type ChallengeCategory =

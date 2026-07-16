@@ -103,6 +103,7 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
       "itinerary",
       "solo trip",
       "coffee",
+      "matcha",
       "photo",
       "flight",
       "flying",
@@ -110,6 +111,7 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
       "travel",
       "lisbon",
       "layover",
+      "golden hour",
     ],
     replies: {
       warm: ["okay romantic alert 😌", "you get the window seat energy", "tell me your favorite layover snack"],
@@ -250,9 +252,11 @@ export function pickRandomPersona(gender: RizzGender): RizzPersona {
   return list[Math.floor(Math.random() * list.length)]!;
 }
 
+/** Legacy session key — migrated into settings.rizzTargetGender */
 const GENDER_KEY = "aurafarm.rizzTargetGender";
 
-export function loadRizzGender(): RizzGender | null {
+/** Read one-time session fallback (migrated into cloud settings). */
+export function loadRizzGenderSession(): RizzGender | null {
   try {
     const v = sessionStorage.getItem(GENDER_KEY);
     if (v === "male" || v === "female") return v;
@@ -262,10 +266,9 @@ export function loadRizzGender(): RizzGender | null {
   return null;
 }
 
-export function saveRizzGender(g: RizzGender | null): void {
+export function clearRizzGenderSession(): void {
   try {
-    if (!g) sessionStorage.removeItem(GENDER_KEY);
-    else sessionStorage.setItem(GENDER_KEY, g);
+    sessionStorage.removeItem(GENDER_KEY);
   } catch {
     /* ignore */
   }

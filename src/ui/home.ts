@@ -3,6 +3,7 @@ import { aestheticById } from "../data/aesthetics";
 import { coresFromIds } from "../data/cores";
 import { nextRank, rankForAura } from "../data/ranks";
 import { challengeArtHtml, challengeTitleRow } from "../data/challenges";
+import { pickDailyPersona } from "../data/rizzScenarios";
 import { getDailyQuote } from "../data/quotes";
 import { getTodaysChallenge } from "../game/daily";
 import { localizeCategory, localizeChallenge, t } from "../i18n";
@@ -11,6 +12,7 @@ import type { PlayerState, Screen } from "../types";
 import { escapeHtml, formatNumber } from "../utils/format";
 import { coreChipHtml } from "./collectibles";
 import { icon } from "./icons";
+import { queueRizzStory } from "./rizz";
 
 export function renderHome(
   container: HTMLElement,
@@ -135,13 +137,40 @@ export function renderHome(
 
       <div class="home-cell home-cell-full">
         <div class="section-header">${t("rizz.homeCard")}</div>
+        ${
+          state.settings.rizzTargetGender
+            ? (() => {
+                const daily = pickDailyPersona(state.settings.rizzTargetGender!);
+                return `
+        <div class="card home-panel rizz-home-story">
+          <div class="rizz-home-row">
+            <div class="rizz-home-thumb" style="--rizz-a:${escapeHtml(daily.accent)}">
+              <img src="${escapeHtml(daily.image)}" alt="" loading="lazy" onerror="this.style.display='none'" />
+            </div>
+            <div style="flex:1;min-width:0">
+              <div class="muted" style="font-size:0.78rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase">${t("rizz.daily")}</div>
+              <h3 style="margin:4px 0 0">${escapeHtml(daily.name)} · @${escapeHtml(daily.handle)}</h3>
+              <p class="muted" style="margin:6px 0 0">${escapeHtml(daily.storyCaption)}</p>
+              <p class="muted" style="margin:4px 0 0;font-size:0.8rem">${escapeHtml(daily.vibe)} · ${
+                state.settings.rizzTargetGender === "female" ? t("rizz.her") : t("rizz.him")
+              }</p>
+            </div>
+          </div>
+          <div class="btn-row" style="margin-top:14px">
+            <button class="btn btn-fill" id="go-rizz-story">${t("rizz.replyToStory")}</button>
+            <button class="btn btn-secondary" id="go-rizz">${t("rizz.open")}</button>
+          </div>
+        </div>`;
+              })()
+            : `
         <div class="card home-panel">
           <h3 style="margin:0">${t("page.rizz")}</h3>
           <p class="muted" style="margin:6px 0 0">${t("rizz.homeBlurb")}</p>
           <div class="btn-row" style="margin-top:auto">
             <button class="btn btn-fill" id="go-rizz">${t("rizz.open")}</button>
           </div>
-        </div>
+        </div>`
+        }
       </div>
 
       <div class="home-account home-cell-full">
@@ -170,6 +199,14 @@ export function renderHome(
   container.querySelector("#go-shop")?.addEventListener("click", () => onNavigate("shop"));
   container.querySelector("#go-card")?.addEventListener("click", () => onNavigate("card"));
   container.querySelector("#go-rizz")?.addEventListener("click", () => onNavigate("rizz"));
+  container.querySelector("#go-rizz-story")?.addEventListener("click", () => {
+    const g = state.settings.rizzTargetGender;
+    if (g) {
+      const daily = pickDailyPersona(g);
+      queueRizzStory(daily.id, g);
+    }
+    onNavigate("rizz");
+  });
   container.querySelector("#go-profile")?.addEventListener("click", () => onNavigate("profile"));
   container.querySelector("#go-settings")?.addEventListener("click", () => onNavigate("settings"));
   container.querySelector("#logout-btn")?.addEventListener("click", () => onLogout());

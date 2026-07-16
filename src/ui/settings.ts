@@ -19,7 +19,7 @@ import {
   updateDisplayName,
   updateSettings,
 } from "../state/store";
-import type { AccentTheme, PlayerState, UserSettings } from "../types";
+import type { AccentTheme, PlayerState, RizzGender, UserSettings } from "../types";
 import { escapeHtml } from "../utils/format";
 import { showToast } from "./toast";
 
@@ -392,6 +392,22 @@ export function renderSettings(
         <p class="field-hint muted" style="margin:0">${t("settings.nsfwHint")}</p>
       </div>
 
+      <div class="section-header">${t("settings.rizz")}</div>
+      <div class="card stack">
+        <p class="muted settings-meta" style="margin:0">${t("settings.rizzHint")}</p>
+        <div class="rizz-settings-genders">
+          <button type="button" class="btn ${s.rizzTargetGender === "female" ? "btn-fill" : "btn-secondary"}" data-rizz-gender="female">${t("rizz.trainHer")}</button>
+          <button type="button" class="btn ${s.rizzTargetGender === "male" ? "btn-fill" : "btn-secondary"}" data-rizz-gender="male">${t("rizz.trainHim")}</button>
+        </div>
+        ${
+          s.rizzTargetGender
+            ? `<p class="field-hint muted" style="margin:0">${t("settings.rizzCurrent", {
+                target: s.rizzTargetGender === "female" ? t("rizz.her") : t("rizz.him"),
+              })}</p>`
+            : `<p class="field-hint muted" style="margin:0">${t("settings.rizzNone")}</p>`
+        }
+      </div>
+
       <div class="section-header">${t("settings.streakSection")}</div>
       <div class="card stack">
         ${toggleRow("streakEmailEnabled", t("settings.streakEmail"), s.streakEmailEnabled)}
@@ -472,6 +488,23 @@ export function renderSettings(
       error = "";
       showToast(success);
       paint();
+    });
+
+    body.querySelectorAll<HTMLButtonElement>("[data-rizz-gender]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const g = btn.dataset.rizzGender as RizzGender;
+        const next = s.rizzTargetGender === g ? null : g;
+        state = updateSettings(state, { rizzTargetGender: next });
+        onState(state);
+        showToast(
+          next
+            ? t("settings.rizzSaved", {
+                target: next === "female" ? t("rizz.her") : t("rizz.him"),
+              })
+            : t("settings.rizzCleared"),
+        );
+        paint();
+      });
     });
   };
 
