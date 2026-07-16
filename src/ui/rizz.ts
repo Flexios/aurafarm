@@ -4,6 +4,7 @@ import {
   loadRizzGenderSession,
   personaById,
   personaMoodImage,
+  personaRevealLevel,
   pickDailyPersona,
   pickRandomPersona,
   startingInterest,
@@ -12,7 +13,7 @@ import {
   type RizzPersona,
 } from "../data/rizzScenarios";
 import { applyRizzResult } from "../game/economy";
-import { buildCoachAdvice } from "../game/rizzCoach";
+import { bonusTurnsToGrant, buildCoachAdvice } from "../game/rizzCoach";
 import {
   RIZZ_LIKE_AT,
   RIZZ_MAX_TURNS,
@@ -50,12 +51,19 @@ let live: {
   interest: number;
   peakInterest: number;
   turn: number;
+  /** Base 8 + trainer-granted extras */
+  maxTurns: number;
+  bonusGranted: number;
+  lastDelta: number;
   busy: boolean;
   result: SessionResult | null;
   storyReplySent: boolean;
   lastSource: "ai" | "local" | null;
   /** Coach panel expanded (when enabled in settings) */
   coachOpen: boolean;
+  coachSalt: number;
+  coachOffered: string[];
+  coachOfferKey: string;
 } = {
   gender: null,
   phase: "gate",
@@ -64,12 +72,24 @@ let live: {
   interest: 42,
   peakInterest: 42,
   turn: 0,
+  maxTurns: RIZZ_MAX_TURNS,
+  bonusGranted: 0,
+  lastDelta: 0,
   busy: false,
   result: null,
   storyReplySent: false,
   lastSource: null,
   coachOpen: true,
+  coachSalt: 0,
+  coachOffered: [],
+  coachOfferKey: "",
 };
+
+function resetCoachMemory(): void {
+  live.coachSalt = 0;
+  live.coachOffered = [];
+  live.coachOfferKey = "";
+}
 
 /** Home / external: open straight into a persona story */
 export function queueRizzStory(personaId: string, gender: RizzGender): void {
@@ -81,10 +101,14 @@ export function queueRizzStory(personaId: string, gender: RizzGender): void {
   live.interest = start;
   live.peakInterest = start;
   live.turn = 0;
+  live.maxTurns = RIZZ_MAX_TURNS;
+  live.bonusGranted = 0;
+  live.lastDelta = 0;
   live.busy = false;
   live.result = null;
   live.storyReplySent = false;
   live.lastSource = null;
+  resetCoachMemory();
   live.phase = "story";
 }
 
@@ -149,7 +173,15 @@ function storyArtHtml(
 function moodClassFor(
   interest: number,
   outcome?: "continue" | "like" | "ghost" | "friendzone" | null,
+  persona?: RizzPersona | null,
 ): string {
+  if (persona) {
+    const lvl = personaRevealLevel(persona, interest, outcome);
+    if (lvl === "hot") return "rizz-mood-win rizz-mood-hot";
+    if (lvl === "win") return "rizz-mood-win";
+    if (lvl === "fail") return "rizz-mood-fail";
+    return "";
+  }
   if (outcome === "like" || interest >= 68) return "rizz-mood-win";
   if (outcome === "ghost" || outcome === "friendzone" || interest <= 32)
     return "rizz-mood-fail";
@@ -188,7 +220,21 @@ function coachPanelHtml(
     turn: opts.turn,
     isStoryPhase: opts.isStoryPhase,
     history: opts.history,
+    excludeLines: live.coachOffered,
+    salt: live.coachSalt,
   });
+  // Remember offered set once per (turn, salt) so refresh rotates without exhaust-on-repaint
+  const offerKey = `${p.id}|${opts.turn}|${live.coachSalt}|${opts.isStoryPhase ? "s" : "c"}`;
+  if (offerKey !== live.coachOfferKey) {
+    live.coachOfferKey = offerKey;
+    for (const line of advice.lines) {
+      const key = line.toLowerCase();
+      if (!live.coachOffered.includes(key)) live.coachOffered.push(key);
+    }
+    if (live.coachOffered.length > 48) {
+      live.coachOffered = live.coachOffered.slice(-28);
+    }
+  }
   return `
     <div class="rizz-coach rizz-coach-open" role="complementary" aria-label="${t("rizz.coach.title")}">
       <div class="rizz-coach-head">
@@ -197,6 +243,7 @@ function coachPanelHtml(
           <strong>${t("rizz.coach.title")}</strong>
         </div>
         <div class="rizz-coach-head-actions">
+          <button type="button" class="btn-plain rizz-coach-mini" id="rizz-coach-refresh">${t("rizz.coach.refresh")}</button>
           <button type="button" class="btn-plain rizz-coach-mini" id="rizz-coach-collapse" aria-expanded="true">${t("rizz.coach.hide")}</button>
           <button type="button" class="btn-plain rizz-coach-mini" id="rizz-coach-disable">${t("rizz.coach.off")}</button>
         </div>
@@ -226,10 +273,16 @@ function wireCoachPanel(
 ): void {
   container.querySelector("#rizz-coach-enable")?.addEventListener("click", () => {
     live.coachOpen = true;
+    resetCoachMemory();
     onState(updateSettings(state, { rizzCoachEnabled: true }));
   });
   container.querySelector("#rizz-coach-open")?.addEventListener("click", () => {
     live.coachOpen = true;
+    paint();
+  });
+  container.querySelector("#rizz-coach-refresh")?.addEventListener("click", () => {
+    live.coachSalt += 1;
+    playUiSound("soft", state.settings.soundEnabled);
     paint();
   });
   container.querySelector("#rizz-coach-collapse")?.addEventListener("click", () => {
@@ -257,10 +310,14 @@ function resetRun(): void {
   live.interest = 40;
   live.peakInterest = 40;
   live.turn = 0;
+  live.maxTurns = RIZZ_MAX_TURNS;
+  live.bonusGranted = 0;
+  live.lastDelta = 0;
   live.busy = false;
   live.result = null;
   live.storyReplySent = false;
   live.lastSource = null;
+  resetCoachMemory();
 }
 
 function beginWithPersona(p: RizzPersona): void {
@@ -270,10 +327,14 @@ function beginWithPersona(p: RizzPersona): void {
   live.interest = start;
   live.peakInterest = start;
   live.turn = 0;
+  live.maxTurns = RIZZ_MAX_TURNS;
+  live.bonusGranted = 0;
+  live.lastDelta = 0;
   live.busy = false;
   live.result = null;
   live.storyReplySent = false;
   live.lastSource = null;
+  resetCoachMemory();
   live.phase = "story";
 }
 
@@ -528,7 +589,7 @@ export function renderRizz(
       }
       const ended = phase === "result" && live.result;
       const result = live.result;
-      const turnsLeft = Math.max(0, RIZZ_MAX_TURNS - live.turn);
+      const turnsLeft = Math.max(0, live.maxTurns - live.turn);
       const win = result?.outcome === "like";
       const friend = result?.outcome === "friendzone";
       const endTitle = !result
@@ -542,7 +603,16 @@ export function renderRizz(
       const moodInterest = ended && result ? result.interest : live.interest;
       const moodOutcome = ended && result ? result.outcome : null;
       const moodPhoto = personaMoodImage(p, moodInterest, moodOutcome);
-      const moodCls = moodClassFor(moodInterest, moodOutcome);
+      const moodCls = moodClassFor(moodInterest, moodOutcome, p);
+      const reveal = personaRevealLevel(p, moodInterest, moodOutcome);
+      const moodTag =
+        reveal === "hot"
+          ? `<span class="rizz-mood-tag rizz-mood-tag-hot">${t("rizz.mood.reveal")}</span>`
+          : reveal === "win"
+            ? `<span class="rizz-mood-tag rizz-mood-tag-win">${t("rizz.mood.vibing")}</span>`
+            : reveal === "fail"
+              ? `<span class="rizz-mood-tag rizz-mood-tag-fail">${t("rizz.mood.cold")}</span>`
+              : "";
 
       container.innerHTML = `
         <div class="rizz-chat${ended ? " rizz-chat-ended" : ""}${moodCls ? ` ${moodCls}` : ""}">
@@ -550,13 +620,7 @@ export function renderRizz(
             <aside class="rizz-chat-photo" aria-hidden="true">
               <div class="rizz-story-art rizz-chat-art${moodCls ? ` ${moodCls}` : ""}" style="--rizz-a:${escapeHtml(p.accent)};--rizz-b:${escapeHtml(p.accent2)}">
                 <img class="rizz-story-img" src="${escapeHtml(moodPhoto)}" alt="" onerror="this.onerror=null;this.src='${escapeHtml(p.image)}'" />
-                ${
-                  moodCls === "rizz-mood-win"
-                    ? `<span class="rizz-mood-tag rizz-mood-tag-win">${t("rizz.mood.vibing")}</span>`
-                    : moodCls === "rizz-mood-fail"
-                      ? `<span class="rizz-mood-tag rizz-mood-tag-fail">${t("rizz.mood.cold")}</span>`
-                      : ""
-                }
+                ${moodTag}
               </div>
               <p class="muted rizz-chat-photo-cap">${escapeHtml(p.storyCaption)}</p>
             </aside>
@@ -631,7 +695,11 @@ export function renderRizz(
                       enabled: Boolean(state.settings.rizzCoachEnabled),
                       open: live.coachOpen,
                     })}
-              <p class="muted rizz-turns">${t("rizz.turnsLeft", { n: turnsLeft })}</p>
+              <p class="muted rizz-turns">${t("rizz.turnsLeft", { n: turnsLeft })}${
+                        live.bonusGranted > 0
+                          ? ` · ${t("rizz.bonusTurns", { n: live.bonusGranted })}`
+                          : ""
+                      }</p>
               <form class="rizz-chat-composer" id="rizz-chat-form">
                 <input type="text" id="rizz-chat-input" maxlength="200" autocomplete="off"
                   placeholder="${t("rizz.chatPlaceholder")}" ${live.busy ? "disabled" : ""} />
@@ -729,6 +797,8 @@ export function renderRizz(
     live.busy = true;
     live.messages = [...live.messages, { role: "user", text }];
     live.turn += 1;
+    // New turn → allow coach to reshuffle fresh options
+    live.coachSalt += 1;
     if (isStory) {
       live.storyReplySent = true;
       live.phase = "chat";
@@ -743,9 +813,12 @@ export function renderRizz(
       live.turn,
       isStory,
       preferAi,
+      live.maxTurns,
     );
 
+    const prevInterest = live.interest;
     live.interest = res.interest;
+    live.lastDelta = res.interest - prevInterest;
     live.peakInterest = Math.max(live.peakInterest, res.interest);
     live.lastSource = res.source;
     if (res.source === "local" && preferAi) {
@@ -769,7 +842,27 @@ export function renderRizz(
       return;
     }
 
-    if (live.turn >= RIZZ_MAX_TURNS) {
+    // Trainer may stretch the chat if chemistry is rising near the end
+    const bonus = bonusTurnsToGrant({
+      interest: live.interest,
+      peakInterest: live.peakInterest,
+      turn: live.turn,
+      maxTurns: live.maxTurns,
+      alreadyGranted: live.bonusGranted,
+      lastDelta: live.lastDelta,
+      hardMode: persona.hardMode,
+      nsfw: persona.nsfw,
+    });
+    if (bonus > 0) {
+      live.maxTurns += bonus;
+      live.bonusGranted += bonus;
+      const extraLine = pickBonusLine(persona, bonus);
+      live.messages = [...live.messages, { role: "npc", text: extraLine }];
+      showToast(t("rizz.bonusToast", { n: bonus }), 2800, "ok");
+      playUiSound("soft", state.settings.soundEnabled);
+    }
+
+    if (live.turn >= live.maxTurns) {
       paint();
       setTimeout(() => {
         void finish(live.interest >= 55 ? "friendzone" : "ghost");
@@ -778,6 +871,20 @@ export function renderRizz(
     }
 
     paint();
+  }
+
+  function pickBonusLine(persona: RizzPersona, n: number): string {
+    const name = persona.name;
+    const lines = [
+      `wait — don't hop yet. this was just getting good. +${n} more`,
+      `ok one more beat. i wasn't done with this chat`,
+      `hold up. extra time. use it well`,
+      n > 1
+        ? `…alright, ${n} more. only because this got interesting`
+        : `fine. one more turn. impress me again`,
+      `${name} voice: "don't ghost mid-vibe." (+${n})`,
+    ];
+    return lines[Math.floor(Math.random() * lines.length)]!;
   }
 
   paint();

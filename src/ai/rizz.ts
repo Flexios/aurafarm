@@ -83,6 +83,7 @@ export async function rizzTurn(
   turn: number,
   isStoryReply: boolean,
   preferAi: boolean,
+  maxTurns?: number,
 ): Promise<RizzTurnResult & { source: "ai" | "local"; provider?: string }> {
   if (preferAi) {
     let ai = await rizzTurnWithAi(
@@ -107,7 +108,15 @@ export async function rizzTurn(
     if (ai) return { ...ai, source: "ai", provider: ai.provider };
   }
   return {
-    ...rizzLocalTurn(persona, playerMessage, interest, turn, isStoryReply, history),
+    ...rizzLocalTurn(
+      persona,
+      playerMessage,
+      interest,
+      turn,
+      isStoryReply,
+      history,
+      maxTurns,
+    ),
     source: "local",
   };
 }

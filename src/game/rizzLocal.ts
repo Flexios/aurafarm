@@ -18,6 +18,7 @@ export interface RizzTurnResult {
   provider?: string;
 }
 
+/** Base turn budget; trainers may grant bonus turns in the UI when chemistry is high */
 const MAX_TURNS = 8;
 const LIKE_AT = 75;
 const GHOST_AT = 12;
@@ -588,6 +589,8 @@ export function rizzLocalTurn(
   turn: number,
   isStoryReply: boolean,
   history: RizzChatMessage[] = [],
+  /** Dynamic cap (base 8 + bonus turns granted by trainer) */
+  maxTurns: number = MAX_TURNS,
 ): RizzTurnResult {
   const msg = playerMessage.trim();
   const intent = detectIntent(msg, persona, isStoryReply);
@@ -619,6 +622,7 @@ export function rizzLocalTurn(
 
   const likeAt = hard ? LIKE_AT + 8 : LIKE_AT; // 83 for hard mode
   const lateLike = hard ? 78 : 70;
+  const turnCap = Math.max(MAX_TURNS, maxTurns);
 
   if (built.forceGhost || intent === "insult" || next <= GHOST_AT) {
     outcome = "ghost";
@@ -629,13 +633,13 @@ export function rizzLocalTurn(
     } else if (!reply) {
       reply = pick(persona.replies.ghost.filter(Boolean).concat(["…", "left on read"]));
     }
-  } else if (next >= likeAt || (turn >= 6 && next >= lateLike && intent !== "low_effort")) {
+  } else if (next >= likeAt || (turn >= Math.max(6, turnCap - 2) && next >= lateLike && intent !== "low_effort")) {
     outcome = "like";
     next = Math.max(next, likeAt);
     reply = pick(persona.replies.like);
     reaction = "❤️";
     mood = "like";
-  } else if (turn >= MAX_TURNS) {
+  } else if (turn >= turnCap) {
     if (next >= 55) {
       outcome = "friendzone";
       reply = pick([

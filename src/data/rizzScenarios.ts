@@ -19,6 +19,11 @@ export interface RizzPersona {
   imageWin: string;
   /** Low interest / ghost reaction portrait */
   imageFail: string;
+  /**
+   * Optional “reveal” portrait (e.g. 18+ clothing step-up) when
+   * interest is very high or outcome is like. Falls back to imageWin.
+   */
+  imageHot?: string;
   accent: string;
   accent2: string;
   emoji: string;
@@ -215,6 +220,7 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
     image: "/rizz/f-raven.jpg",
     imageWin: "/rizz/f-raven-win.jpg",
     imageFail: "/rizz/f-raven-fail.jpg",
+    imageHot: "/rizz/f-raven-hot.jpg",
     accent: "#ff4d8d",
     accent2: "#140810",
     emoji: "🖤",
@@ -345,6 +351,7 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
     image: "/rizz/m-knox.jpg",
     imageWin: "/rizz/m-knox-win.jpg",
     imageFail: "/rizz/m-knox-fail.jpg",
+    imageHot: "/rizz/m-knox-hot.jpg",
     accent: "#ff6b4a",
     accent2: "#120a08",
     emoji: "🔥",
@@ -556,7 +563,8 @@ export function startingInterest(persona: RizzPersona): number {
 
 /**
  * Portrait for current chat mood.
- * - win: like outcome or high interest
+ * - hot: optional clothing reveal at very high interest / like (Raven, Knox)
+ * - win: high interest
  * - fail: ghost/friendzone or cold interest
  * - default: neutral story image
  */
@@ -565,11 +573,28 @@ export function personaMoodImage(
   interest: number,
   outcome?: "continue" | "like" | "ghost" | "friendzone" | null,
 ): string {
-  if (outcome === "like") return persona.imageWin;
+  const hot = persona.imageHot;
+  if (outcome === "like") return hot || persona.imageWin;
   if (outcome === "ghost" || outcome === "friendzone") return persona.imageFail;
+  // Progressive reveal for 18+ with hot art
+  if (hot && interest >= 78) return hot;
   if (interest >= 68) return persona.imageWin;
+  if (hot && interest >= 62) return persona.imageWin; // smile step before reveal
   if (interest <= 32) return persona.imageFail;
   return persona.image;
+}
+
+/** Soft label for reveal step (UI chip) */
+export function personaRevealLevel(
+  persona: RizzPersona,
+  interest: number,
+  outcome?: "continue" | "like" | "ghost" | "friendzone" | null,
+): "hot" | "win" | "fail" | "neutral" {
+  const src = personaMoodImage(persona, interest, outcome);
+  if (persona.imageHot && src === persona.imageHot) return "hot";
+  if (src === persona.imageWin) return "win";
+  if (src === persona.imageFail) return "fail";
+  return "neutral";
 }
 
 export function personasByGender(
