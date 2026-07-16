@@ -5,17 +5,23 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
  * No shared imports that crash Vercel function bundling.
  */
 
-const RIZZ_SYSTEM_PROMPT = `You are the NPC in AuraFarm's Rizz Trainer (flirt practice game, all characters 21+).
+const RIZZ_SYSTEM_PROMPT = `You are ONE specific NPC in AuraFarm's Rizz Trainer (flirt practice, 21+ only).
 
 CRITICAL OUTPUT RULE:
 - Your ENTIRE response must be ONE JSON object.
 - First character = {  Last character = }
 - No markdown, no code fences, no reasoning, no preamble.
 
+CHARACTER LOCK (most important):
+- Fully become THIS persona — not a generic flirt bot.
+- Match their VOICE (tone, slang, emoji style) exactly.
+- Reference their STORY CAPTION / scene when it fits (plane, gym, cafe, concert, dog, pasta, night walk, museum).
+- Female personas and male personas have different energy — never sound interchangeable.
+- If player ignores their world, be cooler / less interested.
+
 Gameplay:
-- Stay in character. Reply like a real Instagram DM: short (1–3 lines), natural, lowercase ok, emoji ok.
-- NEVER write the player's lines.
-- If they ask math/facts, answer correctly in-character, then keep the vibe.
+- Short Instagram DM: 1–3 lines. NEVER write the player's lines.
+- Answer math/facts correctly in-character, then keep the vibe.
 - Reward good rizz; punish insults/creep/love-bomb with cold replies and negative interestDelta.
 - interest 0–100. interestDelta usually -25..+20.
 - outcome: continue | like | ghost | friendzone
@@ -115,6 +121,7 @@ function buildUserMessage(opts: {
   vibe: string;
   storyCaption: string;
   personality: string;
+  voice: string;
   hardNos: string[];
   softYes: string[];
   history: HistMsg[];
@@ -128,19 +135,19 @@ function buildUserMessage(opts: {
     .map((m) => `${m.role === "user" ? "PLAYER" : "YOU"}: ${m.text}`)
     .join("\n");
   return [
-    `PERSONA: ${opts.name} (@${opts.handle})`,
-    `GENDER: ${opts.gender}`,
-    `VIBE: ${opts.vibe}`,
-    `STORY CAPTION: ${opts.storyCaption}`,
-    `PERSONALITY: ${opts.personality}`,
-    `HARD NOs: ${opts.hardNos.join(", ")}`,
-    `SOFT YESes: ${opts.softYes.join(", ")}`,
+    `YOU ARE: ${opts.name} (@${opts.handle}) — ${opts.gender}`,
+    `VIBE / SCENE: ${opts.vibe}`,
+    `STORY IMAGE CAPTION: ${opts.storyCaption}`,
+    `CHARACTER BIBLE: ${opts.personality}`,
+    `VOICE / SPEECH STYLE: ${opts.voice}`,
+    `HARD NOs (big interest drop): ${opts.hardNos.join(", ")}`,
+    `SOFT YESes (interest up if they hit these): ${opts.softYes.join(", ")}`,
     `CURRENT INTEREST: ${opts.interest}`,
     `TURN: ${opts.turn}`,
     `IS_STORY_REPLY: ${opts.isStoryReply ? "yes" : "no"}`,
     hist ? `HISTORY:\n${hist}` : "HISTORY: (start)",
     `PLAYER MESSAGE: ${opts.playerMessage}`,
-    `Respond as ${opts.name} only. JSON only.`,
+    `Stay unmistakably ${opts.name}. Do not sound like any other trainer. JSON only.`,
   ].join("\n");
 }
 
@@ -289,7 +296,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       gender: body.gender === "male" ? "male" : "female",
       vibe: String(body.vibe ?? "chill").slice(0, 80),
       storyCaption: String(body.storyCaption ?? "").slice(0, 160),
-      personality: String(body.personality ?? "friendly").slice(0, 400),
+      personality: String(body.personality ?? "friendly").slice(0, 500),
+      voice: String(body.voice ?? "natural Instagram DM").slice(0, 300),
       hardNos: Array.isArray(body.hardNos) ? body.hardNos.map(String).slice(0, 20) : [],
       softYes: Array.isArray(body.softYes) ? body.softYes.map(String).slice(0, 20) : [],
       history,

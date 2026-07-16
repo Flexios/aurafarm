@@ -1,9 +1,11 @@
+import { REDEEM_CODES } from "../data/codes";
 import { BATTLE_PASS, COSMETICS, cosmeticById } from "../data/cosmetics";
 import {
   buyCosmetic,
   buyGlowPack,
   claimBattlePassTier,
   equipCosmetic,
+  redeemCode,
   unlockBattlePassPremium,
 } from "../game/economy";
 import {
@@ -52,7 +54,7 @@ export function renderShop(
   state: PlayerState,
   onState: (s: PlayerState) => void,
 ): void {
-  let tab: "cosmetics" | "glow" | "pass" = "cosmetics";
+  let tab: "cosmetics" | "glow" | "pass" | "codes" = "cosmetics";
 
   const paint = () => {
     container.innerHTML = `
@@ -60,6 +62,7 @@ export function renderShop(
         <button type="button" data-tab="cosmetics" class="${tab === "cosmetics" ? "active" : ""}">${icon("shop", "icon icon-sm")} ${t("shop.cosmetics")}</button>
         <button type="button" data-tab="glow" class="${tab === "glow" ? "active" : ""}">${icon("glow", "icon icon-sm")} ${t("shop.glow")}</button>
         <button type="button" data-tab="pass" class="${tab === "pass" ? "active" : ""}">${icon("pass", "icon icon-sm")} ${t("shop.pass")}</button>
+        <button type="button" data-tab="codes" class="${tab === "codes" ? "active" : ""}">${icon("star", "icon icon-sm")} ${t("shop.codes")}</button>
       </div>
       <div id="shop-body"></div>
     `;
@@ -74,7 +77,8 @@ export function renderShop(
     const body = container.querySelector("#shop-body")!;
     if (tab === "cosmetics") renderCosmetics(body);
     else if (tab === "glow") renderGlow(body);
-    else renderPass(body);
+    else if (tab === "pass") renderPass(body);
+    else renderCodes(body);
   };
 
   const renderCosmetics = (body: Element) => {
@@ -325,6 +329,61 @@ export function renderShop(
         );
         paint();
       });
+    });
+  };
+
+  const renderCodes = (body: Element) => {
+    const claimed = new Set((state.claimedCodes ?? []).map((c) => c.toUpperCase()));
+    body.innerHTML = `
+      <div class="section-header">${t("shop.codes")}</div>
+      <p class="muted" style="margin:0 0 14px;padding:0 4px">${t("shop.codesBlurb")}</p>
+      <div class="card" style="margin-bottom:14px">
+        <div class="field">
+          <label for="promo-code">${t("shop.codeEnter")}</label>
+          <input id="promo-code" type="text" maxlength="32" autocomplete="off" placeholder="${t("shop.codePlaceholder")}" style="text-transform:uppercase" />
+        </div>
+        <button type="button" class="btn btn-fill" id="redeem-code" style="margin-top:12px">${t("shop.codeRedeem")}</button>
+      </div>
+      <div class="section-header">${t("shop.codesKnown")}</div>
+      <div class="shop-grid">
+        ${REDEEM_CODES.map((c) => {
+          const done = claimed.has(c.code);
+          return `
+            <div class="shop-item">
+              <div class="swatch" style="background:var(--accent-soft)" aria-hidden="true">${icon("star", "icon icon-swatch")}</div>
+              <div class="meta">
+                <strong>${escapeHtml(c.code)}</strong>
+                <span class="muted">${escapeHtml(c.label)}</span>
+                <span class="price-line">
+                  <span class="price-chip" title="${t("currency.sparks")}">${icon("spark", "icon icon-sm")} ${c.sparks}</span>
+                  <span class="price-chip glow" title="${t("currency.glow")}">${icon("glow", "icon icon-sm")} ${c.glow}</span>
+                </span>
+                <span class="muted" style="font-size:0.8rem">${c.expiresAt ? t("shop.codeExpires") : t("shop.codeNever")}${
+                  done ? ` · ${t("shop.codeClaimed")}` : ""
+                }</span>
+              </div>
+            </div>`;
+        }).join("")}
+      </div>
+    `;
+
+    body.querySelector("#redeem-code")?.addEventListener("click", () => {
+      const input = body.querySelector("#promo-code") as HTMLInputElement;
+      const res = redeemCode(state, input?.value ?? "");
+      if (!res.ok) {
+        showToast(res.reason);
+        return;
+      }
+      onState(res.state);
+      state = res.state;
+      showToast(
+        t("shop.codeSuccess", {
+          label: res.label,
+          sparks: res.sparks,
+          glow: res.glow,
+        }),
+      );
+      paint();
     });
   };
 

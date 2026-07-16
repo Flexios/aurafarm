@@ -156,6 +156,8 @@ export interface PlayerState {
   avatarUrl: string | null;
   /** Friend battle IDs already counted toward duel progress */
   claimedFriendBattleIds: string[];
+  /** Promo codes already redeemed on this account (uppercase) */
+  claimedCodes: string[];
 }
 
 /** Local / AI judge axes (each ~0–25). */

@@ -201,6 +201,7 @@ function aiJudgeProxy(): Plugin {
             accent2: "#111",
             emoji: "✨",
             personality: String(body.personality ?? "friendly"),
+            voice: String((body as { voice?: string }).voice ?? "natural Instagram DM"),
             hardNos: Array.isArray(body.hardNos) ? body.hardNos.map(String) : [],
             softYes: Array.isArray(body.softYes) ? body.softYes.map(String) : [],
             replies: { warm: [], cold: [], like: [], ghost: [] },

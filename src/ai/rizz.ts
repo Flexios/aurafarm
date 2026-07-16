@@ -22,6 +22,7 @@ export async function rizzTurnWithAi(
         vibe: persona.vibe,
         storyCaption: persona.storyCaption,
         personality: persona.personality,
+        voice: persona.voice,
         hardNos: persona.hardNos,
         softYes: persona.softYes,
         history: history.slice(-12),

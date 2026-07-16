@@ -75,6 +75,7 @@ export function createDefaultState(): PlayerState {
     settings: { ...DEFAULT_SETTINGS },
     avatarUrl: null,
     claimedFriendBattleIds: [],
+    claimedCodes: [],
   };
 }
 
@@ -117,6 +118,9 @@ export function normalizeState(
     avatarUrl: parsed.avatarUrl ?? null,
     claimedFriendBattleIds: Array.isArray(parsed.claimedFriendBattleIds)
       ? parsed.claimedFriendBattleIds.map(String)
+      : [],
+    claimedCodes: Array.isArray(parsed.claimedCodes)
+      ? parsed.claimedCodes.map((c) => String(c).toUpperCase())
       : [],
     duelWins: Math.max(0, Number(parsed.duelWins ?? 0) || 0),
     duelLosses: Math.max(0, Number(parsed.duelLosses ?? 0) || 0),

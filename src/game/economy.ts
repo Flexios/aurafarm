@@ -1,3 +1,4 @@
+import { findCode, isCodeExpired } from "../data/codes";
 import { BATTLE_PASS, cosmeticById } from "../data/cosmetics";
 import type { PlayerState } from "../types";
 import { saveState } from "../state/store";
@@ -225,6 +226,39 @@ function applyReward(
     return { ...state, ownedCores: [...state.ownedCores, reward.id] };
   }
   return state;
+}
+
+/** Redeem a shop promo code (per-account limits, optional expiry). */
+export function redeemCode(
+  state: PlayerState,
+  rawCode: string,
+):
+  | { ok: true; state: PlayerState; sparks: number; glow: number; label: string }
+  | { ok: false; reason: string } {
+  const def = findCode(rawCode);
+  if (!def) return { ok: false, reason: "Invalid code." };
+  if (isCodeExpired(def)) return { ok: false, reason: "This code has expired." };
+
+  const claimed = state.claimedCodes ?? [];
+  const uses = claimed.filter((c) => c === def.code).length;
+  if (uses >= def.maxPerAccount) {
+    return { ok: false, reason: "You already redeemed this code." };
+  }
+
+  const next: PlayerState = {
+    ...state,
+    sparks: state.sparks + def.sparks,
+    glow: state.glow + def.glow,
+    claimedCodes: [...claimed, def.code],
+  };
+  saveState(next);
+  return {
+    ok: true,
+    state: next,
+    sparks: def.sparks,
+    glow: def.glow,
+    label: def.label,
+  };
 }
 
 export function applyDuelWin(state: PlayerState, score: number): PlayerState {
