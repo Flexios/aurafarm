@@ -37,7 +37,10 @@
   --dock-h: 64px;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring: cubic-bezier(0.34, 1.2, 0.64, 1);
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
   --dur: 0.45s;
+  --dur-fast: 0.18s;
+  --dur-hover: 0.32s;
   color-scheme: dark;
 }
 
@@ -294,14 +297,10 @@ button {
   font-size: 0.82rem;
   font-weight: 600;
   transition:
-    transform 0.25s var(--ease-out),
-    border-color 0.25s var(--ease-out),
-    background 0.25s var(--ease-out);
-}
-
-.pill:hover {
-  border-color: rgba(232, 93, 76, 0.35);
-  background: var(--accent-soft);
+    transform var(--dur-hover) var(--ease-soft),
+    border-color var(--dur-hover) var(--ease-soft),
+    background var(--dur-hover) var(--ease-soft),
+    box-shadow var(--dur-hover) var(--ease-soft);
 }
 
 .pill.glow,
@@ -324,13 +323,23 @@ button {
 }
 
 /* Hover label for currency / streak pills */
+.pill[data-tip]::after,
+.pill[data-tip]::before {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--dur-fast) var(--ease-soft),
+    transform var(--dur-hover) var(--ease-soft),
+    visibility 0s linear var(--dur-fast);
+}
+
 .pill[data-tip]:hover::after,
 .pill[data-tip]:focus-visible::after {
   content: attr(data-tip);
   position: absolute;
   left: 50%;
   bottom: calc(100% + 8px);
-  transform: translateX(-50%);
+  transform: translateX(-50%) translateY(-2px);
   padding: 5px 9px;
   border-radius: 8px;
   background: rgba(44, 44, 46, 0.96);
@@ -343,6 +352,12 @@ button {
   pointer-events: none;
   z-index: 50;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity var(--dur-fast) var(--ease-soft),
+    transform var(--dur-hover) var(--ease-soft),
+    visibility 0s;
 }
 
 .pill[data-tip]:hover::before,
@@ -356,6 +371,11 @@ button {
   border-top-color: rgba(44, 44, 46, 0.96);
   pointer-events: none;
   z-index: 50;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity var(--dur-fast) var(--ease-soft),
+    visibility 0s;
 }
 
 .icon-sm {
@@ -494,15 +514,15 @@ button {
 .card {
   padding: var(--space-4);
   transition:
-    border-color 0.3s var(--ease-out),
-    transform 0.35s var(--ease-out),
-    box-shadow 0.35s var(--ease-out);
+    border-color var(--dur-hover) var(--ease-soft),
+    transform var(--dur-hover) var(--ease-soft),
+    box-shadow var(--dur-hover) var(--ease-soft),
+    background var(--dur-hover) var(--ease-soft);
 }
 
-.card:hover {
-  border-color: rgba(244, 239, 230, 0.16);
-  transform: translateY(-1px);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+/* Static cards: subtle only. Interactive cards lift in hover media query. */
+.card:not(button):not(a):not([role="button"]):not(.rizz-persona-card):not(.rizz-gender-card):hover {
+  border-color: rgba(244, 239, 230, 0.14);
 }
 
 .card + .card,
@@ -531,6 +551,10 @@ button {
   min-height: 52px;
   padding: 10px var(--space-4);
   background: var(--bg-elevated);
+  transition:
+    background var(--dur-hover) var(--ease-soft),
+    transform var(--dur-hover) var(--ease-soft),
+    box-shadow var(--dur-hover) var(--ease-soft);
 }
 
 .list-row .meta {
@@ -564,20 +588,25 @@ button {
   font-size: 1rem;
   letter-spacing: -0.01em;
   transition:
-    opacity 0.25s var(--ease-out),
-    background 0.3s var(--ease-out),
-    transform 0.3s var(--ease-spring),
-    box-shadow 0.3s var(--ease-out),
-    border-color 0.3s var(--ease-out);
+    opacity var(--dur-fast) var(--ease-soft),
+    background var(--dur-hover) var(--ease-soft),
+    transform var(--dur-hover) var(--ease-spring),
+    box-shadow var(--dur-hover) var(--ease-soft),
+    border-color var(--dur-hover) var(--ease-soft),
+    filter var(--dur-hover) var(--ease-soft),
+    color var(--dur-hover) var(--ease-soft);
+  will-change: transform;
 }
 
-.btn:active {
-  transform: scale(0.98);
+.btn:active:not(:disabled) {
+  transform: scale(0.975);
+  transition-duration: 0.08s;
 }
 
 .btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+  will-change: auto;
 }
 
 .btn-primary,
@@ -586,18 +615,13 @@ button {
   background: var(--accent);
   color: #140c0a;
   border: 1px solid transparent;
-  box-shadow: none;
-}
-
-.btn-primary:hover:not(:disabled),
-.btn-fill:hover:not(:disabled) {
-  background: var(--accent-press);
-  transform: translateY(-1px);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset;
 }
 
 .btn-primary:active:not(:disabled),
 .btn-fill:active:not(:disabled) {
-  transform: translateY(1px) scale(0.99);
+  transform: translateY(1px) scale(0.985);
+  box-shadow: none;
 }
 
 .btn-secondary {
@@ -607,20 +631,11 @@ button {
   color: var(--label);
 }
 
-.btn-secondary:hover:not(:disabled) {
-  background: var(--fill);
-  border-color: rgba(244, 239, 230, 0.2);
-}
-
 .btn-plain {
   min-height: 44px;
   color: var(--accent);
   font-weight: 500;
   background: transparent;
-}
-
-.btn-plain:hover {
-  opacity: 0.85;
 }
 
 .btn-row {
@@ -649,10 +664,6 @@ button {
   background: rgba(255, 69, 58, 0.18);
   color: var(--red);
   font-weight: 600;
-}
-
-.btn-danger:hover:not(:disabled) {
-  background: rgba(255, 69, 58, 0.28);
 }
 
 /* Modal */
@@ -749,8 +760,10 @@ button {
   background: transparent;
   border-right: 1px solid var(--separator);
   transition:
-    background 0.3s var(--ease-out),
-    color 0.3s var(--ease-out);
+    background var(--dur-hover) var(--ease-soft),
+    color var(--dur-hover) var(--ease-soft),
+    box-shadow var(--dur-hover) var(--ease-soft),
+    transform var(--dur-fast) var(--ease-soft);
 }
 
 .segmented button:last-child,
@@ -847,12 +860,16 @@ button {
 }
 
 .tag {
+  display: inline-block;
   font-size: 0.78rem;
   font-weight: 600;
   padding: 4px 10px;
   border-radius: 999px;
   background: var(--accent-soft);
   color: #e0b0ff;
+  transition:
+    filter var(--dur-fast) var(--ease-soft),
+    transform var(--dur-fast) var(--ease-soft);
 }
 
 .tag.magenta {
@@ -904,7 +921,11 @@ button {
   border-radius: var(--radius);
   background: var(--fill);
   border: 2px solid transparent;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition:
+    border-color var(--dur-hover) var(--ease-soft),
+    background var(--dur-hover) var(--ease-soft),
+    transform var(--dur-hover) var(--ease-soft),
+    box-shadow var(--dur-hover) var(--ease-soft);
   min-height: 96px;
 }
 
@@ -1155,8 +1176,8 @@ button {
   font-weight: 550;
   letter-spacing: 0.02em;
   transition:
-    color 0.3s var(--ease-out),
-    background 0.3s var(--ease-out);
+    color var(--dur-hover) var(--ease-soft),
+    background var(--dur-hover) var(--ease-soft);
 }
 
 .nav-bottom button .nav-ico-wrap,
@@ -1167,9 +1188,10 @@ button {
   height: 26px;
   border-radius: var(--radius);
   transition:
-    background 0.3s var(--ease-out),
-    color 0.3s var(--ease-out),
-    transform 0.35s var(--ease-spring);
+    background var(--dur-hover) var(--ease-soft),
+    color var(--dur-hover) var(--ease-soft),
+    transform var(--dur-hover) var(--ease-spring),
+    box-shadow var(--dur-hover) var(--ease-soft);
 }
 
 .nav-bottom button .icon,
@@ -1299,13 +1321,15 @@ button {
   font-weight: 600;
   text-align: left;
   transition:
-    border-color 0.3s var(--ease-out),
-    background 0.3s var(--ease-out),
-    transform 0.3s var(--ease-spring);
+    border-color var(--dur-hover) var(--ease-soft),
+    background var(--dur-hover) var(--ease-soft),
+    transform var(--dur-hover) var(--ease-spring),
+    box-shadow var(--dur-hover) var(--ease-soft);
 }
 
 .more-tile:active {
-  transform: scale(0.98);
+  transform: scale(0.975);
+  transition-duration: 0.08s;
 }
 
 .more-tile.active {
@@ -1350,6 +1374,11 @@ button {
   min-height: 64px;
   padding: 12px 16px;
   background: var(--bg-elevated);
+  transition:
+    background var(--dur-hover) var(--ease-soft),
+    transform var(--dur-hover) var(--ease-soft),
+    box-shadow var(--dur-hover) var(--ease-soft),
+    border-color var(--dur-hover) var(--ease-soft);
 }
 
 .shop-grid .shop-item + .shop-item {
@@ -2113,9 +2142,10 @@ button {
     font-weight: 550;
     text-align: left;
     transition:
-      background 0.3s var(--ease-out),
-      color 0.3s var(--ease-out),
-      transform 0.3s var(--ease-out);
+      background var(--dur-hover) var(--ease-soft),
+      color var(--dur-hover) var(--ease-soft),
+      transform var(--dur-hover) var(--ease-soft),
+      box-shadow var(--dur-hover) var(--ease-soft);
   }
 
   .nav-side .nav-item .nav-ico-wrap {
@@ -2125,12 +2155,11 @@ button {
     height: 28px;
     border-radius: var(--radius);
     background: transparent;
-  }
-
-  .nav-side .nav-item:hover {
-    background: var(--fill);
-    color: var(--label);
-    transform: translateX(2px);
+    transition:
+      background var(--dur-hover) var(--ease-soft),
+      color var(--dur-hover) var(--ease-soft),
+      transform var(--dur-hover) var(--ease-spring),
+      box-shadow var(--dur-hover) var(--ease-soft);
   }
 
   .nav-side .nav-item.active {
@@ -2611,6 +2640,7 @@ html[data-large-text="1"] .large-title {
 html[data-reduce-motion="1"] *,
 html[data-reduce-motion="1"] *::before,
 html[data-reduce-motion="1"] *::after {
+  transition-duration: 0.01ms !important;
   animation-duration: 0.01ms !important;
   animation-iteration-count: 1 !important;
   transition-duration: 0.01ms !important;
@@ -2696,10 +2726,10 @@ html[data-hide-top-currency="1"] .topbar-currency {
   text-align: left;
   border: none;
   cursor: pointer;
-}
-
-.profile-hit:hover {
-  background: rgba(44, 44, 46, 1);
+  transition:
+    background var(--dur-hover) var(--ease-soft),
+    transform var(--dur-hover) var(--ease-soft),
+    box-shadow var(--dur-hover) var(--ease-soft);
 }
 
 .sidebar-user {
@@ -2711,10 +2741,10 @@ html[data-hide-top-currency="1"] .topbar-currency {
   border-radius: 12px;
   text-align: left;
   color: inherit;
-}
-
-.sidebar-user:hover {
-  background: var(--fill);
+  transition:
+    background var(--dur-hover) var(--ease-soft),
+    transform var(--dur-hover) var(--ease-soft),
+    box-shadow var(--dur-hover) var(--ease-soft);
 }
 
 .sidebar-user .name {
@@ -2868,14 +2898,236 @@ html[data-hide-top-currency="1"] .topbar-currency {
   text-align: right;
 }
 
+/* ——— Fine-pointer hover system (mouse / trackpad only) ——— */
 @media (hover: hover) and (pointer: fine) {
-  .core-option:hover {
-    background: rgba(120, 120, 128, 0.28);
+  /* Primary CTAs: lift + soft glow */
+  .btn-primary:hover:not(:disabled),
+  .btn-fill:hover:not(:disabled) {
+    background: var(--accent-press);
+    transform: translateY(-2px);
+    box-shadow:
+      0 8px 22px var(--accent-glow),
+      0 1px 0 rgba(255, 255, 255, 0.14) inset;
+    filter: brightness(1.04);
   }
 
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--fill);
+    border-color: rgba(244, 239, 230, 0.28);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
+  }
+
+  .btn-plain:hover:not(:disabled) {
+    opacity: 1;
+    filter: brightness(1.12);
+    transform: translateY(-1px);
+  }
+
+  .btn-danger:hover:not(:disabled) {
+    background: rgba(255, 69, 58, 0.32);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(255, 69, 58, 0.18);
+  }
+
+  .btn-logout:hover:not(:disabled) {
+    background: rgba(255, 69, 58, 0.2);
+    transform: translateY(-1px);
+  }
+
+  /* Interactive cards */
+  button.card:hover,
+  a.card:hover,
+  .card[role="button"]:hover,
+  .rizz-gender-card:hover,
+  .rizz-persona-card:not(.rizz-persona-locked):hover {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--separator));
+    transform: translateY(-3px);
+    box-shadow:
+      0 14px 32px rgba(0, 0, 0, 0.32),
+      0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+
+  .rizz-persona-card.rizz-persona-locked:hover {
+    border-color: rgba(244, 239, 230, 0.18);
+    transform: translateY(-1px);
+    opacity: 0.85;
+  }
+
+  /* Pills / currency chips */
+  .pill:hover {
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--separator));
+    background: var(--accent-soft);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Lists & shop */
   .list-row:hover,
   .shop-item:hover {
-    background: rgba(44, 44, 46, 1);
+    background: rgba(52, 50, 48, 0.95);
+    box-shadow: inset 3px 0 0 var(--accent);
+  }
+
+  .shop-item:hover {
+    transform: translateX(2px);
+  }
+
+  .core-option:hover:not(.selected) {
+    background: rgba(120, 120, 128, 0.22);
+    border-color: rgba(244, 239, 230, 0.14);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+  }
+
+  .core-option.selected:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px var(--accent-glow);
+  }
+
+  /* Segmented tabs (inactive only) */
+  .segmented button:not(.active):hover,
+  .tabs-inline button:not(.active):hover {
+    background: var(--fill);
+    color: var(--label);
+  }
+
+  .segmented button.active:hover,
+  .tabs-inline button.active:hover {
+    filter: brightness(1.06);
+  }
+
+  /* Bottom dock */
+  .nav-bottom button:hover:not(.active),
+  .nav-tab:hover:not(.active) {
+    color: var(--label);
+  }
+
+  .nav-bottom button:hover:not(.active) .nav-ico-wrap,
+  .nav-tab:hover:not(.active) .nav-ico-wrap {
+    background: var(--fill);
+    transform: translateY(-2px) scale(1.06);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+  }
+
+  .nav-bottom button.active:hover .nav-ico-wrap,
+  .nav-tab.active:hover .nav-ico-wrap {
+    transform: translateY(-2px) scale(1.04);
+  }
+
+  /* Desktop sidebar rail */
+  .nav-side .nav-item:hover:not(.active) {
+    background: var(--fill);
+    color: var(--label);
+    transform: translateX(4px);
+    box-shadow: inset 2px 0 0 color-mix(in srgb, var(--accent) 55%, transparent);
+  }
+
+  .nav-side .nav-item:hover:not(.active) .nav-ico-wrap {
+    background: var(--accent-soft);
+    color: var(--accent);
+    transform: scale(1.06);
+  }
+
+  .nav-side .nav-item.active:hover {
+    transform: translateX(2px);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+
+  .sidebar-user:hover {
+    background: var(--fill);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  }
+
+  .profile-hit:hover {
+    background: rgba(52, 50, 48, 0.95);
+    box-shadow: inset 3px 0 0 var(--accent);
+  }
+
+  /* More sheet tiles */
+  .more-tile:hover:not(.active) {
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--separator));
+    background: var(--accent-soft);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+  }
+
+  .more-tile.active:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px var(--accent-glow);
+  }
+
+  .more-tile:hover .more-tile-ico {
+    transform: scale(1.08);
+  }
+
+  .more-tile-ico {
+    transition: transform var(--dur-hover) var(--ease-spring);
+  }
+
+  /* Rizz starters */
+  .rizz-starter-chip:hover {
+    border-color: color-mix(in srgb, var(--accent) 55%, var(--separator));
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    transform: translateX(3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  }
+
+  .rizz-starter-chip {
+    transition:
+      border-color var(--dur-hover) var(--ease-soft),
+      background var(--dur-hover) var(--ease-soft),
+      transform var(--dur-hover) var(--ease-soft),
+      box-shadow var(--dur-hover) var(--ease-soft);
+  }
+
+  /* Avatar soft zoom on persona hover */
+  .rizz-persona-card:not(.rizz-persona-locked):hover .rizz-avatar {
+    transform: scale(1.06);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 40%, transparent);
+  }
+
+  .rizz-avatar {
+    transition:
+      transform var(--dur-hover) var(--ease-spring),
+      box-shadow var(--dur-hover) var(--ease-soft);
+  }
+
+  /* Tags */
+  .tag:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+  }
+
+  .tag {
+    transition:
+      filter var(--dur-fast) var(--ease-soft),
+      transform var(--dur-fast) var(--ease-soft);
+  }
+
+  /* Links that look like actions */
+  a:hover {
+    filter: brightness(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  .btn:hover:not(:disabled),
+  .card:hover,
+  .nav-side .nav-item:hover,
+  .rizz-persona-card:hover,
+  .more-tile:hover {
+    transform: none !important;
   }
 }
 
@@ -2894,13 +3146,10 @@ html[data-hide-top-currency="1"] .topbar-currency {
   margin-top: 10px;
   cursor: pointer;
   transition:
-    border-color 0.25s var(--ease-out),
-    transform 0.3s var(--ease-out);
-}
-
-.rizz-gender-card:hover {
-  border-color: rgba(232, 93, 76, 0.4);
-  transform: translateY(-1px);
+    border-color var(--dur-hover) var(--ease-soft),
+    transform var(--dur-hover) var(--ease-soft),
+    box-shadow var(--dur-hover) var(--ease-soft),
+    background var(--dur-hover) var(--ease-soft);
 }
 
 .rizz-gender-emoji {
@@ -2940,6 +3189,12 @@ html[data-hide-top-currency="1"] .topbar-currency {
   cursor: pointer;
   padding: 12px 14px;
   align-items: flex-start;
+  transition:
+    border-color var(--dur-hover) var(--ease-soft),
+    transform var(--dur-hover) var(--ease-soft),
+    box-shadow var(--dur-hover) var(--ease-soft),
+    background var(--dur-hover) var(--ease-soft),
+    opacity var(--dur-hover) var(--ease-soft);
 }
 
 .rizz-persona-card.rizz-persona-locked {
@@ -3037,14 +3292,6 @@ html[data-hide-top-currency="1"] .topbar-currency {
   background: rgba(120, 120, 128, 0.12);
   color: var(--label-primary);
   cursor: pointer;
-  transition:
-    border-color 0.2s var(--ease-out),
-    background 0.2s var(--ease-out);
-}
-
-.rizz-starter-chip:hover {
-  border-color: rgba(232, 93, 76, 0.45);
-  background: rgba(232, 93, 76, 0.1);
 }
 
 .rizz-hard-note {
