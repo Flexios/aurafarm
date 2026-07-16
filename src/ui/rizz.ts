@@ -183,8 +183,9 @@ export function renderRizz(
     }
 
     if (phase === "pick" && gender) {
-      const list = personasByGender(gender, state.ownedCores);
-      const daily = pickDailyPersona(gender, new Date(), state.ownedCores);
+      const nsfwOn = Boolean(state.settings.nsfwChallenges);
+      const list = personasByGender(gender, state.ownedCores, nsfwOn);
+      const daily = pickDailyPersona(gender, new Date(), state.ownedCores, nsfwOn);
       container.innerHTML = `
         <div class="rizz-pick">
           <div class="rizz-pick-head">
@@ -194,7 +195,7 @@ export function renderRizz(
             <button type="button" class="btn-plain" id="rizz-change-gender">${t("rizz.changeTarget")}</button>
           </div>
           <div class="card rizz-daily-card">
-            <div class="section-header" style="margin:0 0 8px">${t("rizz.daily")}</div>
+            <div class="section-header" style="margin:0 0 8px">${t("rizz.daily")}${daily.nsfw ? ` <span class="tag challenge-18-tag" style="background:rgba(255,80,120,0.2)">18+</span>` : ""}</div>
             <div class="rizz-persona-row">
               <div class="rizz-avatar has-photo" style="${avatarStyle(daily)}" aria-hidden="true">${daily.emoji}</div>
               <div style="flex:1;min-width:0">
@@ -212,7 +213,7 @@ export function renderRizz(
               <button type="button" class="card rizz-persona-card" data-persona="${escapeHtml(p.id)}">
                 <div class="rizz-avatar has-photo" style="${avatarStyle(p)}" aria-hidden="true">${p.emoji}</div>
                 <div style="flex:1;min-width:0;text-align:left">
-                  <strong>${escapeHtml(p.name)}</strong>
+                  <strong>${escapeHtml(p.name)}${p.nsfw ? ` <span class="tag challenge-18-tag" style="background:rgba(255,80,120,0.2);font-size:0.7rem">18+</span>` : ""}</strong>
                   <div class="muted" style="font-size:0.82rem">${escapeHtml(p.vibe)}</div>
                 </div>
                 <span class="muted">→</span>
@@ -221,7 +222,9 @@ export function renderRizz(
               .join("")}
           </div>
           <button type="button" class="btn btn-secondary" id="rizz-random" style="margin-top:12px">${t("rizz.random")}</button>
-          <p class="muted" style="font-size:0.8rem;margin-top:10px">${aiOn ? t("rizz.aiOn") : t("rizz.aiOff")}</p>
+          <p class="muted" style="font-size:0.8rem;margin-top:10px">${aiOn ? t("rizz.aiOn") : t("rizz.aiOff")}${
+            nsfwOn ? ` · ${t("rizz.nsfwOn")}` : ` · ${t("rizz.nsfwOff")}`
+          }</p>
         </div>`;
       container.querySelector("#rizz-change-gender")?.addEventListener("click", () => {
         resetRun();
@@ -229,6 +232,10 @@ export function renderRizz(
         persistGender(null);
       });
       const startWith = (p: RizzPersona) => {
+        if (p.nsfw && !nsfwOn) {
+          showToast(t("rizz.nsfwLocked"));
+          return;
+        }
         resetRun();
         live.personaId = p.id;
         live.phase = "story";
@@ -236,7 +243,7 @@ export function renderRizz(
       };
       container.querySelector("#rizz-start-daily")?.addEventListener("click", () => startWith(daily));
       container.querySelector("#rizz-random")?.addEventListener("click", () =>
-        startWith(pickRandomPersona(gender, state.ownedCores)),
+        startWith(pickRandomPersona(gender, state.ownedCores, nsfwOn)),
       );
       container.querySelectorAll<HTMLButtonElement>("[data-persona]").forEach((btn) => {
         btn.addEventListener("click", () => {
@@ -249,6 +256,13 @@ export function renderRizz(
 
     if (phase === "story" && persona) {
       const p = persona;
+      if (p.nsfw && !state.settings.nsfwChallenges) {
+        showToast(t("rizz.nsfwLocked"));
+        live.phase = "pick";
+        live.personaId = null;
+        paint();
+        return;
+      }
       container.innerHTML = `
         <div class="rizz-story">
           <div class="rizz-story-chrome">
@@ -256,7 +270,7 @@ export function renderRizz(
             <div class="rizz-story-top">
               <div class="rizz-avatar rizz-avatar-sm has-photo" style="${avatarStyle(p)}" aria-hidden="true">${p.emoji}</div>
               <div style="flex:1;min-width:0">
-                <strong>${escapeHtml(p.name)}</strong>
+                <strong>${escapeHtml(p.name)}${p.nsfw ? ` <span class="tag challenge-18-tag" style="background:rgba(255,80,120,0.2);font-size:0.7rem">18+</span>` : ""}</strong>
                 <div class="muted" style="font-size:0.75rem">@${escapeHtml(p.handle)} · ${t("rizz.justNow")}</div>
               </div>
               <button type="button" class="btn-plain rizz-close" id="rizz-abort" aria-label="${t("common.close")}">✕</button>
@@ -297,6 +311,13 @@ export function renderRizz(
 
     if ((phase === "chat" || phase === "result") && persona) {
       const p = persona;
+      if (p.nsfw && !state.settings.nsfwChallenges) {
+        showToast(t("rizz.nsfwLocked"));
+        live.phase = "pick";
+        live.personaId = null;
+        paint();
+        return;
+      }
       const ended = phase === "result" && live.result;
       const result = live.result;
       const turnsLeft = Math.max(0, RIZZ_MAX_TURNS - live.turn);

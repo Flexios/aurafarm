@@ -144,6 +144,7 @@ export function renderHome(
                   state.settings.rizzTargetGender!,
                   new Date(),
                   state.ownedCores,
+                  Boolean(state.settings.nsfwChallenges),
                 );
                 return `
         <div class="card home-panel rizz-home-story">
@@ -206,7 +207,12 @@ export function renderHome(
   container.querySelector("#go-rizz-story")?.addEventListener("click", () => {
     const g = state.settings.rizzTargetGender;
     if (g) {
-      const daily = pickDailyPersona(g, new Date(), state.ownedCores);
+      const daily = pickDailyPersona(
+        g,
+        new Date(),
+        state.ownedCores,
+        Boolean(state.settings.nsfwChallenges),
+      );
       queueRizzStory(daily.id, g);
     }
     onNavigate("rizz");

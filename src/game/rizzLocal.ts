@@ -254,6 +254,24 @@ function personaFacts(p: RizzPersona): {
         ],
         vibeReply: ["concert brain only. text accordingly"],
       };
+    case "f-raven":
+      return {
+        where: ["home. lights low. phone brighter than my self-control"],
+        doing: ["staying up for no good reason… or maybe a good one"],
+        vibeReply: [
+          "1am brain is honest. careful",
+          "say something interesting or i'll get bored 🖤",
+        ],
+      };
+    case "m-knox":
+      return {
+        where: ["still up. bad idea. good timing"],
+        doing: ["thinking about you more than i should 🔥"],
+        vibeReply: [
+          "down bad hours. keep up",
+          "don't text soft if you started this",
+        ],
+      };
     case "m-jordan":
       return {
         where: ["museum quiet wing. the blue painting won"],

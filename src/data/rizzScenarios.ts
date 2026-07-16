@@ -35,6 +35,8 @@ export interface RizzPersona {
    * LIKE threshold raised slightly in local engine.
    */
   hardMode?: boolean;
+  /** Only listed when settings.nsfwChallenges (18+) is on */
+  nsfw?: boolean;
 }
 
 export const RIZZ_PERSONAS: RizzPersona[] = [
@@ -150,6 +152,59 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
   },
   // ——— Male ———
   {
+    id: "f-raven",
+    gender: "female",
+    name: "Raven",
+    handle: "raven.after",
+    vibe: "after dark · 18+",
+    storyCaption: "1am. lights low. don't be boring 🖤",
+    image: "/rizz/f-raven.jpg",
+    accent: "#ff4d8d",
+    accent2: "#140810",
+    emoji: "🖤",
+    nsfw: true,
+    personality:
+      "Raven, 24, after-dark flirt. Down-bad energy but still requires consent and charm — she rewards bold, witty, slightly spicy openers that match her late-night vibe. She is freakier than the soft trainers: more teasing, more tension, more direct. She hates pure creep, non-consensual pressure, insults, and zero effort. She loves confidence, heat, and clever dirty-adjacent humor (keep it playful, not gross).",
+    voice:
+      "Low, teasing, late-night DMs. Slightly breathy confidence. Emoji 🖤 🔥 😏. More direct than Maya/Lina; never gym-bro or cafe-soft. Speaks like someone already half in the mood.",
+    hardNos: [
+      "send nudes now",
+      "pic now",
+      "come over right now",
+      "i don't care if you say no",
+      "slut",
+      "whore",
+      "rape",
+      "force",
+    ],
+    softYes: [
+      "late",
+      "1am",
+      "tonight",
+      "tension",
+      "tease",
+      "heat",
+      "close",
+      "whisper",
+      "want",
+      "flirt",
+      "dark",
+      "bed",
+      "kiss",
+      "bold",
+    ],
+    replies: {
+      warm: [
+        "ok… that was a little dangerous 😏",
+        "keep talking like that and i might actually stay up",
+        "mm. not boring. continue.",
+      ],
+      cold: ["try harder", "that was mid for 1am", "nah"],
+      like: ["you're trouble. i like that. don't disappear 🔥"],
+      ghost: ["lights out", "…"],
+    },
+  },
+  {
     id: "f-elise",
     gender: "female",
     name: "Elise",
@@ -203,6 +258,59 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
       cold: ["hmm. not yet.", "too easy. try harder.", "i need more than that."],
       like: ["okay… you made it past my walls. rare. don't waste it 🥛"],
       ghost: ["i'm quiet for a reason", "…"],
+    },
+  },
+  {
+    id: "m-knox",
+    gender: "male",
+    name: "Knox",
+    handle: "knox.late",
+    vibe: "down bad · 18+",
+    storyCaption: "up thinking about you. dangerous hobby 🔥",
+    image: "/rizz/m-knox.jpg",
+    accent: "#ff6b4a",
+    accent2: "#120a08",
+    emoji: "🔥",
+    nsfw: true,
+    personality:
+      "Knox, 25, shamelessly down-bad night owl. Flirty, forward, and freakier than the soft boys — he matches heat with heat, teases hard, and likes players who can keep up. Still stops at consent: pushy/non-con/insults get iced. Rewards bold, confident, spicy banter and late-night honesty.",
+    voice:
+      "Smooth, cocky, late-night text energy. Emoji 🔥 😏. More forward than Jordan/Sam; less chef-bit than Leo. Sounds like someone already thinking about you.",
+    hardNos: [
+      "send nudes now",
+      "no means yes",
+      "i don't care",
+      "force",
+      "rape",
+      "slut",
+      "whore",
+      "ugly",
+    ],
+    softYes: [
+      "late",
+      "up",
+      "tonight",
+      "want",
+      "miss",
+      "come",
+      "close",
+      "kiss",
+      "heat",
+      "tease",
+      "honest",
+      "bed",
+      "thinking",
+      "bold",
+    ],
+    replies: {
+      warm: [
+        "yeah i was hoping you'd text first 😏",
+        "say that again slower",
+        "dangerous. keep going.",
+      ],
+      cold: ["weak", "try again", "not feeling that"],
+      like: ["you're in my head now. don't ghost 🔥"],
+      ghost: ["going dark", "…"],
     },
   },
   {
@@ -316,9 +424,13 @@ export function hasRizzPersonaUnlocked(
 export function personasByGender(
   gender: RizzGender,
   ownedCores?: string[] | null,
+  nsfwOn = false,
 ): RizzPersona[] {
   return RIZZ_PERSONAS.filter(
-    (p) => p.gender === gender && hasRizzPersonaUnlocked(p, ownedCores),
+    (p) =>
+      p.gender === gender &&
+      hasRizzPersonaUnlocked(p, ownedCores) &&
+      (!p.nsfw || nsfwOn),
   );
 }
 
@@ -330,17 +442,19 @@ export function pickDailyPersona(
   gender: RizzGender,
   date = new Date(),
   ownedCores?: string[] | null,
+  nsfwOn = false,
 ): RizzPersona {
-  const list = personasByGender(gender, ownedCores);
-  const rng = mulberry32(hashString(`rizz-daily:${gender}:${todayKey(date)}`));
+  const list = personasByGender(gender, ownedCores, nsfwOn);
+  const rng = mulberry32(hashString(`rizz-daily:${gender}:${todayKey(date)}:${nsfwOn ? "x" : "s"}`));
   return list[Math.floor(rng() * list.length)]!;
 }
 
 export function pickRandomPersona(
   gender: RizzGender,
   ownedCores?: string[] | null,
+  nsfwOn = false,
 ): RizzPersona {
-  const list = personasByGender(gender, ownedCores);
+  const list = personasByGender(gender, ownedCores, nsfwOn);
   return list[Math.floor(Math.random() * list.length)]!;
 }
 
