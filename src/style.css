@@ -2216,50 +2216,59 @@ button {
   }
 
   .rizz-story-chrome {
-    gap: 14px;
+    gap: 16px;
     width: 100%;
   }
 
+  /*
+   * Portrait column is WIDTH-limited so the box stays 3:4.
+   * Never stretch art to fill a wide landscape grid cell (that crops faces).
+   */
   .rizz-story-stage {
     display: grid;
-    grid-template-columns: minmax(300px, 0.95fr) minmax(320px, 1.05fr);
-    gap: 24px;
-    align-items: stretch;
-    min-height: min(72vh, 640px);
+    grid-template-columns: min(420px, 38vw) minmax(0, 1fr);
+    gap: 28px 32px;
+    align-items: start;
+    min-height: 0;
+    width: 100%;
   }
 
   .rizz-story-art {
     width: 100%;
-    height: 100%;
-    min-height: min(68vh, 620px);
-    max-height: min(72vh, 680px);
-    aspect-ratio: auto;
+    max-width: 420px;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    aspect-ratio: 3 / 4 !important;
     border-radius: 16px;
+    justify-self: start;
   }
 
-  /* Show face + upper body cleanly — no aggressive mid-crop */
+  /* Source photos are 3:4 — cover in a 3:4 box = full image, no crop */
   .rizz-story-img {
     object-fit: cover;
-    object-position: center 18%;
+    object-position: center center;
   }
 
   /* Caption lives in the right panel on desktop (readable) */
   .rizz-story-caption-onimg {
-    display: none;
+    display: none !important;
   }
 
   .rizz-story-side {
-    display: flex;
+    display: flex !important;
     flex-direction: column;
-    justify-content: space-between;
-    gap: 16px;
-    min-height: 100%;
-    padding: 4px 0 0;
+    justify-content: flex-start;
+    gap: 18px;
+    min-height: 0;
+    height: 100%;
+    padding: 8px 4px 0 0;
+    max-width: 560px;
   }
 
   .rizz-story-side-card {
-    display: block;
-    flex: 1;
+    display: block !important;
+    flex: 0 1 auto;
   }
 
   .rizz-story-caption-block {
@@ -2268,7 +2277,7 @@ button {
 
   .rizz-story-composer {
     max-width: none;
-    margin-top: auto;
+    margin-top: 8px;
   }
 
   .rizz-story-composer .rizz-send {
@@ -2339,13 +2348,20 @@ button {
   }
 
   .rizz-story-stage {
-    grid-template-columns: minmax(340px, 0.9fr) minmax(380px, 1.1fr);
-    gap: 28px;
+    grid-template-columns: min(460px, 34vw) minmax(0, 1fr);
+    gap: 32px 40px;
   }
 
   .rizz-story-art {
-    min-height: min(70vh, 680px);
-    max-height: min(74vh, 720px);
+    max-width: 460px;
+    aspect-ratio: 3 / 4 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+
+  .rizz-story-side {
+    max-width: 640px;
   }
 
   .rizz-persona-list {
@@ -2363,8 +2379,12 @@ button {
   }
 
   .rizz-story-stage {
-    grid-template-columns: minmax(380px, 0.85fr) minmax(420px, 1.15fr);
-    max-width: 1400px;
+    grid-template-columns: 480px minmax(0, 1fr);
+    max-width: 1280px;
+  }
+
+  .rizz-story-art {
+    max-width: 480px;
   }
 }
 
@@ -2888,8 +2908,12 @@ html[data-hide-top-currency="1"] .topbar-currency {
 .rizz-story-art {
   position: relative;
   width: 100%;
+  /* Always portrait — photos are 3:4; never force landscape */
   aspect-ratio: 3 / 4;
-  max-height: min(58vh, 520px);
+  height: auto;
+  max-width: min(100%, 420px);
+  max-height: none;
+  margin: 0 auto;
   border-radius: 14px;
   overflow: hidden;
   background: linear-gradient(160deg, var(--rizz-a, #e85d4c), var(--rizz-b, #141210) 70%);
@@ -2903,7 +2927,7 @@ html[data-hide-top-currency="1"] .topbar-currency {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center top;
+  object-position: center center;
   z-index: 1;
   display: block;
 }
