@@ -259,43 +259,53 @@ export function renderRizz(
       const p = persona;
       const turnsLeft = Math.max(0, RIZZ_MAX_TURNS - live.turn);
       container.innerHTML = `
-        <div class="rizz-chat" style="--rizz-chat-bg:url('${escapeHtml(p.image)}')">
-          <div class="rizz-chat-top">
-            <button type="button" class="btn-plain" id="rizz-back-pick">←</button>
-            <div class="rizz-avatar rizz-avatar-sm has-photo" style="${avatarStyle(p)}" aria-hidden="true">${p.emoji}</div>
-            <div style="flex:1;min-width:0">
-              <strong>${escapeHtml(p.name)}</strong>
-              <div class="muted" style="font-size:0.75rem">@${escapeHtml(p.handle)}</div>
-            </div>
-            <div class="rizz-interest" title="${t("rizz.interest")}">
-              <div class="rizz-interest-ring">
-                <span>${Math.round(live.interest)}</span>
+        <div class="rizz-chat">
+          <div class="rizz-chat-layout">
+            <aside class="rizz-chat-photo" aria-hidden="true">
+              <div class="rizz-story-art rizz-chat-art" style="--rizz-a:${escapeHtml(p.accent)};--rizz-b:${escapeHtml(p.accent2)}">
+                <img class="rizz-story-img" src="${escapeHtml(p.image)}" alt="" />
               </div>
-              <div class="rizz-interest-label">${interestLabel(live.interest)}</div>
+              <p class="muted rizz-chat-photo-cap">${escapeHtml(p.storyCaption)}</p>
+            </aside>
+            <div class="rizz-chat-main">
+              <div class="rizz-chat-top">
+                <button type="button" class="btn-plain" id="rizz-back-pick">←</button>
+                <div class="rizz-avatar rizz-avatar-sm has-photo" style="${avatarStyle(p)}" aria-hidden="true">${p.emoji}</div>
+                <div style="flex:1;min-width:0">
+                  <strong>${escapeHtml(p.name)}</strong>
+                  <div class="muted" style="font-size:0.75rem">@${escapeHtml(p.handle)}</div>
+                </div>
+                <div class="rizz-interest" title="${t("rizz.interest")}">
+                  <div class="rizz-interest-ring">
+                    <span>${Math.round(live.interest)}</span>
+                  </div>
+                  <div class="rizz-interest-label">${interestLabel(live.interest)}</div>
+                </div>
+              </div>
+              <div class="rizz-interest-bar" aria-hidden="true"><i style="width:${live.interest}%"></i></div>
+              <div class="rizz-bubbles" id="rizz-bubbles">
+                ${live.messages
+                  .map((m, i) => {
+                    const isStory = i === 0 && m.role === "user" && live.storyReplySent;
+                    if (m.role === "user") {
+                      return `<div class="rizz-bubble rizz-bubble-me${isStory ? " rizz-bubble-story" : ""}">
+                        ${isStory ? `<span class="rizz-story-tag">${t("rizz.storyReply")}</span>` : ""}
+                        <p>${escapeHtml(m.text)}</p>
+                      </div>`;
+                    }
+                    return `<div class="rizz-bubble rizz-bubble-them"><p>${escapeHtml(m.text)}</p></div>`;
+                  })
+                  .join("")}
+                ${live.busy ? `<div class="rizz-bubble rizz-bubble-them rizz-typing"><span></span><span></span><span></span></div>` : ""}
+              </div>
+              <p class="muted rizz-turns">${t("rizz.turnsLeft", { n: turnsLeft })}</p>
+              <form class="rizz-chat-composer" id="rizz-chat-form">
+                <input type="text" id="rizz-chat-input" maxlength="200" autocomplete="off"
+                  placeholder="${t("rizz.chatPlaceholder")}" ${live.busy ? "disabled" : ""} />
+                <button type="submit" class="btn btn-fill rizz-send" ${live.busy ? "disabled" : ""}>${t("rizz.send")}</button>
+              </form>
             </div>
           </div>
-          <div class="rizz-interest-bar" aria-hidden="true"><i style="width:${live.interest}%"></i></div>
-          <div class="rizz-bubbles" id="rizz-bubbles">
-            ${live.messages
-              .map((m, i) => {
-                const isStory = i === 0 && m.role === "user" && live.storyReplySent;
-                if (m.role === "user") {
-                  return `<div class="rizz-bubble rizz-bubble-me${isStory ? " rizz-bubble-story" : ""}">
-                    ${isStory ? `<span class="rizz-story-tag">${t("rizz.storyReply")}</span>` : ""}
-                    <p>${escapeHtml(m.text)}</p>
-                  </div>`;
-                }
-                return `<div class="rizz-bubble rizz-bubble-them"><p>${escapeHtml(m.text)}</p></div>`;
-              })
-              .join("")}
-            ${live.busy ? `<div class="rizz-bubble rizz-bubble-them rizz-typing"><span></span><span></span><span></span></div>` : ""}
-          </div>
-          <p class="muted rizz-turns">${t("rizz.turnsLeft", { n: turnsLeft })}</p>
-          <form class="rizz-chat-composer" id="rizz-chat-form">
-            <input type="text" id="rizz-chat-input" maxlength="200" autocomplete="off"
-              placeholder="${t("rizz.chatPlaceholder")}" ${live.busy ? "disabled" : ""} />
-            <button type="submit" class="btn btn-fill rizz-send" ${live.busy ? "disabled" : ""}>${t("rizz.send")}</button>
-          </form>
         </div>`;
       const bubbles = container.querySelector("#rizz-bubbles");
       if (bubbles) bubbles.scrollTop = bubbles.scrollHeight;

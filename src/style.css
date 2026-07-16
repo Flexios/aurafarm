@@ -3056,6 +3056,31 @@ html[data-hide-top-currency="1"] .topbar-currency {
   flex-direction: column;
   gap: 10px;
   min-height: min(70vh, 620px);
+  width: 100%;
+}
+
+.rizz-chat-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+/* Portrait column only on desktop */
+.rizz-chat-photo {
+  display: none;
+}
+
+.rizz-chat-main {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+}
+
+.rizz-chat-photo-cap {
+  margin: 8px 0 0;
 }
 
 .rizz-chat-top {
@@ -3201,4 +3226,122 @@ html[data-hide-top-currency="1"] .topbar-currency {
 
 .rizz-result .hero-score {
   text-align: center;
+}
+
+/* ——— Rizz desktop overrides (must be AFTER base .rizz-* rules) ——— */
+@media (min-width: 960px) {
+  .rizz-story-stage {
+    display: grid !important;
+    grid-template-columns: 380px minmax(280px, 1fr) !important;
+    gap: 28px 36px !important;
+    align-items: start !important;
+    width: 100% !important;
+  }
+
+  .rizz-story-art {
+    width: 380px !important;
+    max-width: 380px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    aspect-ratio: 3 / 4 !important;
+    margin: 0 !important;
+    justify-self: start;
+  }
+
+  .rizz-story-img {
+    object-fit: cover !important;
+    object-position: center center !important;
+  }
+
+  .rizz-story-caption-onimg {
+    display: none !important;
+  }
+
+  .rizz-story-side {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    max-width: 520px;
+    width: 100%;
+    padding-top: 8px;
+  }
+
+  .rizz-story-side-card {
+    display: block !important;
+  }
+
+  .rizz-story-caption-block {
+    font-size: 1.35rem !important;
+    line-height: 1.4;
+  }
+
+  /* Chat: portrait left + messages right */
+  .rizz-chat {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 0 !important;
+  }
+
+  .rizz-chat-layout {
+    display: grid !important;
+    grid-template-columns: 320px minmax(0, 1fr) !important;
+    gap: 28px 32px !important;
+    align-items: start !important;
+    width: 100%;
+  }
+
+  .rizz-chat-photo {
+    display: block !important;
+  }
+
+  .rizz-chat-art {
+    width: 100% !important;
+    max-width: 320px !important;
+    aspect-ratio: 3 / 4 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+  }
+
+  .rizz-chat-photo-cap {
+    margin: 10px 0 0;
+    font-size: 0.86rem;
+    line-height: 1.35;
+  }
+
+  .rizz-chat-main {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    max-width: 720px;
+  }
+
+  .rizz-bubbles {
+    max-height: min(52vh, 480px) !important;
+    min-height: 240px;
+  }
+
+  .rizz-chat::before {
+    display: none !important;
+    content: none !important;
+  }
+}
+
+@media (min-width: 1200px) {
+  .rizz-story-stage {
+    grid-template-columns: 420px minmax(320px, 1fr) !important;
+  }
+  .rizz-story-art {
+    width: 420px !important;
+    max-width: 420px !important;
+  }
+  .rizz-chat-layout {
+    grid-template-columns: 360px minmax(0, 1fr) !important;
+  }
+  .rizz-chat-art {
+    max-width: 360px !important;
+  }
 }
