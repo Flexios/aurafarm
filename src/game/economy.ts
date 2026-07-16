@@ -245,10 +245,14 @@ export function redeemCode(
     return { ok: false, reason: "You already redeemed this code." };
   }
 
+  const coreIds = def.coreIds ?? [];
+  const ownedCores = Array.from(new Set([...state.ownedCores, ...coreIds]));
+
   const next: PlayerState = {
     ...state,
     sparks: state.sparks + def.sparks,
     glow: state.glow + def.glow,
+    ownedCores,
     claimedCodes: [...claimed, def.code],
   };
   saveState(next);

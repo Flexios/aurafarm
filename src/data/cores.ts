@@ -65,6 +65,14 @@ export const CORES: CoreDef[] = [
     description: "Founder of AuraFarm. Unique to @admin — not farmable.",
     exclusive: true,
   },
+  {
+    id: "elise-sip",
+    name: "Elise's Sip",
+    emoji: "🥛",
+    rarity: "legendary",
+    description: "Chocolate milkshake energy. Unlocks exclusive trainer Elise. Code only.",
+    exclusive: true,
+  },
 ];
 
 /** Username (lowercase) → exclusive core ids granted automatically */

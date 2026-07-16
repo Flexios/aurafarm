@@ -562,11 +562,22 @@ export function rizzLocalTurn(
     delta += Math.floor(Math.random() * 3) - 1;
   }
 
+  // Hard-mode trainers (e.g. Elise): dampen positive gains, punish mediocrity
+  const hard = Boolean(persona.hardMode);
+  if (hard) {
+    if (delta > 0) delta = Math.max(1, Math.floor(delta * 0.45));
+    else if (delta === 0) delta = -2;
+    else delta = Math.floor(delta * 1.15);
+  }
+
   let next = clamp(interest + delta);
   let outcome: RizzOutcome = "continue";
   let mood = built.mood;
   let reply = built.reply;
   let reaction = built.reaction;
+
+  const likeAt = hard ? LIKE_AT + 8 : LIKE_AT; // 83 for hard mode
+  const lateLike = hard ? 78 : 70;
 
   if (built.forceGhost || intent === "insult" || next <= GHOST_AT) {
     outcome = "ghost";
@@ -577,9 +588,9 @@ export function rizzLocalTurn(
     } else if (!reply) {
       reply = pick(persona.replies.ghost.filter(Boolean).concat(["…", "left on read"]));
     }
-  } else if (next >= LIKE_AT || (turn >= 5 && next >= 70 && intent !== "low_effort")) {
+  } else if (next >= likeAt || (turn >= 6 && next >= lateLike && intent !== "low_effort")) {
     outcome = "like";
-    next = Math.max(next, LIKE_AT);
+    next = Math.max(next, likeAt);
     reply = pick(persona.replies.like);
     reaction = "❤️";
     mood = "like";

@@ -183,8 +183,8 @@ export function renderRizz(
     }
 
     if (phase === "pick" && gender) {
-      const list = personasByGender(gender);
-      const daily = pickDailyPersona(gender);
+      const list = personasByGender(gender, state.ownedCores);
+      const daily = pickDailyPersona(gender, new Date(), state.ownedCores);
       container.innerHTML = `
         <div class="rizz-pick">
           <div class="rizz-pick-head">
@@ -236,7 +236,7 @@ export function renderRizz(
       };
       container.querySelector("#rizz-start-daily")?.addEventListener("click", () => startWith(daily));
       container.querySelector("#rizz-random")?.addEventListener("click", () =>
-        startWith(pickRandomPersona(gender)),
+        startWith(pickRandomPersona(gender, state.ownedCores)),
       );
       container.querySelectorAll<HTMLButtonElement>("[data-persona]").forEach((btn) => {
         btn.addEventListener("click", () => {

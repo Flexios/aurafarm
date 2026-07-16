@@ -10,6 +10,8 @@ export interface RedeemCodeDef {
   label: string;
   sparks: number;
   glow: number;
+  /** Collectible core ids granted */
+  coreIds?: string[];
   /** Max redemptions per account */
   maxPerAccount: number;
   /** ISO date string, or null = never expires */
@@ -27,6 +29,16 @@ export const REDEEM_CODES: RedeemCodeDef[] = [
     maxPerAccount: 1,
     expiresAt: null,
     blurb: "Thanks for playing early. One claim per account.",
+  },
+  {
+    code: "SIMP",
+    label: "Simp Pack",
+    sparks: 6,
+    glow: 7,
+    coreIds: ["elise-sip"],
+    maxPerAccount: 1,
+    expiresAt: null,
+    blurb: "Unlocks exclusive trainer Elise + a legendary collectible. One claim per account.",
   },
 ];
 

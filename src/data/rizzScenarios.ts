@@ -26,6 +26,15 @@ export interface RizzPersona {
     like: string[];
     ghost: string[];
   };
+  /** Hidden until unlock (e.g. code grant core) */
+  exclusive?: boolean;
+  /** Collectible core id that unlocks this trainer */
+  unlockCoreId?: string;
+  /**
+   * Harder to impress: positive interest gains are scaled down,
+   * LIKE threshold raised slightly in local engine.
+   */
+  hardMode?: boolean;
 }
 
 export const RIZZ_PERSONAS: RizzPersona[] = [
@@ -141,6 +150,62 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
   },
   // ——— Male ———
   {
+    id: "f-elise",
+    gender: "female",
+    name: "Elise",
+    handle: "elise.soft",
+    vibe: "clean girl · hard mode",
+    storyCaption: "clean girl soft launch · coffee or chocolate milkshake ☕🥛",
+    image: "/rizz/f-elise.jpg",
+    accent: "#e8c4b8",
+    accent2: "#1a1412",
+    emoji: "🥛",
+    exclusive: true,
+    unlockCoreId: "elise-sip",
+    hardMode: true,
+    personality:
+      "Elise, 22, clean-girl aesthetic, soft on the inside but VERY selective. Optimist, slightly introverted — she opens slowly. Loves coffee, chocolate milkshakes, calm confidence, and genuine effort. She is HARDER than other trainers: interest rises slowly, she needs multiple good lines, and generic flattery barely moves her. Cringe, thirst, or insults = near-instant cold. She rewards patience, wit, and specificity about her clean vibe / drinks / soft energy.",
+    voice:
+      "Soft, clean, slightly reserved. Lowercase, warm but not easy. Uses ☕ 🥛 😌 sparingly. Never chaotic, never gym-cocky, never concert-gremlin. Quiet optimist who still has standards.",
+    hardNos: [
+      "send nudes",
+      "come over",
+      "smash",
+      "rate me",
+      "daddy",
+      "babygirl",
+      "thicc",
+      "dtf",
+      "netflix and chill",
+      "you're hot",
+      "damn girl",
+    ],
+    softYes: [
+      "coffee",
+      "matcha",
+      "milkshake",
+      "chocolate",
+      "clean girl",
+      "soft",
+      "honest",
+      "patience",
+      "calm",
+      "latte",
+      "cozy",
+      "kind",
+    ],
+    replies: {
+      warm: [
+        "ok that was… actually thoughtful 😌",
+        "you're trying. i notice. keep going carefully.",
+        "soft launch approved. don't get loud now.",
+      ],
+      cold: ["hmm. not yet.", "too easy. try harder.", "i need more than that."],
+      like: ["okay… you made it past my walls. rare. don't waste it 🥛"],
+      ghost: ["i'm quiet for a reason", "…"],
+    },
+  },
+  {
     id: "m-jordan",
     gender: "male",
     name: "Jordan",
@@ -238,22 +303,44 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
   },
 ];
 
-export function personasByGender(gender: RizzGender): RizzPersona[] {
-  return RIZZ_PERSONAS.filter((p) => p.gender === gender);
+/** Whether the player has unlocked an exclusive trainer. */
+export function hasRizzPersonaUnlocked(
+  persona: RizzPersona,
+  ownedCores: string[] | null | undefined,
+): boolean {
+  if (!persona.exclusive) return true;
+  if (!persona.unlockCoreId) return false;
+  return (ownedCores ?? []).includes(persona.unlockCoreId);
+}
+
+export function personasByGender(
+  gender: RizzGender,
+  ownedCores?: string[] | null,
+): RizzPersona[] {
+  return RIZZ_PERSONAS.filter(
+    (p) => p.gender === gender && hasRizzPersonaUnlocked(p, ownedCores),
+  );
 }
 
 export function personaById(id: string): RizzPersona | undefined {
   return RIZZ_PERSONAS.find((p) => p.id === id);
 }
 
-export function pickDailyPersona(gender: RizzGender, date = new Date()): RizzPersona {
-  const list = personasByGender(gender);
+export function pickDailyPersona(
+  gender: RizzGender,
+  date = new Date(),
+  ownedCores?: string[] | null,
+): RizzPersona {
+  const list = personasByGender(gender, ownedCores);
   const rng = mulberry32(hashString(`rizz-daily:${gender}:${todayKey(date)}`));
   return list[Math.floor(rng() * list.length)]!;
 }
 
-export function pickRandomPersona(gender: RizzGender): RizzPersona {
-  const list = personasByGender(gender);
+export function pickRandomPersona(
+  gender: RizzGender,
+  ownedCores?: string[] | null,
+): RizzPersona {
+  const list = personasByGender(gender, ownedCores);
   return list[Math.floor(Math.random() * list.length)]!;
 }
 

@@ -1,4 +1,5 @@
 import { REDEEM_CODES } from "../data/codes";
+import { coreById } from "../data/cores";
 import { BATTLE_PASS, COSMETICS, cosmeticById } from "../data/cosmetics";
 import {
   buyCosmetic,
@@ -348,6 +349,11 @@ export function renderShop(
       <div class="shop-grid">
         ${REDEEM_CODES.map((c) => {
           const done = claimed.has(c.code);
+          const cores = (c.coreIds ?? [])
+            .map((id) => coreById(id))
+            .filter(Boolean)
+            .map((core) => `${core!.emoji} ${core!.name}`)
+            .join(" · ");
           return `
             <div class="shop-item">
               <div class="swatch" style="background:var(--accent-soft)" aria-hidden="true">${icon("star", "icon icon-swatch")}</div>
@@ -358,6 +364,7 @@ export function renderShop(
                   <span class="price-chip" title="${t("currency.sparks")}">${icon("spark", "icon icon-sm")} ${c.sparks}</span>
                   <span class="price-chip glow" title="${t("currency.glow")}">${icon("glow", "icon icon-sm")} ${c.glow}</span>
                 </span>
+                ${cores ? `<span class="muted" style="font-size:0.82rem">${t("shop.codeAlso")}: ${escapeHtml(cores)}</span>` : ""}
                 <span class="muted" style="font-size:0.8rem">${c.expiresAt ? t("shop.codeExpires") : t("shop.codeNever")}${
                   done ? ` · ${t("shop.codeClaimed")}` : ""
                 }</span>

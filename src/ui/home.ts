@@ -140,7 +140,11 @@ export function renderHome(
         ${
           state.settings.rizzTargetGender
             ? (() => {
-                const daily = pickDailyPersona(state.settings.rizzTargetGender!);
+                const daily = pickDailyPersona(
+                  state.settings.rizzTargetGender!,
+                  new Date(),
+                  state.ownedCores,
+                );
                 return `
         <div class="card home-panel rizz-home-story">
           <div class="rizz-home-row">
@@ -202,7 +206,7 @@ export function renderHome(
   container.querySelector("#go-rizz-story")?.addEventListener("click", () => {
     const g = state.settings.rizzTargetGender;
     if (g) {
-      const daily = pickDailyPersona(g);
+      const daily = pickDailyPersona(g, new Date(), state.ownedCores);
       queueRizzStory(daily.id, g);
     }
     onNavigate("rizz");
