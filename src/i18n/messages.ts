@@ -64,6 +64,8 @@ const en = {
 
   // Home
   "home.today": "Today",
+  "home.dailyQuote": "Daily aura",
+  "home.quoteHint": "Refreshes every day · farm the vibe",
   "home.vibeChallenge": "Vibe Challenge",
   "home.doneToday": "Done today",
   "home.ready": "Ready",
@@ -337,6 +339,8 @@ const de: Record<MessageKey, string> = {
   "onboard.switchAccount": "Anderes Konto nutzen",
 
   "home.today": "Heute",
+  "home.dailyQuote": "Tägliche Aura",
+  "home.quoteHint": "Wechselt jeden Tag · farm den Vibe",
   "home.vibeChallenge": "Vibe-Challenge",
   "home.doneToday": "Heute erledigt",
   "home.ready": "Bereit",
@@ -603,6 +607,8 @@ const fr: Record<MessageKey, string> = {
   "onboard.switchAccount": "Utiliser un autre compte",
 
   "home.today": "Aujourd’hui",
+  "home.dailyQuote": "Aura du jour",
+  "home.quoteHint": "Nouveau chaque jour · cultive le vibe",
   "home.vibeChallenge": "Challenge vibe",
   "home.doneToday": "Fait aujourd’hui",
   "home.ready": "Prêt",
@@ -869,6 +875,8 @@ const zh: Record<MessageKey, string> = {
   "onboard.switchAccount": "换一个账号",
 
   "home.today": "今天",
+  "home.dailyQuote": "今日 Aura",
+  "home.quoteHint": "每日刷新 · 耕耘你的氛围",
   "home.vibeChallenge": "氛围挑战",
   "home.doneToday": "今日已完成",
   "home.ready": "待开始",
@@ -1135,6 +1143,8 @@ const es: Record<MessageKey, string> = {
   "onboard.switchAccount": "Usar otra cuenta",
 
   "home.today": "Hoy",
+  "home.dailyQuote": "Aura del día",
+  "home.quoteHint": "Cambia cada día · cultiva el vibe",
   "home.vibeChallenge": "Reto vibe",
   "home.doneToday": "Hecho hoy",
   "home.ready": "Listo",

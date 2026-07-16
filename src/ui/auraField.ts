@@ -86,16 +86,24 @@ function frame(): void {
 
   const [ar, ag, ab] = accentRgb();
 
+  // Base wash so the field reads on large monitors (not only near the dock)
+  const base = c.createRadialGradient(w * 0.5, h * 0.2, 0, w * 0.5, h * 0.35, Math.max(w, h) * 0.75);
+  base.addColorStop(0, `rgba(${ar},${ag},${ab},0.11)`);
+  base.addColorStop(0.45, `rgba(${ar},${ag},${ab},0.04)`);
+  base.addColorStop(1, "transparent");
+  c.fillStyle = base;
+  c.fillRect(0, 0, w, h);
+
   // Layered ink bands — slow drift, not confetti
-  for (let i = 0; i < 4; i++) {
-    const ox = w * (0.2 + i * 0.2) + Math.sin(t * 0.7 + i) * w * 0.06;
-    const oy = h * (0.25 + (i % 3) * 0.2) + Math.cos(t * 0.55 + i * 1.3) * h * 0.05;
-    const rx = w * (0.35 + i * 0.05);
-    const ry = h * (0.22 + i * 0.04);
+  for (let i = 0; i < 5; i++) {
+    const ox = w * (0.15 + i * 0.18) + Math.sin(t * 0.7 + i) * w * 0.08;
+    const oy = h * (0.2 + (i % 3) * 0.22) + Math.cos(t * 0.55 + i * 1.3) * h * 0.06;
+    const rx = w * (0.28 + i * 0.06);
+    const ry = h * (0.2 + i * 0.04);
     const g = c.createRadialGradient(ox, oy, 0, ox, oy, Math.max(rx, ry));
-    const a0 = 0.07 - i * 0.01;
+    const a0 = 0.12 - i * 0.015;
     g.addColorStop(0, `rgba(${ar},${ag},${ab},${a0})`);
-    g.addColorStop(0.55, `rgba(${ar},${ag},${ab},${a0 * 0.35})`);
+    g.addColorStop(0.55, `rgba(${ar},${ag},${ab},${a0 * 0.4})`);
     g.addColorStop(1, "transparent");
     c.fillStyle = g;
     c.beginPath();
@@ -104,9 +112,9 @@ function frame(): void {
   }
 
   // Pointer follow wash
-  const pg = c.createRadialGradient(px * w, py * h, 0, px * w, py * h, Math.max(w, h) * 0.4);
-  pg.addColorStop(0, `rgba(${ar},${ag},${ab},0.09)`);
-  pg.addColorStop(0.5, `rgba(${ar},${ag},${ab},0.03)`);
+  const pg = c.createRadialGradient(px * w, py * h, 0, px * w, py * h, Math.max(w, h) * 0.45);
+  pg.addColorStop(0, `rgba(${ar},${ag},${ab},0.14)`);
+  pg.addColorStop(0.5, `rgba(${ar},${ag},${ab},0.045)`);
   pg.addColorStop(1, "transparent");
   c.fillStyle = pg;
   c.fillRect(0, 0, w, h);

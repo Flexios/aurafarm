@@ -3,6 +3,7 @@ import { aestheticById } from "../data/aesthetics";
 import { coresFromIds } from "../data/cores";
 import { nextRank, rankForAura } from "../data/ranks";
 import { challengeArtHtml, challengeTitleRow } from "../data/challenges";
+import { getDailyQuote } from "../data/quotes";
 import { getTodaysChallenge } from "../game/daily";
 import { localizeCategory, localizeChallenge, t } from "../i18n";
 import { hasPlayedDaily } from "../state/store";
@@ -27,13 +28,31 @@ export function renderHome(
   const challenge = localizeChallenge(
     getTodaysChallenge(Boolean(state.settings.nsfwChallenges)),
   );
+  const quote = getDailyQuote();
   const played = hasPlayedDaily(state);
   const aesthetic = aestheticById(state.core);
   const collectionCores = coresFromIds(state.ownedCores);
   const track = state.battlePassPremium ? t("home.premium") : t("home.freeTrack");
+  const dayLabel = new Date().toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+  });
 
   container.innerHTML = `
     <div class="desktop-grid home-grid">
+      <div class="home-cell home-cell-full">
+        <div class="section-header">${t("home.dailyQuote")}</div>
+        <div class="card quote-card home-panel">
+          <div class="quote-meta">
+            <span class="quote-day">${escapeHtml(dayLabel)}</span>
+            <span class="tag magenta">${escapeHtml(quote.vibe)}</span>
+          </div>
+          <p class="quote-text">${escapeHtml(quote.text)}</p>
+          <p class="quote-vibe muted">${t("home.quoteHint")}</p>
+        </div>
+      </div>
+
       <div class="home-cell">
         <div class="section-header">${t("home.today")}</div>
         <div class="card challenge-card home-panel">
