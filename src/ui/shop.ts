@@ -1,4 +1,5 @@
 import { BATTLE_PASS, COSMETICS, cosmeticById } from "../data/cosmetics";
+import { coreById } from "../data/cores";
 import {
   buyCosmetic,
   buyGlowPack,
@@ -9,6 +10,7 @@ import {
 } from "../game/economy";
 import {
   cosmeticName,
+  coreName,
   rarityLabel,
   rewardLabel,
   t,
@@ -17,6 +19,12 @@ import type { CosmeticSlot, PlayerState } from "../types";
 import { escapeHtml } from "../utils/format";
 import { icon, type IconName } from "./icons";
 import { showToast } from "./toast";
+
+/** Client-side redeem throttle (ms between attempts) */
+const CODE_COOLDOWN_MS = 1600;
+/** After this many failed attempts, longer lockout */
+const CODE_FAIL_LOCK_AFTER = 4;
+const CODE_FAIL_LOCK_MS = 12_000;
 
 function slotMeta(slot: CosmeticSlot): { label: string; ico: IconName } {
   const map: Record<CosmeticSlot, { label: string; ico: IconName }> = {
@@ -54,14 +62,17 @@ export function renderShop(
   onState: (s: PlayerState) => void,
 ): void {
   let tab: "cosmetics" | "glow" | "pass" | "codes" = "cosmetics";
+  let lastRedeemAt = 0;
+  let failCount = 0;
+  let lockUntil = 0;
 
   const paint = () => {
     container.innerHTML = `
-      <div class="segmented">
-        <button type="button" data-tab="cosmetics" class="${tab === "cosmetics" ? "active" : ""}">${icon("shop", "icon icon-sm")} ${t("shop.cosmetics")}</button>
-        <button type="button" data-tab="glow" class="${tab === "glow" ? "active" : ""}">${icon("glow", "icon icon-sm")} ${t("shop.glow")}</button>
-        <button type="button" data-tab="pass" class="${tab === "pass" ? "active" : ""}">${icon("pass", "icon icon-sm")} ${t("shop.pass")}</button>
-        <button type="button" data-tab="codes" class="${tab === "codes" ? "active" : ""}">${icon("star", "icon icon-sm")} ${t("shop.codes")}</button>
+      <div class="segmented shop-tabs">
+        <button type="button" data-tab="cosmetics" class="${tab === "cosmetics" ? "active" : ""}">${icon("shop", "icon icon-sm")} <span class="tab-label">${t("shop.cosmetics")}</span></button>
+        <button type="button" data-tab="glow" class="${tab === "glow" ? "active" : ""}">${icon("glow", "icon icon-sm")} <span class="tab-label">${t("shop.glow")}</span></button>
+        <button type="button" data-tab="pass" class="${tab === "pass" ? "active" : ""}">${icon("pass", "icon icon-sm")} <span class="tab-label">${t("shop.pass")}</span></button>
+        <button type="button" data-tab="codes" class="${tab === "codes" ? "active" : ""}">${icon("star", "icon icon-sm")} <span class="tab-label">${t("shop.codes")}</span></button>
       </div>
       <div id="shop-body"></div>
     `;
@@ -338,35 +349,88 @@ export function renderShop(
       <div class="card">
         <div class="field">
           <label for="promo-code">${t("shop.codeEnter")}</label>
-          <input id="promo-code" type="text" maxlength="32" autocomplete="off" placeholder="${t("shop.codePlaceholder")}" style="text-transform:uppercase" />
+          <input id="promo-code" type="text" maxlength="32" autocomplete="off" spellcheck="false" placeholder="${t("shop.codePlaceholder")}" style="text-transform:uppercase" />
         </div>
         <button type="button" class="btn btn-fill" id="redeem-code" style="margin-top:12px">${t("shop.codeRedeem")}</button>
       </div>
+      <p class="muted" style="margin:12px 0 0;padding:0 4px;font-size:0.86rem;line-height:1.4">${t("shop.codesHint")}</p>
     `;
 
-    body.querySelector("#redeem-code")?.addEventListener("click", () => {
-      const input = body.querySelector("#promo-code") as HTMLInputElement;
-      const res = redeemCode(state, input?.value ?? "");
-      if (!res.ok) {
-        showToast(res.reason);
+    const doRedeem = () => {
+      const now = Date.now();
+      if (now < lockUntil) {
+        showToast(t("shop.codeSlowDown"));
         return;
       }
+      if (now - lastRedeemAt < CODE_COOLDOWN_MS) {
+        showToast(t("shop.codeSlowDown"));
+        return;
+      }
+      lastRedeemAt = now;
+
+      const input = body.querySelector("#promo-code") as HTMLInputElement;
+      const raw = (input?.value ?? "").trim();
+      if (!raw) {
+        showToast(t("shop.codeInvalid"));
+        return;
+      }
+
+      const res = redeemCode(state, raw);
+      if (!res.ok) {
+        failCount += 1;
+        if (failCount >= CODE_FAIL_LOCK_AFTER) {
+          lockUntil = now + CODE_FAIL_LOCK_MS;
+          failCount = 0;
+          showToast(t("shop.codeSlowDown"));
+          return;
+        }
+        const reasonKey =
+          res.reason === "expired"
+            ? "shop.codeExpired"
+            : res.reason === "already"
+              ? "shop.codeAlready"
+              : "shop.codeInvalid";
+        showToast(t(reasonKey));
+        return;
+      }
+
+      failCount = 0;
       onState(res.state);
       state = res.state;
+      if (input) input.value = "";
+
       showToast(
         t("shop.codeSuccess", {
           label: res.label,
           sparks: res.sparks,
           glow: res.glow,
         }),
+        2600,
       );
+
+      // Highlight trainer / collectible unlocks (e.g. SIMP → Elise)
+      if (res.unlockedCores.length) {
+        window.setTimeout(() => {
+          for (const id of res.unlockedCores) {
+            const core = coreById(id);
+            if (!core) continue;
+            const name = coreName(core.id, core.name);
+            if (id === "elise-sip") {
+              showToast(t("shop.codeUnlockElise"), 3200);
+            } else {
+              showToast(t("shop.codeUnlock", { name }), 3000);
+            }
+          }
+        }, 900);
+      }
+
       paint();
-    });
+    };
+
+    body.querySelector("#redeem-code")?.addEventListener("click", doRedeem);
 
     body.querySelector("#promo-code")?.addEventListener("keydown", (e) => {
-      if ((e as KeyboardEvent).key === "Enter") {
-        (body.querySelector("#redeem-code") as HTMLButtonElement | null)?.click();
-      }
+      if ((e as KeyboardEvent).key === "Enter") doRedeem();
     });
   };
 

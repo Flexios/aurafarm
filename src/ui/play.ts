@@ -31,12 +31,20 @@ export function renderPlay(
   let result: ScoreResult | null = null;
   let busy = false;
   let preferAi = aiOn && state.settings.preferAiJudge;
+  /** Provider name from last successful AI judge (for result badge) */
+  let lastAiProvider: string | undefined;
 
   const paint = () => {
     if (result) {
       const core = result.coreDropped ? coreById(result.coreDropped) : null;
       const grade = result.grade || gradeFromScore(result.score);
       const b = result.breakdown;
+      const sourceLabel =
+        result.source === "ai"
+          ? lastAiProvider
+            ? t("play.aiJudgeProvider", { provider: lastAiProvider })
+            : t("play.aiJudge")
+          : t("play.localJudge");
       container.innerHTML = `
         <div class="card result-panel">
           <div class="muted" style="font-weight:600;font-size:0.84rem">${t("play.judgeTitle", { grade })}</div>
@@ -44,7 +52,7 @@ export function renderPlay(
           <div class="verdict">${escapeHtml(result.verdict)}</div>
           <div class="tag-row" style="justify-content:center">
             ${result.tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}
-            <span class="tag magenta">${result.source === "ai" ? t("play.aiJudge") : t("play.localJudge")}</span>
+            <span class="tag magenta">${escapeHtml(sourceLabel)}</span>
           </div>
           ${
             b
@@ -122,9 +130,10 @@ export function renderPlay(
         </div>
         <label class="muted" style="display:flex;align-items:center;gap:8px;margin:12px 0;font-size:0.9rem">
           <input type="checkbox" id="use-ai" ${preferAi && aiOn ? "checked" : ""} ${aiOn ? "" : "disabled"} />
-          ${t("play.preferAi")}${aiOn ? "" : " · —"}
+          ${t("play.preferAi")}${aiOn ? "" : ` · ${t("play.aiOffline")}`}
         </label>
-        <button class="btn btn-fill" id="submit" style="margin-top:auto" ${mode === "daily" && dailyDone ? "disabled" : ""}>${busy ? t("play.judging") : t("play.submit")}</button>
+        <div class="ai-badge ${aiOn ? "on" : ""}" style="margin-top:0;margin-bottom:8px">${aiOn ? t("home.aiOn") : t("home.aiOff")}</div>
+        <button class="btn btn-fill" id="submit" style="margin-top:auto" ${mode === "daily" && dailyDone ? "disabled" : ""} ${busy ? "disabled" : ""}>${busy ? t("play.judging") : t("play.submit")}</button>
       </div>
       </div>
     `;
@@ -162,7 +171,7 @@ export function renderPlay(
       let base = local;
 
       if (useAi) {
-        showToast("Aura Judge is reading the room…");
+        showToast(t("play.aiReading"));
         const ai = await judgeWithAi(
           challengeRaw,
           answer,
@@ -170,6 +179,7 @@ export function renderPlay(
           state.streak,
         );
         if (ai) {
+          lastAiProvider = ai.provider || "AI";
           const blended = blendAiWithLocal(ai.score, local.score);
           base = {
             score: blended,
@@ -179,9 +189,13 @@ export function renderPlay(
             breakdown: ai.breakdown ?? local.breakdown,
             grade: gradeFromScore(blended),
           };
+          showToast(t("play.aiOk", { provider: lastAiProvider }), 1800);
         } else {
-          showToast("AI unavailable — local judge stepped in.");
+          lastAiProvider = undefined;
+          showToast(t("play.aiFallback"));
         }
+      } else {
+        lastAiProvider = undefined;
       }
 
       const full = finalizeRewards(base, state.streak, state.ownedCores);

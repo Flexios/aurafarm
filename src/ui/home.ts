@@ -70,7 +70,7 @@ export function renderHome(
           <div class="btn-row" style="margin-top:auto">
             <button class="btn btn-fill" id="go-play">${played ? t("home.practice") : t("home.start")}</button>
           </div>
-          <div class="ai-badge ${aiOn ? "on" : ""}">${aiOn ? t("home.aiOn") : t("home.aiOff")}</div>
+          <div class="ai-badge ${aiOn ? "on" : ""}" title="${aiOn ? t("home.aiOn") : t("home.aiOff")}">${aiOn ? t("home.aiOn") : t("home.aiOff")}</div>
         </div>
       </div>
 

@@ -233,19 +233,30 @@ export function redeemCode(
   state: PlayerState,
   rawCode: string,
 ):
-  | { ok: true; state: PlayerState; sparks: number; glow: number; label: string }
-  | { ok: false; reason: string } {
+  | {
+      ok: true;
+      state: PlayerState;
+      sparks: number;
+      glow: number;
+      label: string;
+      /** Core ids newly granted by this redeem */
+      unlockedCores: string[];
+      code: string;
+    }
+  | { ok: false; reason: "invalid" | "expired" | "already" } {
   const def = findCode(rawCode);
-  if (!def) return { ok: false, reason: "Invalid code." };
-  if (isCodeExpired(def)) return { ok: false, reason: "This code has expired." };
+  if (!def) return { ok: false, reason: "invalid" };
+  if (isCodeExpired(def)) return { ok: false, reason: "expired" };
 
   const claimed = state.claimedCodes ?? [];
   const uses = claimed.filter((c) => c === def.code).length;
   if (uses >= def.maxPerAccount) {
-    return { ok: false, reason: "You already redeemed this code." };
+    return { ok: false, reason: "already" };
   }
 
   const coreIds = def.coreIds ?? [];
+  const owned = new Set(state.ownedCores);
+  const unlockedCores = coreIds.filter((id) => !owned.has(id));
   const ownedCores = Array.from(new Set([...state.ownedCores, ...coreIds]));
 
   const next: PlayerState = {
@@ -262,6 +273,8 @@ export function redeemCode(
     sparks: def.sparks,
     glow: def.glow,
     label: def.label,
+    unlockedCores,
+    code: def.code,
   };
 }
 
