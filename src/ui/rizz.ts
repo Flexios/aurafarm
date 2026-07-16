@@ -326,7 +326,11 @@ export function renderRizz(
                 <div class="rizz-avatar rizz-avatar-sm has-photo" style="${avatarStyle(p)}" aria-hidden="true">${p.emoji}</div>
                 <div style="flex:1;min-width:0">
                   <strong>${escapeHtml(p.name)}</strong>
-                  <div class="muted" style="font-size:0.75rem">@${escapeHtml(p.handle)}${ended ? ` · ${t("rizz.chatEnded")}` : ""}</div>
+                  <div class="muted" style="font-size:0.75rem">@${escapeHtml(p.handle)}${ended ? ` · ${t("rizz.chatEnded")}` : ""}${
+                    !ended && live.lastSource
+                      ? ` · ${live.lastSource === "ai" ? t("rizz.sourceAi") : t("rizz.sourceLocal")}`
+                      : ""
+                  }</div>
                 </div>
                 <div class="rizz-interest" title="${t("rizz.interest")}">
                   <div class="rizz-interest-ring">
