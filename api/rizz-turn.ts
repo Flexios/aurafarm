@@ -160,19 +160,22 @@ function clampInterest(n: number): number {
 
 /** OpenRouter free models sometimes dump moderation text instead of a DM. */
 function isSafetyDump(content: string): boolean {
-  const c = content.toLowerCase();
+  const c = content.toLowerCase().trim();
   return (
     /safety\s*categor/i.test(c) ||
     /content.?filter/i.test(c) ||
     /i can'?t (assist|help|engage)/i.test(c) ||
     /as an ai/i.test(c) ||
     /violat(e|es|ing).*(policy|guidelines)/i.test(c) ||
-    /^(sexual|violence|hate)\s*$/i.test(content.trim())
+    /^(sexual|violence|hate|self-?harm|dangerous)\b/i.test(c) ||
+    /^categories?:\s*(sexual|violence|hate)/i.test(c) ||
+    /\b(flagged|blocked|moderation)\b/i.test(c)
   );
 }
 
 function safetyFallbackReply(
   name: string,
+  gender: string,
   fallbackInterest: number,
 ): {
   reply: string;
@@ -183,8 +186,22 @@ function safetyFallbackReply(
   reaction?: string;
 } {
   const interest = clampInterest(fallbackInterest - 12);
+  const female = gender !== "male";
+  const reply = female
+    ? pickSafe([
+        "lol slow down. keep it cute or i'm gone 🖤",
+        "too blunt. try flirting, not a porno script",
+        "mm… maybe later. earn it first 😏",
+        "that was desperate. do better.",
+      ])
+    : pickSafe([
+        "easy tiger. talk to me like you mean it 🔥",
+        "too blunt. spit game, not a script",
+        "slow down. i like heat, not spam",
+        "nah that was mid. try again with actual rizz",
+      ]);
   return {
-    reply: `lol slow down. keep it cute or i'm gone 🖤`,
+    reply,
     interestDelta: interest - fallbackInterest,
     interest,
     mood: "cold",
@@ -192,9 +209,18 @@ function safetyFallbackReply(
   };
 }
 
-function parseRizzJson(content: string, fallbackInterest: number, name = "them") {
+function pickSafe(arr: string[]): string {
+  return arr[Math.floor(Math.random() * arr.length)]!;
+}
+
+function parseRizzJson(
+  content: string,
+  fallbackInterest: number,
+  name = "them",
+  gender = "female",
+) {
   if (isSafetyDump(content)) {
-    return safetyFallbackReply(name, fallbackInterest);
+    return safetyFallbackReply(name, gender, fallbackInterest);
   }
   const start = content.indexOf("{");
   const end = content.lastIndexOf("}");
@@ -373,10 +399,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
-    let parsed = parseRizzJson(content, interest, String(body.name ?? "them"));
+    const gender = body.gender === "male" ? "male" : "female";
+    let parsed = parseRizzJson(content, interest, String(body.name ?? "them"), gender);
     // If salvage failed but content looks like a safety dump, force character reject
     if (!parsed && isSafetyDump(content)) {
-      parsed = safetyFallbackReply(String(body.name ?? "them"), interest);
+      parsed = safetyFallbackReply(String(body.name ?? "them"), gender, interest);
     }
     if (!parsed) {
       res.status(502).json({
@@ -387,9 +414,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
-    // Never surface raw filter text as a bubble
+    // Never surface raw filter text as a bubble (Raven, Knox, anyone)
     if (isSafetyDump(parsed.reply)) {
-      parsed = safetyFallbackReply(String(body.name ?? "them"), interest);
+      parsed = safetyFallbackReply(String(body.name ?? "them"), gender, interest);
     }
 
     res.status(200).json({ available: true, provider, ...parsed });
