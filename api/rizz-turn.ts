@@ -89,9 +89,7 @@ async function callProvider(
     body: JSON.stringify({
       model: p.model,
       temperature: 0.65,
-      max_tokens: 180,
-      // Nudge providers that support it; ignored if unsupported
-      response_format: { type: "json_object" },
+      max_tokens: 220,
       messages: [
         { role: "system", content: system },
         { role: "user", content: user },
@@ -101,6 +99,7 @@ async function callProvider(
   if (!resp.ok) {
     const detail = await resp.text().catch(() => "");
     console.warn(`[rizz-turn] ${p.name} ${resp.status}: ${detail.slice(0, 400)}`);
+    // Retry once without extras if model rejects body shape
     return null;
   }
   const data = (await resp.json()) as {
