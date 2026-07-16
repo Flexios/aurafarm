@@ -31,8 +31,21 @@ export async function rizzTurnWithAi(
         isStoryReply,
       }),
     });
-    if (!res.ok) return null;
-    const data = (await res.json()) as RizzTurnResult & { available?: boolean };
+    if (!res.ok) {
+      let detail = "";
+      try {
+        const err = (await res.json()) as { error?: string; detail?: string };
+        detail = err.error || err.detail || res.statusText;
+      } catch {
+        detail = res.statusText;
+      }
+      console.warn("[rizz] AI HTTP", res.status, detail);
+      return null;
+    }
+    const data = (await res.json()) as RizzTurnResult & {
+      available?: boolean;
+      provider?: string;
+    };
     if (typeof data.interest !== "number" || !data.reply) return null;
     return {
       reply: data.reply,
@@ -41,8 +54,10 @@ export async function rizzTurnWithAi(
       mood: data.mood || "neutral",
       outcome: data.outcome || "continue",
       reaction: data.reaction,
+      provider: data.provider,
     };
-  } catch {
+  } catch (e) {
+    console.warn("[rizz] AI fetch failed", e);
     return null;
   }
 }
@@ -56,7 +71,7 @@ export async function rizzTurn(
   turn: number,
   isStoryReply: boolean,
   preferAi: boolean,
-): Promise<RizzTurnResult & { source: "ai" | "local" }> {
+): Promise<RizzTurnResult & { source: "ai" | "local"; provider?: string }> {
   if (preferAi) {
     const ai = await rizzTurnWithAi(
       persona,
@@ -66,7 +81,7 @@ export async function rizzTurn(
       turn,
       isStoryReply,
     );
-    if (ai) return { ...ai, source: "ai" };
+    if (ai) return { ...ai, source: "ai", provider: ai.provider };
   }
   return {
     ...rizzLocalTurn(persona, playerMessage, interest, turn, isStoryReply, history),

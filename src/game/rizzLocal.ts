@@ -14,6 +14,8 @@ export interface RizzTurnResult {
   mood: string;
   outcome: RizzOutcome;
   reaction?: string;
+  /** Set when reply came from a cloud/local LLM provider */
+  provider?: string;
 }
 
 const MAX_TURNS = 8;

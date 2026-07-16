@@ -477,6 +477,14 @@ export function renderRizz(
     live.interest = res.interest;
     live.peakInterest = Math.max(live.peakInterest, res.interest);
     live.lastSource = res.source;
+    if (res.source === "local" && preferAi) {
+      // Prefer AI was on but /api/rizz-turn failed (missing key, bad key, or not redeployed)
+      if (live.turn === 1) {
+        showToast(t("rizz.aiFallback"));
+      }
+    } else if (res.source === "ai" && live.turn === 1) {
+      showToast(t("rizz.aiActive", { provider: res.provider || "AI" }));
+    }
     if (res.reply) {
       live.messages = [...live.messages, { role: "npc", text: res.reply }];
     }
