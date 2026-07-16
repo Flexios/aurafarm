@@ -3,6 +3,7 @@ import {
   clearRizzGenderSession,
   loadRizzGenderSession,
   personaById,
+  personaMoodImage,
   pickDailyPersona,
   pickRandomPersona,
   startingInterest,
@@ -116,19 +117,35 @@ function trainerBadgesHtml(p: RizzPersona, locked: boolean): string {
   return bits.join("");
 }
 
-function avatarStyle(p: RizzPersona): string {
-  return `--rizz-a:${escapeHtml(p.accent)};--rizz-photo:url('${escapeHtml(p.image)}')`;
+function avatarStyle(p: RizzPersona, photo?: string): string {
+  const src = photo ?? p.image;
+  return `--rizz-a:${escapeHtml(p.accent)};--rizz-photo:url('${escapeHtml(src)}')`;
 }
 
-function storyArtHtml(p: RizzPersona): string {
+function storyArtHtml(
+  p: RizzPersona,
+  photo?: string,
+  moodClass = "",
+): string {
+  const src = photo ?? p.image;
   return `
-    <div class="rizz-story-art" data-id="${escapeHtml(p.id)}" style="--rizz-a:${escapeHtml(p.accent)};--rizz-b:${escapeHtml(p.accent2)}">
-      <img class="rizz-story-img" src="${escapeHtml(p.image)}" alt="${escapeHtml(p.name)}" loading="lazy" onerror="this.style.display='none'" />
+    <div class="rizz-story-art${moodClass ? ` ${moodClass}` : ""}" data-id="${escapeHtml(p.id)}" style="--rizz-a:${escapeHtml(p.accent)};--rizz-b:${escapeHtml(p.accent2)}">
+      <img class="rizz-story-img" src="${escapeHtml(src)}" alt="${escapeHtml(p.name)}" loading="lazy" onerror="this.onerror=null;this.src='${escapeHtml(p.image)}'" />
       <div class="rizz-story-fallback" aria-hidden="true">
         <span class="rizz-story-emoji">${p.emoji}</span>
       </div>
       <div class="rizz-story-caption rizz-story-caption-onimg">${escapeHtml(p.storyCaption)}</div>
     </div>`;
+}
+
+function moodClassFor(
+  interest: number,
+  outcome?: "continue" | "like" | "ghost" | "friendzone" | null,
+): string {
+  if (outcome === "like" || interest >= 68) return "rizz-mood-win";
+  if (outcome === "ghost" || outcome === "friendzone" || interest <= 32)
+    return "rizz-mood-fail";
+  return "";
 }
 
 function resetRun(): void {
@@ -406,20 +423,31 @@ export function renderRizz(
             ? t("rizz.result.friendzone")
             : t("rizz.result.ghost");
       const endEmoji = win ? "❤️" : friend ? "🤝" : "👻";
+      const moodInterest = ended && result ? result.interest : live.interest;
+      const moodOutcome = ended && result ? result.outcome : null;
+      const moodPhoto = personaMoodImage(p, moodInterest, moodOutcome);
+      const moodCls = moodClassFor(moodInterest, moodOutcome);
 
       container.innerHTML = `
-        <div class="rizz-chat${ended ? " rizz-chat-ended" : ""}">
+        <div class="rizz-chat${ended ? " rizz-chat-ended" : ""}${moodCls ? ` ${moodCls}` : ""}">
           <div class="rizz-chat-layout">
             <aside class="rizz-chat-photo" aria-hidden="true">
-              <div class="rizz-story-art rizz-chat-art" style="--rizz-a:${escapeHtml(p.accent)};--rizz-b:${escapeHtml(p.accent2)}">
-                <img class="rizz-story-img" src="${escapeHtml(p.image)}" alt="" />
+              <div class="rizz-story-art rizz-chat-art${moodCls ? ` ${moodCls}` : ""}" style="--rizz-a:${escapeHtml(p.accent)};--rizz-b:${escapeHtml(p.accent2)}">
+                <img class="rizz-story-img" src="${escapeHtml(moodPhoto)}" alt="" onerror="this.onerror=null;this.src='${escapeHtml(p.image)}'" />
+                ${
+                  moodCls === "rizz-mood-win"
+                    ? `<span class="rizz-mood-tag rizz-mood-tag-win">${t("rizz.mood.vibing")}</span>`
+                    : moodCls === "rizz-mood-fail"
+                      ? `<span class="rizz-mood-tag rizz-mood-tag-fail">${t("rizz.mood.cold")}</span>`
+                      : ""
+                }
               </div>
               <p class="muted rizz-chat-photo-cap">${escapeHtml(p.storyCaption)}</p>
             </aside>
             <div class="rizz-chat-main">
               <div class="rizz-chat-top">
                 <button type="button" class="btn-plain" id="rizz-back-pick">←</button>
-                <div class="rizz-avatar rizz-avatar-sm has-photo" style="${avatarStyle(p)}" aria-hidden="true">${p.emoji}</div>
+                <div class="rizz-avatar rizz-avatar-sm has-photo" style="${avatarStyle(p, moodPhoto)}" aria-hidden="true">${p.emoji}</div>
                 <div style="flex:1;min-width:0">
                   <strong>${escapeHtml(p.name)}</strong>
                   <div class="muted" style="font-size:0.75rem">@${escapeHtml(p.handle)}${ended ? ` · ${t("rizz.chatEnded")}` : ""}${

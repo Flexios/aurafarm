@@ -3067,6 +3067,45 @@ html[data-hide-top-currency="1"] .topbar-currency {
   align-items: flex-start;
 }
 
+.rizz-story-art.rizz-mood-win,
+.rizz-chat-art.rizz-mood-win {
+  box-shadow: 0 0 0 2px rgba(255, 100, 140, 0.45), 0 12px 40px rgba(232, 93, 76, 0.25);
+}
+
+.rizz-story-art.rizz-mood-fail,
+.rizz-chat-art.rizz-mood-fail {
+  box-shadow: 0 0 0 2px rgba(120, 120, 128, 0.35);
+  filter: saturate(0.85);
+}
+
+.rizz-mood-tag {
+  position: absolute;
+  left: 10px;
+  bottom: 12px;
+  z-index: 3;
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+}
+
+.rizz-mood-tag-win {
+  background: rgba(255, 80, 120, 0.85);
+  color: #fff;
+}
+
+.rizz-mood-tag-fail {
+  background: rgba(40, 40, 44, 0.88);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.rizz-story-img {
+  transition: opacity 0.35s var(--ease-out), filter 0.35s var(--ease-out);
+}
+
 .rizz-avatar {
   width: 44px;
   height: 44px;

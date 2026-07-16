@@ -13,7 +13,12 @@ export interface RizzPersona {
   handle: string;
   vibe: string;
   storyCaption: string;
+  /** Default / neutral story portrait */
   image: string;
+  /** High interest / like reaction portrait */
+  imageWin: string;
+  /** Low interest / ghost reaction portrait */
+  imageFail: string;
   accent: string;
   accent2: string;
   emoji: string;
@@ -59,6 +64,8 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
     vibe: "cafe soft-launch",
     storyCaption: "matcha & main character energy ✨",
     image: "/rizz/f-maya.jpg",
+    imageWin: "/rizz/f-maya-win.jpg",
+    imageFail: "/rizz/f-maya-fail.jpg",
     accent: "#c4785a",
     accent2: "#2a1f1a",
     emoji: "☕",
@@ -91,6 +98,8 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
     vibe: "gym soft-launch",
     storyCaption: "leg day or die day 💪",
     image: "/rizz/f-nova.jpg",
+    imageWin: "/rizz/f-nova-win.jpg",
+    imageFail: "/rizz/f-nova-fail.jpg",
     accent: "#e85d4c",
     accent2: "#1a1210",
     emoji: "💪",
@@ -123,6 +132,8 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
     vibe: "sunset flight",
     storyCaption: "window seat supremacy ✈️ golden hour",
     image: "/rizz/f-lina.jpg",
+    imageWin: "/rizz/f-lina-win.jpg",
+    imageFail: "/rizz/f-lina-fail.jpg",
     accent: "#f0a05a",
     accent2: "#1c1410",
     emoji: "✈️",
@@ -168,6 +179,8 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
     vibe: "concert blur",
     storyCaption: "front row chaos 🎤 don't talk to me i'm processing",
     image: "/rizz/f-zoe.jpg",
+    imageWin: "/rizz/f-zoe-win.jpg",
+    imageFail: "/rizz/f-zoe-fail.jpg",
     accent: "#b57bff",
     accent2: "#16101c",
     emoji: "🎤",
@@ -200,6 +213,8 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
     vibe: "after dark · 18+",
     storyCaption: "1am. lights low. silk on, patience optional 🖤",
     image: "/rizz/f-raven.jpg",
+    imageWin: "/rizz/f-raven-win.jpg",
+    imageFail: "/rizz/f-raven-fail.jpg",
     accent: "#ff4d8d",
     accent2: "#140810",
     emoji: "🖤",
@@ -261,6 +276,8 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
     vibe: "clean girl · hard mode",
     storyCaption: "clean girl soft launch · coffee or chocolate milkshake ☕🥛",
     image: "/rizz/f-elise.jpg",
+    imageWin: "/rizz/f-elise-win.jpg",
+    imageFail: "/rizz/f-elise-fail.jpg",
     accent: "#e8c4b8",
     accent2: "#1a1412",
     emoji: "🥛",
@@ -326,6 +343,8 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
     vibe: "down bad · 18+",
     storyCaption: "up thinking about you. dangerous hobby 🔥",
     image: "/rizz/m-knox.jpg",
+    imageWin: "/rizz/m-knox-win.jpg",
+    imageFail: "/rizz/m-knox-fail.jpg",
     accent: "#ff6b4a",
     accent2: "#120a08",
     emoji: "🔥",
@@ -387,6 +406,8 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
     vibe: "museum soft boy",
     storyCaption: "this painting stared back first 🖼️",
     image: "/rizz/m-jordan.jpg",
+    imageWin: "/rizz/m-jordan-win.jpg",
+    imageFail: "/rizz/m-jordan-fail.jpg",
     accent: "#6b8cae",
     accent2: "#12161c",
     emoji: "🖼️",
@@ -419,6 +440,8 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
     vibe: "dog park golden hour",
     storyCaption: "he's the main character, i'm just PR 🐕",
     image: "/rizz/m-kai.jpg",
+    imageWin: "/rizz/m-kai-win.jpg",
+    imageFail: "/rizz/m-kai-fail.jpg",
     accent: "#6bcf8e",
     accent2: "#101814",
     emoji: "🐕",
@@ -451,6 +474,8 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
     vibe: "midnight pasta",
     storyCaption: "1am carbonara. no notes. 🍝",
     image: "/rizz/m-leo.jpg",
+    imageWin: "/rizz/m-leo-win.jpg",
+    imageFail: "/rizz/m-leo-fail.jpg",
     accent: "#e8a54b",
     accent2: "#1a1410",
     emoji: "🍝",
@@ -483,6 +508,8 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
     vibe: "city night walk",
     storyCaption: "city lights > therapy (don't quote me) 🌃",
     image: "/rizz/m-sam.jpg",
+    imageWin: "/rizz/m-sam-win.jpg",
+    imageFail: "/rizz/m-sam-fail.jpg",
     accent: "#4a9eff",
     accent2: "#0e1218",
     emoji: "🌃",
@@ -525,6 +552,24 @@ export function startingInterest(persona: RizzPersona): number {
   if (persona.nsfw) return 46;
   if (persona.difficulty === "chill") return 45;
   return 40;
+}
+
+/**
+ * Portrait for current chat mood.
+ * - win: like outcome or high interest
+ * - fail: ghost/friendzone or cold interest
+ * - default: neutral story image
+ */
+export function personaMoodImage(
+  persona: RizzPersona,
+  interest: number,
+  outcome?: "continue" | "like" | "ghost" | "friendzone" | null,
+): string {
+  if (outcome === "like") return persona.imageWin;
+  if (outcome === "ghost" || outcome === "friendzone") return persona.imageFail;
+  if (interest >= 68) return persona.imageWin;
+  if (interest <= 32) return persona.imageFail;
+  return persona.image;
 }
 
 export function personasByGender(

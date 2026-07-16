@@ -204,6 +204,8 @@ function aiJudgeProxy(): Plugin {
             vibe: String(body.vibe ?? "chill"),
             storyCaption: String(body.storyCaption ?? ""),
             image: "",
+            imageWin: "",
+            imageFail: "",
             accent: "#888",
             accent2: "#111",
             emoji: "✨",
