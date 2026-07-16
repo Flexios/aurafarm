@@ -4,27 +4,25 @@ import {
   buildJudgeUserMessage,
   parseJudgeJson,
 } from "../src/game/judgeRubric";
-import { chatCompletion, llmAvailable } from "../src/server/llm";
+import { chatCompletion, llmAvailable, llmProviderNames } from "./_lib/llm";
 
-/**
- * Aura Judge — multi-provider (xAI → Groq → Gemini → Ollama).
- */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     res.status(405).json({ error: "Method not allowed" });
     return;
   }
 
-  if (!llmAvailable()) {
-    res.status(503).json({
-      error: "No AI provider configured",
-      available: false,
-    });
-    return;
-  }
-
   try {
-    const body = req.body as {
+    if (!llmAvailable()) {
+      res.status(503).json({
+        error: "No AI provider configured",
+        available: false,
+        providers: llmProviderNames(),
+      });
+      return;
+    }
+
+    const body = (req.body ?? {}) as {
       prompt?: string;
       answer?: string;
       core?: string;
@@ -66,7 +64,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     );
 
     if (!ai) {
-      res.status(502).json({ error: "All AI providers failed" });
+      res.status(502).json({ error: "All AI providers failed", providers: llmProviderNames() });
       return;
     }
 

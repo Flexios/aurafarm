@@ -6,28 +6,26 @@ import {
 } from "../src/game/rizzPrompt";
 import type { RizzPersona } from "../src/data/rizzScenarios";
 import type { RizzChatMessage } from "../src/game/rizzLocal";
-import { chatCompletion, llmAvailable } from "../src/server/llm";
+import { chatCompletion, llmAvailable, llmProviderNames } from "./_lib/llm";
 
-/**
- * Rizz Trainer turn — tries free/paid providers (xAI → Groq → Gemini → Ollama).
- * Env (any one is enough): XAI_API_KEY | GROQ_API_KEY | GEMINI_API_KEY | OLLAMA_BASE_URL
- */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     res.status(405).json({ error: "Method not allowed" });
     return;
   }
 
-  if (!llmAvailable()) {
-    res.status(503).json({
-      error: "No AI provider configured (XAI_API_KEY, GROQ_API_KEY, GEMINI_API_KEY, or OLLAMA)",
-      available: false,
-    });
-    return;
-  }
-
   try {
-    const body = req.body as {
+    if (!llmAvailable()) {
+      res.status(503).json({
+        error: "No AI provider configured",
+        available: false,
+        providers: llmProviderNames(),
+        hint: "Set OPENROUTER_API_KEY (or XAI/GROQ/GEMINI) in Vercel → Environment Variables, then Redeploy.",
+      });
+      return;
+    }
+
+    const body = (req.body ?? {}) as {
       personaId?: string;
       gender?: string;
       name?: string;
@@ -102,13 +100,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     );
 
     if (!ai) {
-      res.status(502).json({ error: "All AI providers failed" });
+      res.status(502).json({
+        error: "All AI providers failed",
+        providers: llmProviderNames(),
+        hint: "OpenRouter key may be invalid (401 User not found). Create a new key at openrouter.ai/keys",
+      });
       return;
     }
 
     const parsed = parseRizzJson(ai.content, interest);
     if (!parsed) {
-      res.status(502).json({ error: "Bad AI response", provider: ai.provider });
+      res.status(502).json({
+        error: "Bad AI response",
+        provider: ai.provider,
+        sample: ai.content.slice(0, 160),
+      });
       return;
     }
 
