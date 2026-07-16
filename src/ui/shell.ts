@@ -11,7 +11,7 @@ type NavItem = { id: Screen; label: string; ico: IconName };
 /** Survives shell re-renders within a session */
 let moreMenuOpen = false;
 
-const MORE_SCREENS: Screen[] = ["shop", "card", "settings", "admin"];
+const MORE_SCREENS: Screen[] = ["shop", "card", "rizz", "settings", "admin"];
 
 function isMoreScreen(screen: Screen): boolean {
   return MORE_SCREENS.includes(screen);
@@ -24,6 +24,7 @@ function desktopNav(isAdmin: boolean): NavItem[] {
     { id: "duel", label: t("nav.duel"), ico: "duel" },
     { id: "shop", label: t("nav.shop"), ico: "shop" },
     { id: "card", label: t("nav.card"), ico: "card" },
+    { id: "rizz", label: t("nav.rizz"), ico: "rizz" },
     { id: "profile", label: t("nav.profile"), ico: "person" },
     { id: "settings", label: t("nav.settings"), ico: "settings" },
   ];
@@ -45,6 +46,7 @@ function mobileMoreItems(isAdmin: boolean): NavItem[] {
   const items: NavItem[] = [
     { id: "shop", label: t("nav.shop"), ico: "shop" },
     { id: "card", label: t("nav.card"), ico: "card" },
+    { id: "rizz", label: t("nav.rizz"), ico: "rizz" },
     { id: "settings", label: t("nav.settings"), ico: "settings" },
   ];
   if (isAdmin) items.push({ id: "admin", label: t("nav.admin"), ico: "admin" });
@@ -82,9 +84,7 @@ export function renderShell(
   const moreItems = mobileMoreItems(isAdmin);
   const moreActive = isMoreScreen(screen);
   // Close more sheet when leaving more-screens via primary tab (optional UX)
-  if (!moreActive && moreMenuOpen && !["shop", "card", "settings", "admin"].includes(screen)) {
-    // keep open only if user opened it; close when navigating to primary
-  }
+  // more sheet closes via go() / toggle; primary tabs clear moreActive
 
   const streak = t("currency.streak");
   const sparks = t("currency.sparks");
@@ -217,6 +217,7 @@ function pageTitle(screen: Screen): string {
     shop: t("page.shop"),
     card: t("page.card"),
     duel: t("page.duel"),
+    rizz: t("page.rizz"),
     profile: t("page.profile"),
     settings: t("page.settings"),
     admin: t("page.admin"),

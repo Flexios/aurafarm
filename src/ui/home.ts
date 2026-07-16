@@ -133,6 +133,17 @@ export function renderHome(
         </div>
       </div>
 
+      <div class="home-cell home-cell-full">
+        <div class="section-header">${t("rizz.homeCard")}</div>
+        <div class="card home-panel">
+          <h3 style="margin:0">${t("page.rizz")}</h3>
+          <p class="muted" style="margin:6px 0 0">${t("rizz.homeBlurb")}</p>
+          <div class="btn-row" style="margin-top:auto">
+            <button class="btn btn-fill" id="go-rizz">${t("rizz.open")}</button>
+          </div>
+        </div>
+      </div>
+
       <div class="home-account home-cell-full">
         <div class="section-header">${t("home.account")}</div>
         <div class="card home-panel">
@@ -158,6 +169,7 @@ export function renderHome(
   container.querySelector("#go-play")?.addEventListener("click", () => onNavigate("play"));
   container.querySelector("#go-shop")?.addEventListener("click", () => onNavigate("shop"));
   container.querySelector("#go-card")?.addEventListener("click", () => onNavigate("card"));
+  container.querySelector("#go-rizz")?.addEventListener("click", () => onNavigate("rizz"));
   container.querySelector("#go-profile")?.addEventListener("click", () => onNavigate("profile"));
   container.querySelector("#go-settings")?.addEventListener("click", () => onNavigate("settings"));
   container.querySelector("#logout-btn")?.addEventListener("click", () => onLogout());

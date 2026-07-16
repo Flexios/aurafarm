@@ -14,9 +14,13 @@ export type Screen =
   | "shop"
   | "card"
   | "duel"
+  | "rizz"
   | "profile"
   | "settings"
   | "admin";
+
+/** Target gender for Rizz Trainer (who you practice on). */
+export type RizzGender = "female" | "male";
 
 export type AccentTheme = "purple" | "blue" | "pink" | "green";
 

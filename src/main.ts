@@ -27,6 +27,7 @@ import { renderLogin } from "./ui/login";
 import { renderOnboarding } from "./ui/onboarding";
 import { renderPlay } from "./ui/play";
 import { renderProfile } from "./ui/profile";
+import { renderRizz } from "./ui/rizz";
 import { renderSettings } from "./ui/settings";
 import { mountInShell } from "./ui/shell";
 import { renderShop } from "./ui/shop";
@@ -171,6 +172,11 @@ function render(): void {
           break;
         case "duel":
           renderDuel(slot, state, (s) => {
+            void setState(s);
+          });
+          break;
+        case "rizz":
+          renderRizz(slot, state, aiOn, (s) => {
             void setState(s);
           });
           break;

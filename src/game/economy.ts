@@ -62,6 +62,37 @@ export function applyPracticeResult(state: PlayerState, result: ScoreResult): Pl
   return next;
 }
 
+/** Rizz Trainer end rewards — win pays better; partial credit on friendzone. */
+export function applyRizzResult(
+  state: PlayerState,
+  opts: {
+    won: boolean;
+    friendzone?: boolean;
+    interest: number;
+    turns: number;
+  },
+): { state: PlayerState; aura: number; sparks: number } {
+  let aura = 0;
+  let sparks = 0;
+  if (opts.won) {
+    aura = 18 + Math.round(opts.interest * 0.35) + Math.max(0, 8 - opts.turns) * 2;
+    sparks = 12 + Math.round(opts.interest / 10);
+  } else if (opts.friendzone) {
+    aura = 8 + Math.round(opts.interest * 0.12);
+    sparks = 5;
+  } else {
+    aura = 3;
+    sparks = 2;
+  }
+  const next: PlayerState = {
+    ...state,
+    totalAura: state.totalAura + aura,
+    sparks: state.sparks + sparks,
+  };
+  saveState(next);
+  return { state: next, aura, sparks };
+}
+
 export function buyCosmetic(
   state: PlayerState,
   cosmeticId: string,
