@@ -6,10 +6,11 @@ import {
 } from "../src/game/rizzPrompt";
 import type { RizzPersona } from "../src/data/rizzScenarios";
 import type { RizzChatMessage } from "../src/game/rizzLocal";
+import { chatCompletion, llmAvailable } from "../src/server/llm";
 
 /**
- * Rizz Trainer turn (SpaceXAI / xAI Grok).
- * Set XAI_API_KEY in Vercel project env (server-only).
+ * Rizz Trainer turn — tries free/paid providers (xAI → Groq → Gemini → Ollama).
+ * Env (any one is enough): XAI_API_KEY | GROQ_API_KEY | GEMINI_API_KEY | OLLAMA_BASE_URL
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
@@ -17,9 +18,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  const apiKey = process.env.XAI_API_KEY;
-  if (!apiKey) {
-    res.status(503).json({ error: "XAI_API_KEY not configured", available: false });
+  if (!llmAvailable()) {
+    res.status(503).json({
+      error: "No AI provider configured (XAI_API_KEY, GROQ_API_KEY, GEMINI_API_KEY, or OLLAMA)",
+      available: false,
+    });
     return;
   }
 
@@ -90,40 +93,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       isStoryReply: Boolean(body.isStoryReply),
     });
 
-    const resp = await fetch("https://api.x.ai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "grok-4.5",
-        temperature: 0.75,
-        max_tokens: 220,
-        messages: [
-          { role: "system", content: RIZZ_SYSTEM_PROMPT },
-          { role: "user", content: userMsg },
-        ],
-      }),
-    });
+    const ai = await chatCompletion(
+      [
+        { role: "system", content: RIZZ_SYSTEM_PROMPT },
+        { role: "user", content: userMsg },
+      ],
+      { temperature: 0.75, maxTokens: 220 },
+    );
 
-    if (!resp.ok) {
-      const text = await resp.text();
-      res.status(502).json({ error: "AI rizz failed", detail: text.slice(0, 240) });
+    if (!ai) {
+      res.status(502).json({ error: "All AI providers failed" });
       return;
     }
 
-    const data = (await resp.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-    const content = data.choices?.[0]?.message?.content ?? "";
-    const parsed = parseRizzJson(content, interest);
+    const parsed = parseRizzJson(ai.content, interest);
     if (!parsed) {
-      res.status(502).json({ error: "Bad AI response" });
+      res.status(502).json({ error: "Bad AI response", provider: ai.provider });
       return;
     }
 
-    res.status(200).json({ available: true, ...parsed });
+    res.status(200).json({ available: true, provider: ai.provider, ...parsed });
   } catch (err) {
     res.status(500).json({
       error: err instanceof Error ? err.message : "Unknown error",

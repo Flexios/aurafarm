@@ -47,7 +47,10 @@ Open the printed URL (default `http://127.0.0.1:5173`).
 |------|--------|
 | `VITE_SUPABASE_URL` | from Supabase |
 | `VITE_SUPABASE_ANON_KEY` | from Supabase |
-| `XAI_API_KEY` | optional, for AI Aura Judge |
+| `XAI_API_KEY` | optional paid AI (xAI / SpaceXAI) |
+| `GROQ_API_KEY` | optional **free** AI (Groq Llama free tier) |
+| `GEMINI_API_KEY` | optional **free** AI (Google AI Studio) |
+| `OLLAMA_BASE_URL` | optional local free AI (`http://127.0.0.1:11434`) |
 | `SUPABASE_SERVICE_ROLE_KEY` | optional, for streak reminder cron |
 | `CRON_SECRET` | optional, protect `/api/streak-reminders` |
 | `RESEND_API_KEY` | optional, send streak emails via [Resend](https://resend.com) |
@@ -61,11 +64,18 @@ Open the printed URL (default `http://127.0.0.1:5173`).
 
 **Supabase Auth URLs (optional):** add your Vercel domain under Authentication → URL configuration.
 
-### 4. Optional AI Judge
+### 4. Optional AI (Judge + Rizz Trainer)
 
-- Local: `XAI_API_KEY` in `.env` (Vite proxy `/api/judge`)
-- Production: `XAI_API_KEY` in Vercel (serverless `api/judge.ts`)
-- Without a key, the **local scorer** always works
+Providers are tried in order until one works:
+
+1. **xAI** (`XAI_API_KEY`) — paid credits  
+2. **Groq** (`GROQ_API_KEY`) — free tier, best free cloud option → [console.groq.com](https://console.groq.com)  
+3. **Gemini** (`GEMINI_API_KEY`) — free tier → [aistudio.google.com/apikey](https://aistudio.google.com/apikey)  
+4. **Ollama** (`OLLAMA_BASE_URL`) — free unlimited **on your PC only** (not on Vercel)
+
+- Local: put keys in `.env` (Vite proxies `/api/judge` + `/api/rizz-turn`)  
+- Production: same keys in Vercel env  
+- Without any key, **local engines** still work (rule-based, no network AI)
 
 ## How to play
 

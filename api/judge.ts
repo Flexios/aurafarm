@@ -4,10 +4,10 @@ import {
   buildJudgeUserMessage,
   parseJudgeJson,
 } from "../src/game/judgeRubric";
+import { chatCompletion, llmAvailable } from "../src/server/llm";
 
 /**
- * Production Aura Judge (SpaceXAI / xAI Grok).
- * Set XAI_API_KEY in Vercel project env (server-only).
+ * Aura Judge — multi-provider (xAI → Groq → Gemini → Ollama).
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
@@ -15,9 +15,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  const apiKey = process.env.XAI_API_KEY;
-  if (!apiKey) {
-    res.status(503).json({ error: "XAI_API_KEY not configured", available: false });
+  if (!llmAvailable()) {
+    res.status(503).json({
+      error: "No AI provider configured",
+      available: false,
+    });
     return;
   }
 
@@ -55,41 +57,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       streak: typeof body.streak === "number" ? body.streak : undefined,
     });
 
-    const resp = await fetch("https://api.x.ai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "grok-4.5",
-        temperature: 0.45,
-        max_tokens: 280,
-        messages: [
-          { role: "system", content: JUDGE_SYSTEM_PROMPT },
-          { role: "user", content: userMsg },
-        ],
-      }),
-    });
+    const ai = await chatCompletion(
+      [
+        { role: "system", content: JUDGE_SYSTEM_PROMPT },
+        { role: "user", content: userMsg },
+      ],
+      { temperature: 0.45, maxTokens: 280 },
+    );
 
-    if (!resp.ok) {
-      const text = await resp.text();
-      res.status(502).json({ error: "AI judge failed", detail: text.slice(0, 240) });
+    if (!ai) {
+      res.status(502).json({ error: "All AI providers failed" });
       return;
     }
 
-    const data = (await resp.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-    const content = data.choices?.[0]?.message?.content ?? "";
-    const parsed = parseJudgeJson(content);
+    const parsed = parseJudgeJson(ai.content);
     if (!parsed) {
-      res.status(502).json({ error: "Bad AI response" });
+      res.status(502).json({ error: "Bad AI response", provider: ai.provider });
       return;
     }
 
     res.status(200).json({
       available: true,
+      provider: ai.provider,
       score: parsed.score,
       verdict: parsed.verdict,
       tags: parsed.tags.length ? parsed.tags : ["ai-judged"],

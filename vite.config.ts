@@ -11,6 +11,12 @@ import {
 } from "./src/game/rizzPrompt";
 import type { RizzPersona } from "./src/data/rizzScenarios";
 import type { RizzChatMessage } from "./src/game/rizzLocal";
+import { chatCompletion, llmAvailable, llmProviderNames } from "./src/server/llm";
+
+function envBag(mode: string): Record<string, string | undefined> {
+  const loaded = loadEnv(mode, process.cwd(), "");
+  return { ...process.env, ...loaded };
+}
 
 function aiJudgeProxy(): Plugin {
   return {
@@ -23,12 +29,16 @@ function aiJudgeProxy(): Plugin {
           return;
         }
 
-        const env = loadEnv(server.config.mode, process.cwd(), "");
-        const apiKey = env.XAI_API_KEY || process.env.XAI_API_KEY;
-        if (!apiKey) {
+        const env = envBag(server.config.mode);
+        if (!llmAvailable(env)) {
           res.statusCode = 503;
           res.setHeader("Content-Type", "application/json");
-          res.end(JSON.stringify({ error: "XAI_API_KEY not configured", available: false }));
+          res.end(
+            JSON.stringify({
+              error: "No AI provider configured",
+              available: false,
+            }),
+          );
           return;
         }
 
@@ -67,36 +77,22 @@ function aiJudgeProxy(): Plugin {
             streak: body.streak,
           });
 
-          const resp = await fetch("https://api.x.ai/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${apiKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              model: "grok-4.5",
-              temperature: 0.45,
-              max_tokens: 280,
-              messages: [
-                { role: "system", content: JUDGE_SYSTEM_PROMPT },
-                { role: "user", content: userMsg },
-              ],
-            }),
-          });
+          const ai = await chatCompletion(
+            [
+              { role: "system", content: JUDGE_SYSTEM_PROMPT },
+              { role: "user", content: userMsg },
+            ],
+            { temperature: 0.45, maxTokens: 280, env },
+          );
 
-          if (!resp.ok) {
-            const text = await resp.text();
+          if (!ai) {
             res.statusCode = 502;
             res.setHeader("Content-Type", "application/json");
-            res.end(JSON.stringify({ error: "AI judge failed", detail: text.slice(0, 240) }));
+            res.end(JSON.stringify({ error: "All AI providers failed" }));
             return;
           }
 
-          const data = (await resp.json()) as {
-            choices?: Array<{ message?: { content?: string } }>;
-          };
-          const content = data.choices?.[0]?.message?.content ?? "";
-          const parsed = parseJudgeJson(content);
+          const parsed = parseJudgeJson(ai.content);
           if (!parsed) {
             res.statusCode = 502;
             res.setHeader("Content-Type", "application/json");
@@ -109,6 +105,7 @@ function aiJudgeProxy(): Plugin {
           res.end(
             JSON.stringify({
               available: true,
+              provider: ai.provider,
               score: parsed.score,
               verdict: parsed.verdict,
               tags: parsed.tags.length ? parsed.tags : ["ai-judged"],
@@ -127,11 +124,15 @@ function aiJudgeProxy(): Plugin {
       });
 
       server.middlewares.use("/api/ai-status", (_req, res) => {
-        const env = loadEnv(server.config.mode, process.cwd(), "");
-        const available = Boolean(env.XAI_API_KEY || process.env.XAI_API_KEY);
+        const env = envBag(server.config.mode);
         res.statusCode = 200;
         res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify({ available }));
+        res.end(
+          JSON.stringify({
+            available: llmAvailable(env),
+            providers: llmProviderNames(env),
+          }),
+        );
       });
 
       server.middlewares.use("/api/rizz-turn", async (req, res) => {
@@ -141,12 +142,16 @@ function aiJudgeProxy(): Plugin {
           return;
         }
 
-        const env = loadEnv(server.config.mode, process.cwd(), "");
-        const apiKey = env.XAI_API_KEY || process.env.XAI_API_KEY;
-        if (!apiKey) {
+        const env = envBag(server.config.mode);
+        if (!llmAvailable(env)) {
           res.statusCode = 503;
           res.setHeader("Content-Type", "application/json");
-          res.end(JSON.stringify({ error: "XAI_API_KEY not configured", available: false }));
+          res.end(
+            JSON.stringify({
+              error: "No AI provider configured",
+              available: false,
+            }),
+          );
           return;
         }
 
@@ -217,36 +222,22 @@ function aiJudgeProxy(): Plugin {
             isStoryReply: Boolean(body.isStoryReply),
           });
 
-          const resp = await fetch("https://api.x.ai/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${apiKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              model: "grok-4.5",
-              temperature: 0.75,
-              max_tokens: 220,
-              messages: [
-                { role: "system", content: RIZZ_SYSTEM_PROMPT },
-                { role: "user", content: userMsg },
-              ],
-            }),
-          });
+          const ai = await chatCompletion(
+            [
+              { role: "system", content: RIZZ_SYSTEM_PROMPT },
+              { role: "user", content: userMsg },
+            ],
+            { temperature: 0.75, maxTokens: 220, env },
+          );
 
-          if (!resp.ok) {
-            const text = await resp.text();
+          if (!ai) {
             res.statusCode = 502;
             res.setHeader("Content-Type", "application/json");
-            res.end(JSON.stringify({ error: "AI rizz failed", detail: text.slice(0, 240) }));
+            res.end(JSON.stringify({ error: "All AI providers failed" }));
             return;
           }
 
-          const data = (await resp.json()) as {
-            choices?: Array<{ message?: { content?: string } }>;
-          };
-          const content = data.choices?.[0]?.message?.content ?? "";
-          const parsed = parseRizzJson(content, interest);
+          const parsed = parseRizzJson(ai.content, interest);
           if (!parsed) {
             res.statusCode = 502;
             res.setHeader("Content-Type", "application/json");
@@ -256,7 +247,7 @@ function aiJudgeProxy(): Plugin {
 
           res.statusCode = 200;
           res.setHeader("Content-Type", "application/json");
-          res.end(JSON.stringify({ available: true, ...parsed }));
+          res.end(JSON.stringify({ available: true, provider: ai.provider, ...parsed }));
         } catch (err) {
           res.statusCode = 500;
           res.setHeader("Content-Type", "application/json");
