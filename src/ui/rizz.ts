@@ -25,11 +25,15 @@ type Phase = "gate" | "pick" | "story" | "chat" | "result";
 
 interface SessionResult {
   outcome: RizzOutcome;
+  /** Interest at end of chat */
   interest: number;
+  /** Highest interest reached during the chat */
+  peakInterest: number;
   turns: number;
   aura: number;
   sparks: number;
   personaName: string;
+  source?: "ai" | "local";
 }
 
 /** Survives shell re-renders when rewards update parent state */
@@ -39,20 +43,24 @@ let live: {
   personaId: string | null;
   messages: RizzChatMessage[];
   interest: number;
+  peakInterest: number;
   turn: number;
   busy: boolean;
   result: SessionResult | null;
   storyReplySent: boolean;
+  lastSource: "ai" | "local" | null;
 } = {
   gender: null,
   phase: "gate",
   personaId: null,
   messages: [],
   interest: 42,
+  peakInterest: 42,
   turn: 0,
   busy: false,
   result: null,
   storyReplySent: false,
+  lastSource: null,
 };
 
 /** Home / external: open straight into a persona story */
@@ -61,10 +69,12 @@ export function queueRizzStory(personaId: string, gender: RizzGender): void {
   live.personaId = personaId;
   live.messages = [];
   live.interest = 42;
+  live.peakInterest = 42;
   live.turn = 0;
   live.busy = false;
   live.result = null;
   live.storyReplySent = false;
+  live.lastSource = null;
   live.phase = "story";
 }
 
@@ -94,10 +104,12 @@ function resetRun(): void {
   live.personaId = null;
   live.messages = [];
   live.interest = 42;
+  live.peakInterest = 42;
   live.turn = 0;
   live.busy = false;
   live.result = null;
   live.storyReplySent = false;
+  live.lastSource = null;
 }
 
 export function renderRizz(
@@ -330,7 +342,7 @@ export function renderRizz(
                 <span class="rizz-end-emoji">${endEmoji}</span>
                 <div class="rizz-end-copy">
                   <strong>${endTitle}</strong>
-                  <span class="muted">${t("rizz.result.interest", { n: result.interest })} · +${result.aura} ${t("common.aura")} · +${result.sparks} ${t("currency.sparks")}</span>
+                  <span class="muted">${t("rizz.result.interest", { n: result.peakInterest })} · ${t("rizz.result.final", { n: result.interest })} · +${result.aura} ${t("common.aura")} · +${result.sparks} ${t("currency.sparks")}</span>
                 </div>
               </div>`
                   : ""
@@ -415,10 +427,12 @@ export function renderRizz(
     live.result = {
       outcome,
       interest: live.interest,
+      peakInterest: live.peakInterest,
       turns: live.turn,
       aura: applied.aura,
       sparks: applied.sparks,
       personaName: persona.name,
+      source: live.lastSource ?? undefined,
     };
     live.phase = "result";
     if (won) showToast(t("rizz.toast.like"));
@@ -461,6 +475,8 @@ export function renderRizz(
     );
 
     live.interest = res.interest;
+    live.peakInterest = Math.max(live.peakInterest, res.interest);
+    live.lastSource = res.source;
     if (res.reply) {
       live.messages = [...live.messages, { role: "npc", text: res.reply }];
     }
