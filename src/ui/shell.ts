@@ -83,8 +83,10 @@ export function renderShell(
   const primary = mobilePrimary();
   const moreItems = mobileMoreItems(isAdmin);
   const moreActive = isMoreScreen(screen);
-  // Close more sheet when leaving more-screens via primary tab (optional UX)
-  // more sheet closes via go() / toggle; primary tabs clear moreActive
+  // Desktop never uses the More sheet — keep it closed if resized up
+  if (typeof window !== "undefined" && window.matchMedia("(min-width: 960px)").matches) {
+    moreMenuOpen = false;
+  }
 
   const streak = t("currency.streak");
   const sparks = t("currency.sparks");

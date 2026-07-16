@@ -61,10 +61,14 @@ function interestLabel(n: number): string {
   return t("rizz.meter.cold");
 }
 
+function avatarStyle(p: RizzPersona): string {
+  return `--rizz-a:${escapeHtml(p.accent)};--rizz-photo:url('${escapeHtml(p.image)}')`;
+}
+
 function storyArtHtml(p: RizzPersona): string {
   return `
     <div class="rizz-story-art" data-id="${escapeHtml(p.id)}" style="--rizz-a:${escapeHtml(p.accent)};--rizz-b:${escapeHtml(p.accent2)}">
-      <img class="rizz-story-img" src="${escapeHtml(p.image)}" alt="" loading="lazy" onerror="this.style.display='none'" />
+      <img class="rizz-story-img" src="${escapeHtml(p.image)}" alt="${escapeHtml(p.name)}" loading="lazy" onerror="this.style.display='none'" />
       <div class="rizz-story-fallback" aria-hidden="true">
         <span class="rizz-story-emoji">${p.emoji}</span>
       </div>
@@ -150,7 +154,7 @@ export function renderRizz(
           <div class="card rizz-daily-card">
             <div class="section-header" style="margin:0 0 8px">${t("rizz.daily")}</div>
             <div class="rizz-persona-row">
-              <div class="rizz-avatar" style="--rizz-a:${escapeHtml(daily.accent)}">${daily.emoji}</div>
+              <div class="rizz-avatar has-photo" style="${avatarStyle(daily)}" aria-hidden="true">${daily.emoji}</div>
               <div style="flex:1;min-width:0">
                 <strong>${escapeHtml(daily.name)}</strong>
                 <div class="muted" style="font-size:0.84rem">@${escapeHtml(daily.handle)} · ${escapeHtml(daily.vibe)}</div>
@@ -164,7 +168,7 @@ export function renderRizz(
               .map(
                 (p) => `
               <button type="button" class="card rizz-persona-card" data-persona="${escapeHtml(p.id)}">
-                <div class="rizz-avatar" style="--rizz-a:${escapeHtml(p.accent)}">${p.emoji}</div>
+                <div class="rizz-avatar has-photo" style="${avatarStyle(p)}" aria-hidden="true">${p.emoji}</div>
                 <div style="flex:1;min-width:0;text-align:left">
                   <strong>${escapeHtml(p.name)}</strong>
                   <div class="muted" style="font-size:0.82rem">${escapeHtml(p.vibe)}</div>
@@ -210,7 +214,7 @@ export function renderRizz(
           <div class="rizz-story-chrome">
             <div class="rizz-story-progress"><i></i></div>
             <div class="rizz-story-top">
-              <div class="rizz-avatar rizz-avatar-sm" style="--rizz-a:${escapeHtml(p.accent)}">${p.emoji}</div>
+              <div class="rizz-avatar rizz-avatar-sm has-photo" style="${avatarStyle(p)}" aria-hidden="true">${p.emoji}</div>
               <div style="flex:1;min-width:0">
                 <strong>${escapeHtml(p.name)}</strong>
                 <div class="muted" style="font-size:0.75rem">${t("rizz.justNow")}</div>
@@ -248,7 +252,7 @@ export function renderRizz(
         <div class="rizz-chat">
           <div class="rizz-chat-top">
             <button type="button" class="btn-plain" id="rizz-back-pick">←</button>
-            <div class="rizz-avatar rizz-avatar-sm" style="--rizz-a:${escapeHtml(p.accent)}">${p.emoji}</div>
+            <div class="rizz-avatar rizz-avatar-sm has-photo" style="${avatarStyle(p)}" aria-hidden="true">${p.emoji}</div>
             <div style="flex:1;min-width:0">
               <strong>${escapeHtml(p.name)}</strong>
               <div class="muted" style="font-size:0.75rem">@${escapeHtml(p.handle)}</div>
