@@ -1,7 +1,7 @@
 /**
  * Multi-provider LLM helper (server / Vite middleware only).
- * Order: SpaceXAI (xAI) → Groq (free tier) → Gemini (free tier) → Ollama (local free).
- * No provider is truly unlimited forever in the cloud — free tiers have rate limits.
+ * Order: SpaceXAI (xAI) → OpenRouter → Groq → Gemini → Ollama (local).
+ * Free cloud options: OPENROUTER_API_KEY (e.g. openrouter/free), GROQ_API_KEY, GEMINI_API_KEY.
  */
 
 export type LlmMessage = {
@@ -17,6 +17,8 @@ type OpenAiProvider = {
   baseUrl: string;
   apiKey: string;
   model: string;
+  /** Extra headers (OpenRouter recommends HTTP-Referer + X-Title) */
+  headers?: Record<string, string>;
 };
 
 type GeminiProvider = {
@@ -44,6 +46,23 @@ export function listLlmProviders(env: LlmEnv = {}): Provider[] {
       baseUrl: "https://api.x.ai/v1",
       apiKey: xai,
       model: envGet(env, "XAI_MODEL") || "grok-4.5",
+    });
+  }
+
+  // Free models via OpenRouter: https://openrouter.ai/keys — use openrouter/free or *:free models
+  const openrouter = envGet(env, "OPENROUTER_API_KEY");
+  if (openrouter) {
+    const site = envGet(env, "OPENROUTER_SITE_URL") || envGet(env, "APP_URL") || "https://aurafarm.app";
+    out.push({
+      kind: "openai",
+      name: "openrouter",
+      baseUrl: "https://openrouter.ai/api/v1",
+      apiKey: openrouter,
+      model: envGet(env, "OPENROUTER_MODEL") || "openrouter/free",
+      headers: {
+        "HTTP-Referer": site,
+        "X-Title": "AuraFarm",
+      },
     });
   }
 
@@ -106,6 +125,7 @@ async function callOpenAi(
     headers: {
       Authorization: `Bearer ${p.apiKey}`,
       "Content-Type": "application/json",
+      ...(p.headers ?? {}),
     },
     body: JSON.stringify({
       model: p.model,

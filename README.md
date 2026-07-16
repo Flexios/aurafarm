@@ -48,6 +48,8 @@ Open the printed URL (default `http://127.0.0.1:5173`).
 | `VITE_SUPABASE_URL` | from Supabase |
 | `VITE_SUPABASE_ANON_KEY` | from Supabase |
 | `XAI_API_KEY` | optional paid AI (xAI / SpaceXAI) |
+| `OPENROUTER_API_KEY` | optional **free** AI (OpenRouter free models) |
+| `OPENROUTER_MODEL` | optional, default `openrouter/free` |
 | `GROQ_API_KEY` | optional **free** AI (Groq Llama free tier) |
 | `GEMINI_API_KEY` | optional **free** AI (Google AI Studio) |
 | `OLLAMA_BASE_URL` | optional local free AI (`http://127.0.0.1:11434`) |
@@ -69,9 +71,10 @@ Open the printed URL (default `http://127.0.0.1:5173`).
 Providers are tried in order until one works:
 
 1. **xAI** (`XAI_API_KEY`) — paid credits  
-2. **Groq** (`GROQ_API_KEY`) — free tier, best free cloud option → [console.groq.com](https://console.groq.com)  
-3. **Gemini** (`GEMINI_API_KEY`) — free tier → [aistudio.google.com/apikey](https://aistudio.google.com/apikey)  
-4. **Ollama** (`OLLAMA_BASE_URL`) — free unlimited **on your PC only** (not on Vercel)
+2. **OpenRouter** (`OPENROUTER_API_KEY`) — free models via `openrouter/free` → [openrouter.ai/keys](https://openrouter.ai/keys)  
+3. **Groq** (`GROQ_API_KEY`) — free tier → [console.groq.com](https://console.groq.com)  
+4. **Gemini** (`GEMINI_API_KEY`) — free tier → [aistudio.google.com/apikey](https://aistudio.google.com/apikey)  
+5. **Ollama** (`OLLAMA_BASE_URL`) — free unlimited **on your PC only** (not on Vercel)
 
 - Local: put keys in `.env` (Vite proxies `/api/judge` + `/api/rizz-turn`)  
 - Production: same keys in Vercel env  
