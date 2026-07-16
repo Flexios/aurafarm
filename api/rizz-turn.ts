@@ -24,6 +24,8 @@ Gameplay:
 - Short Instagram DM: 1–3 lines. NEVER write the player's lines.
 - Answer math/facts correctly in-character, then keep the vibe.
 - Reward good rizz; punish insults/creep/love-bomb with cold replies and negative interestDelta.
+- If the player is crude/explicit, still reply IN CHARACTER (tease, reject, or match heat depending on persona). Never refuse as a system/moderator.
+- NEVER output safety labels, policy text, "Safety Categories", "I can't assist", or content-filter messages. Always character JSON.
 - interest 0–100. interestDelta usually -25..+20.
 - outcome: continue | like | ghost | friendzone
 
@@ -156,7 +158,44 @@ function clampInterest(n: number): number {
   return Math.max(0, Math.min(100, Math.round(n)));
 }
 
-function parseRizzJson(content: string, fallbackInterest: number) {
+/** OpenRouter free models sometimes dump moderation text instead of a DM. */
+function isSafetyDump(content: string): boolean {
+  const c = content.toLowerCase();
+  return (
+    /safety\s*categor/i.test(c) ||
+    /content.?filter/i.test(c) ||
+    /i can'?t (assist|help|engage)/i.test(c) ||
+    /as an ai/i.test(c) ||
+    /violat(e|es|ing).*(policy|guidelines)/i.test(c) ||
+    /^(sexual|violence|hate)\s*$/i.test(content.trim())
+  );
+}
+
+function safetyFallbackReply(
+  name: string,
+  fallbackInterest: number,
+): {
+  reply: string;
+  interestDelta: number;
+  interest: number;
+  mood: string;
+  outcome: string;
+  reaction?: string;
+} {
+  const interest = clampInterest(fallbackInterest - 12);
+  return {
+    reply: `lol slow down. keep it cute or i'm gone 🖤`,
+    interestDelta: interest - fallbackInterest,
+    interest,
+    mood: "cold",
+    outcome: interest <= 15 ? "ghost" : "continue",
+  };
+}
+
+function parseRizzJson(content: string, fallbackInterest: number, name = "them") {
+  if (isSafetyDump(content)) {
+    return safetyFallbackReply(name, fallbackInterest);
+  }
   const start = content.indexOf("{");
   const end = content.lastIndexOf("}");
   if (start >= 0 && end > start) {
@@ -334,7 +373,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
-    const parsed = parseRizzJson(content, interest);
+    let parsed = parseRizzJson(content, interest, String(body.name ?? "them"));
+    // If salvage failed but content looks like a safety dump, force character reject
+    if (!parsed && isSafetyDump(content)) {
+      parsed = safetyFallbackReply(String(body.name ?? "them"), interest);
+    }
     if (!parsed) {
       res.status(502).json({
         error: "Bad AI response",
@@ -342,6 +385,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         sample: content.slice(0, 240),
       });
       return;
+    }
+
+    // Never surface raw filter text as a bubble
+    if (isSafetyDump(parsed.reply)) {
+      parsed = safetyFallbackReply(String(body.name ?? "them"), interest);
     }
 
     res.status(200).json({ available: true, provider, ...parsed });
