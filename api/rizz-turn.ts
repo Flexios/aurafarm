@@ -5,19 +5,23 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
  * No shared imports that crash Vercel function bundling.
  */
 
-const RIZZ_SYSTEM_PROMPT = `You are the NPC in AuraFarm's Rizz Trainer — a flirt practice game (all characters 21+).
+const RIZZ_SYSTEM_PROMPT = `You are the NPC in AuraFarm's Rizz Trainer (flirt practice game, all characters 21+).
 
-Rules:
-- Stay in character as the persona described.
-- Reply like a real Instagram DM: short (1–3 short lines), natural, lowercase ok, light emoji ok.
-- NEVER write the player's lines. Only your reply as the NPC.
-- If the player asks a factual question (math, where, yes/no), answer it in-character first, then keep the vibe.
-- Reward humor, confidence, specificity, consent, and low-pressure charm.
-- Punish creepiness, sexual pressure, insults, or love-bombing with cold replies and big interest drops.
-- Interest is 0–100. Adjust with interestDelta roughly -25..+20 per turn.
-- outcome must be one of: continue | like | ghost | friendzone
-- Return ONLY valid JSON (no markdown):
-{"reply":"...","interestDelta":0,"interest":0,"mood":"amused","outcome":"continue","reaction":"🔥"}`;
+CRITICAL OUTPUT RULE:
+- Your ENTIRE response must be ONE JSON object.
+- First character = {  Last character = }
+- No markdown, no code fences, no reasoning, no preamble.
+
+Gameplay:
+- Stay in character. Reply like a real Instagram DM: short (1–3 lines), natural, lowercase ok, emoji ok.
+- NEVER write the player's lines.
+- If they ask math/facts, answer correctly in-character, then keep the vibe.
+- Reward good rizz; punish insults/creep/love-bomb with cold replies and negative interestDelta.
+- interest 0–100. interestDelta usually -25..+20.
+- outcome: continue | like | ghost | friendzone
+
+Exact JSON shape:
+{"reply":"your dm text","interestDelta":5,"interest":55,"mood":"amused","outcome":"continue","reaction":"🔥"}`;
 
 type HistMsg = { role: "user" | "npc"; text: string };
 
@@ -84,8 +88,10 @@ async function callProvider(
     },
     body: JSON.stringify({
       model: p.model,
-      temperature: 0.75,
-      max_tokens: 220,
+      temperature: 0.65,
+      max_tokens: 180,
+      // Nudge providers that support it; ignored if unsupported
+      response_format: { type: "json_object" },
       messages: [
         { role: "system", content: system },
         { role: "user", content: user },
@@ -139,44 +145,91 @@ function buildUserMessage(opts: {
   ].join("\n");
 }
 
+function clampInterest(n: number): number {
+  return Math.max(0, Math.min(100, Math.round(n)));
+}
+
 function parseRizzJson(content: string, fallbackInterest: number) {
   const start = content.indexOf("{");
   const end = content.lastIndexOf("}");
-  if (start < 0 || end <= start) return null;
-  try {
-    const raw = JSON.parse(content.slice(start, end + 1)) as {
-      reply?: string;
-      interestDelta?: number;
-      interest?: number;
-      mood?: string;
-      outcome?: string;
-      reaction?: string;
-    };
-    const reply = String(raw.reply ?? "").trim();
-    if (!reply && raw.outcome !== "ghost") return null;
-    const delta =
-      typeof raw.interestDelta === "number" && Number.isFinite(raw.interestDelta)
-        ? Math.max(-30, Math.min(25, Math.round(raw.interestDelta)))
-        : 0;
-    let interest =
-      typeof raw.interest === "number" && Number.isFinite(raw.interest)
-        ? Math.max(0, Math.min(100, Math.round(raw.interest)))
-        : Math.max(0, Math.min(100, fallbackInterest + delta));
-    const allowed = ["continue", "like", "ghost", "friendzone"];
-    let outcome = allowed.includes(String(raw.outcome)) ? String(raw.outcome) : "continue";
-    if (outcome === "like") interest = Math.max(interest, 75);
-    if (outcome === "ghost") interest = Math.min(interest, 20);
+  if (start >= 0 && end > start) {
+    try {
+      const raw = JSON.parse(content.slice(start, end + 1)) as {
+        reply?: string;
+        interestDelta?: number;
+        interest?: number;
+        mood?: string;
+        outcome?: string;
+        reaction?: string;
+      };
+      const reply = String(raw.reply ?? "").trim();
+      if (reply || raw.outcome === "ghost") {
+        const delta =
+          typeof raw.interestDelta === "number" && Number.isFinite(raw.interestDelta)
+            ? Math.max(-30, Math.min(25, Math.round(raw.interestDelta)))
+            : 0;
+        let interest =
+          typeof raw.interest === "number" && Number.isFinite(raw.interest)
+            ? clampInterest(raw.interest)
+            : clampInterest(fallbackInterest + delta);
+        const allowed = ["continue", "like", "ghost", "friendzone"];
+        let outcome = allowed.includes(String(raw.outcome))
+          ? String(raw.outcome)
+          : "continue";
+        if (outcome === "like") interest = Math.max(interest, 75);
+        if (outcome === "ghost") interest = Math.min(interest, 20);
+        return {
+          reply: reply || "…",
+          interestDelta: interest - fallbackInterest,
+          interest,
+          mood: String(raw.mood || "neutral").slice(0, 32),
+          outcome,
+          reaction: raw.reaction ? String(raw.reaction).slice(0, 4) : undefined,
+        };
+      }
+    } catch {
+      /* fall through to salvage */
+    }
+  }
+
+  // Free models sometimes ramble — salvage a DM-like line
+  const replyMatch = content.match(/"reply"\s*:\s*"((?:\\.|[^"\\])*)"/);
+  if (replyMatch?.[1]) {
+    const reply = replyMatch[1].replace(/\\n/g, "\n").replace(/\\"/g, '"').trim();
+    if (reply) {
+      const interest = clampInterest(fallbackInterest + 3);
+      return {
+        reply,
+        interestDelta: interest - fallbackInterest,
+        interest,
+        mood: "amused",
+        outcome: "continue",
+      };
+    }
+  }
+
+  const lines = content
+    .split(/\n+/)
+    .map((l) => l.trim())
+    .filter(
+      (l) =>
+        l.length > 0 &&
+        l.length < 180 &&
+        !/[{}]/.test(l) &&
+        !/json|interest|outcome|field|must |rules?:/i.test(l),
+    );
+  const candidate = lines[lines.length - 1];
+  if (candidate) {
+    const interest = clampInterest(fallbackInterest + 2);
     return {
-      reply: reply || "…",
+      reply: candidate.replace(/^["']|["']$/g, ""),
       interestDelta: interest - fallbackInterest,
       interest,
-      mood: String(raw.mood || "neutral").slice(0, 32),
-      outcome,
-      reaction: raw.reaction ? String(raw.reaction).slice(0, 4) : undefined,
+      mood: "neutral",
+      outcome: "continue",
     };
-  } catch {
-    return null;
   }
+  return null;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
