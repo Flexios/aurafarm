@@ -521,7 +521,11 @@ export function renderRizz(
                   <div class="section-header" style="margin:0 0 8px">${t("rizz.storyReply")}</div>
                   <p class="rizz-story-caption-block">${escapeHtml(p.storyCaption)}</p>
                   <p class="muted rizz-story-vibe">${escapeHtml(p.vibe)} · ${escapeHtml(p.bio)}</p>
-                  <p class="muted rizz-story-tip">${escapeHtml(p.openTip)}</p>
+                  <p class="muted rizz-story-tip rizz-story-tip-desktop">${escapeHtml(p.openTip)}</p>
+                </div>
+                <!-- Assist panel: coach + tips always visible on mobile (side-card is desktop-only) -->
+                <div class="rizz-story-assist">
+                  <p class="muted rizz-story-tip rizz-story-tip-mobile">${escapeHtml(p.openTip)}</p>
                   ${
                     state.settings.rizzCoachEnabled && live.coachOpen
                       ? ""
@@ -615,11 +619,11 @@ export function renderRizz(
               : "";
 
       container.innerHTML = `
-        <div class="rizz-chat${ended ? " rizz-chat-ended" : ""}${moodCls ? ` ${moodCls}` : ""}">
+        <div class="rizz-chat${ended ? " rizz-chat-ended" : ""}${moodCls ? ` ${moodCls}` : ""}" style="--rizz-chat-bg:url('${escapeHtml(moodPhoto)}')">
           <div class="rizz-chat-layout">
-            <aside class="rizz-chat-photo" aria-hidden="true">
+            <aside class="rizz-chat-photo">
               <div class="rizz-story-art rizz-chat-art${moodCls ? ` ${moodCls}` : ""}" style="--rizz-a:${escapeHtml(p.accent)};--rizz-b:${escapeHtml(p.accent2)}">
-                <img class="rizz-story-img" src="${escapeHtml(moodPhoto)}" alt="" onerror="this.onerror=null;this.src='${escapeHtml(p.image)}'" />
+                <img class="rizz-story-img" src="${escapeHtml(moodPhoto)}" alt="${escapeHtml(p.name)}" onerror="this.onerror=null;this.src='${escapeHtml(p.image)}'" />
                 ${moodTag}
               </div>
               <p class="muted rizz-chat-photo-cap">${escapeHtml(p.storyCaption)}</p>
@@ -666,6 +670,18 @@ export function renderRizz(
               </div>`
                   : ""
               }
+              ${
+                !ended
+                  ? coachPanelHtml(p, {
+                      interest: live.interest,
+                      turn: live.turn,
+                      isStoryPhase: false,
+                      history: live.messages,
+                      enabled: Boolean(state.settings.rizzCoachEnabled),
+                      open: live.coachOpen,
+                    })
+                  : ""
+              }
               <div class="rizz-bubbles" id="rizz-bubbles">
                 ${live.messages
                   .map((m, i) => {
@@ -687,15 +703,7 @@ export function renderRizz(
                 <button type="button" class="btn btn-fill" id="rizz-again">${t("rizz.again")}</button>
                 <button type="button" class="btn btn-secondary" id="rizz-home">${t("play.home")}</button>
               </div>`
-                  : `${coachPanelHtml(p, {
-                      interest: live.interest,
-                      turn: live.turn,
-                      isStoryPhase: false,
-                      history: live.messages,
-                      enabled: Boolean(state.settings.rizzCoachEnabled),
-                      open: live.coachOpen,
-                    })}
-              <p class="muted rizz-turns">${t("rizz.turnsLeft", { n: turnsLeft })}${
+                  : `<p class="muted rizz-turns">${t("rizz.turnsLeft", { n: turnsLeft })}${
                         live.bonusGranted > 0
                           ? ` · ${t("rizz.bonusTurns", { n: live.bonusGranted })}`
                           : ""

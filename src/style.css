@@ -2414,6 +2414,14 @@ button {
     flex: 0 1 auto;
   }
 
+  .rizz-story-tip-desktop {
+    display: block !important;
+  }
+
+  .rizz-story-tip-mobile {
+    display: none !important;
+  }
+
   .rizz-story-caption-block {
     font-size: 1.45rem;
   }
@@ -3446,9 +3454,27 @@ html[data-hide-top-currency="1"] .topbar-currency {
     transform var(--dur-hover) var(--ease-soft);
 }
 
-.rizz-chat-main .rizz-coach {
+.rizz-chat-main .rizz-coach,
+.rizz-story-assist .rizz-coach {
   margin: 8px 0 4px;
   flex-shrink: 0;
+  max-height: min(42vh, 360px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile coach: keep controls tappable, slightly denser */
+.rizz-coach-head {
+  flex-wrap: wrap;
+}
+
+.rizz-coach-head-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.rizz-coach-line {
+  min-height: 44px;
 }
 
 .rizz-interest-hard > i {
@@ -3652,7 +3678,7 @@ html[data-hide-top-currency="1"] .topbar-currency {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
-/* Side panel (desktop primary; mobile still shows composer below) */
+/* Side panel (desktop primary; mobile still shows composer + coach below) */
 .rizz-story-side {
   display: flex;
   flex-direction: column;
@@ -3661,11 +3687,35 @@ html[data-hide-top-currency="1"] .topbar-currency {
 }
 
 .rizz-story-side-card {
-  display: none; /* mobile uses on-image caption */
+  display: none; /* mobile uses on-image caption; coach lives in .rizz-story-assist */
   padding: 18px 18px 16px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--separator);
   background: rgba(20, 18, 16, 0.88);
+}
+
+/* Always on mobile + desktop: tips, starters, coach (outside desktop-only side-card) */
+.rizz-story-assist {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  order: 0;
+}
+
+.rizz-story-tip-desktop {
+  display: none;
+}
+
+.rizz-story-tip-mobile {
+  display: block;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px dashed var(--separator);
+  background: rgba(20, 18, 16, 0.55);
+  font-size: 0.86rem;
+  line-height: 1.4;
 }
 
 .rizz-story-caption-block {
@@ -3749,9 +3799,20 @@ html[data-hide-top-currency="1"] .topbar-currency {
   width: 100%;
 }
 
-/* Portrait column only on desktop */
+/* Mood / reveal portrait — compact on mobile, full column on desktop */
 .rizz-chat-photo {
-  display: none;
+  display: block;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.rizz-chat-art {
+  width: min(100%, 200px);
+  max-width: 200px;
+  max-height: min(32vh, 260px);
+  aspect-ratio: 3 / 4;
+  margin: 0 auto;
+  border-radius: 14px;
 }
 
 .rizz-chat-main {
@@ -3763,6 +3824,7 @@ html[data-hide-top-currency="1"] .topbar-currency {
 }
 
 .rizz-chat-photo-cap {
+  display: none; /* caption noise on mobile; desktop shows it */
   margin: 8px 0 0;
 }
 
@@ -3954,9 +4016,23 @@ html[data-hide-top-currency="1"] .topbar-currency {
     display: block !important;
   }
 
+  .rizz-story-tip-desktop {
+    display: block !important;
+  }
+
+  .rizz-story-tip-mobile {
+    display: none !important;
+  }
+
   .rizz-story-caption-block {
     font-size: 1.35rem !important;
     line-height: 1.4;
+  }
+
+  .rizz-story-assist .rizz-coach,
+  .rizz-chat-main .rizz-coach {
+    max-height: none;
+    overflow: visible;
   }
 
   /* Chat: portrait left + messages right */
@@ -3982,6 +4058,7 @@ html[data-hide-top-currency="1"] .topbar-currency {
   .rizz-chat-art {
     width: 100% !important;
     max-width: 320px !important;
+    max-height: none !important;
     aspect-ratio: 3 / 4 !important;
     height: auto !important;
     min-height: 0 !important;
@@ -3989,6 +4066,7 @@ html[data-hide-top-currency="1"] .topbar-currency {
   }
 
   .rizz-chat-photo-cap {
+    display: block !important;
     margin: 10px 0 0;
     font-size: 0.86rem;
     line-height: 1.35;
