@@ -4,7 +4,7 @@ import {
   buildJudgeUserMessage,
   parseJudgeJson,
 } from "../src/game/judgeRubric";
-import { chatCompletion, llmAvailable, llmProviderNames } from "./_lib/llm";
+import { chatCompletion, llmAvailable, llmProviderNames } from "./lib/llm";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {

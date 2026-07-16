@@ -6,7 +6,7 @@ import {
 } from "../src/game/rizzPrompt";
 import type { RizzPersona } from "../src/data/rizzScenarios";
 import type { RizzChatMessage } from "../src/game/rizzLocal";
-import { chatCompletion, llmAvailable, llmProviderNames } from "./_lib/llm";
+import { chatCompletion, llmAvailable, llmProviderNames } from "./lib/llm";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {

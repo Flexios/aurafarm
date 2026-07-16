@@ -1,15 +1,15 @@
 /**
  * Dev/Vite re-export — production serverless uses api/_lib/llm.ts
  */
-export type { LlmMessage } from "../../api/_lib/llm";
+export type { LlmMessage } from "../../api/lib/llm";
 
-import type { LlmMessage } from "../../api/_lib/llm";
+import type { LlmMessage } from "../../api/lib/llm";
 import {
   chatCompletion as apiChat,
   llmAvailable as apiAvailable,
   llmProviderNames as apiNames,
   listProviders,
-} from "../../api/_lib/llm";
+} from "../../api/lib/llm";
 
 export type LlmEnv = Record<string, string | undefined>;
 
