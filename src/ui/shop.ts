@@ -1,5 +1,3 @@
-import { REDEEM_CODES } from "../data/codes";
-import { coreById } from "../data/cores";
 import { BATTLE_PASS, COSMETICS, cosmeticById } from "../data/cosmetics";
 import {
   buyCosmetic,
@@ -334,43 +332,15 @@ export function renderShop(
   };
 
   const renderCodes = (body: Element) => {
-    const claimed = new Set((state.claimedCodes ?? []).map((c) => c.toUpperCase()));
     body.innerHTML = `
       <div class="section-header">${t("shop.codes")}</div>
       <p class="muted" style="margin:0 0 14px;padding:0 4px">${t("shop.codesBlurb")}</p>
-      <div class="card" style="margin-bottom:14px">
+      <div class="card">
         <div class="field">
           <label for="promo-code">${t("shop.codeEnter")}</label>
           <input id="promo-code" type="text" maxlength="32" autocomplete="off" placeholder="${t("shop.codePlaceholder")}" style="text-transform:uppercase" />
         </div>
         <button type="button" class="btn btn-fill" id="redeem-code" style="margin-top:12px">${t("shop.codeRedeem")}</button>
-      </div>
-      <div class="section-header">${t("shop.codesKnown")}</div>
-      <div class="shop-grid">
-        ${REDEEM_CODES.map((c) => {
-          const done = claimed.has(c.code);
-          const cores = (c.coreIds ?? [])
-            .map((id) => coreById(id))
-            .filter(Boolean)
-            .map((core) => `${core!.emoji} ${core!.name}`)
-            .join(" · ");
-          return `
-            <div class="shop-item">
-              <div class="swatch" style="background:var(--accent-soft)" aria-hidden="true">${icon("star", "icon icon-swatch")}</div>
-              <div class="meta">
-                <strong>${escapeHtml(c.code)}</strong>
-                <span class="muted">${escapeHtml(c.label)}</span>
-                <span class="price-line">
-                  <span class="price-chip" title="${t("currency.sparks")}">${icon("spark", "icon icon-sm")} ${c.sparks}</span>
-                  <span class="price-chip glow" title="${t("currency.glow")}">${icon("glow", "icon icon-sm")} ${c.glow}</span>
-                </span>
-                ${cores ? `<span class="muted" style="font-size:0.82rem">${t("shop.codeAlso")}: ${escapeHtml(cores)}</span>` : ""}
-                <span class="muted" style="font-size:0.8rem">${c.expiresAt ? t("shop.codeExpires") : t("shop.codeNever")}${
-                  done ? ` · ${t("shop.codeClaimed")}` : ""
-                }</span>
-              </div>
-            </div>`;
-        }).join("")}
       </div>
     `;
 
@@ -391,6 +361,12 @@ export function renderShop(
         }),
       );
       paint();
+    });
+
+    body.querySelector("#promo-code")?.addEventListener("keydown", (e) => {
+      if ((e as KeyboardEvent).key === "Enter") {
+        (body.querySelector("#redeem-code") as HTMLButtonElement | null)?.click();
+      }
     });
   };
 
