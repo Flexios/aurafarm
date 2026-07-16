@@ -10,6 +10,7 @@ type NavItem = { id: Screen; label: string; ico: IconName };
 
 /** Survives shell re-renders within a session */
 let moreMenuOpen = false;
+let moreEscapeHandler: ((e: KeyboardEvent) => void) | null = null;
 
 const MORE_SCREENS: Screen[] = ["shop", "card", "rizz", "settings", "admin"];
 
@@ -210,6 +211,23 @@ export function renderShell(
     moreMenuOpen = false;
     onNavigate(screen);
   });
+
+  if (moreEscapeHandler) {
+    window.removeEventListener("keydown", moreEscapeHandler);
+    moreEscapeHandler = null;
+  }
+  if (moreMenuOpen) {
+    moreEscapeHandler = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      moreMenuOpen = false;
+      if (moreEscapeHandler) {
+        window.removeEventListener("keydown", moreEscapeHandler);
+        moreEscapeHandler = null;
+      }
+      onNavigate(screen);
+    };
+    window.addEventListener("keydown", moreEscapeHandler);
+  }
 }
 
 function pageTitle(screen: Screen): string {

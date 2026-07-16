@@ -17,6 +17,7 @@ import {
 } from "../i18n";
 import type { CosmeticSlot, PlayerState } from "../types";
 import { escapeHtml } from "../utils/format";
+import { playUiSound } from "../utils/sound";
 import { icon, type IconName } from "./icons";
 import { showToast } from "./toast";
 
@@ -378,10 +379,11 @@ export function renderShop(
       const res = redeemCode(state, raw);
       if (!res.ok) {
         failCount += 1;
+        playUiSound("error", state.settings.soundEnabled);
         if (failCount >= CODE_FAIL_LOCK_AFTER) {
           lockUntil = now + CODE_FAIL_LOCK_MS;
           failCount = 0;
-          showToast(t("shop.codeSlowDown"));
+          showToast(t("shop.codeSlowDown"), 2400, "error");
           return;
         }
         const reasonKey =
@@ -390,7 +392,7 @@ export function renderShop(
             : res.reason === "already"
               ? "shop.codeAlready"
               : "shop.codeInvalid";
-        showToast(t(reasonKey));
+        showToast(t(reasonKey), 2400, "error");
         return;
       }
 
@@ -399,6 +401,7 @@ export function renderShop(
       state = res.state;
       if (input) input.value = "";
 
+      playUiSound("success", state.settings.soundEnabled);
       showToast(
         t("shop.codeSuccess", {
           label: res.label,
@@ -406,6 +409,7 @@ export function renderShop(
           glow: res.glow,
         }),
         2600,
+        "ok",
       );
 
       // Highlight trainer / collectible unlocks (e.g. SIMP → Elise)
@@ -416,9 +420,9 @@ export function renderShop(
             if (!core) continue;
             const name = coreName(core.id, core.name);
             if (id === "elise-sip") {
-              showToast(t("shop.codeUnlockElise"), 3200);
+              showToast(t("shop.codeUnlockElise"), 3200, "ok");
             } else {
-              showToast(t("shop.codeUnlock", { name }), 3000);
+              showToast(t("shop.codeUnlock", { name }), 3000, "ok");
             }
           }
         }, 900);

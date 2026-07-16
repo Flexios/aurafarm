@@ -2,6 +2,8 @@ import type { RizzPersona } from "../data/rizzScenarios";
 import type { RizzChatMessage, RizzTurnResult } from "../game/rizzLocal";
 import { rizzLocalTurn } from "../game/rizzLocal";
 
+const RIZZ_TIMEOUT_MS = 14_000;
+
 export async function rizzTurnWithAi(
   persona: RizzPersona,
   history: RizzChatMessage[],
@@ -10,10 +12,13 @@ export async function rizzTurnWithAi(
   turn: number,
   isStoryReply: boolean,
 ): Promise<RizzTurnResult | null> {
+  const ctrl = new AbortController();
+  const timer = window.setTimeout(() => ctrl.abort(), RIZZ_TIMEOUT_MS);
   try {
     const res = await fetch("/api/rizz-turn", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      signal: ctrl.signal,
       body: JSON.stringify({
         personaId: persona.id,
         gender: persona.gender,
@@ -60,10 +65,12 @@ export async function rizzTurnWithAi(
   } catch (e) {
     console.warn("[rizz] AI fetch failed", e);
     return null;
+  } finally {
+    window.clearTimeout(timer);
   }
 }
 
-/** AI if available, else local. */
+/** AI if available, else local. One soft retry before local fallback. */
 export async function rizzTurn(
   persona: RizzPersona,
   history: RizzChatMessage[],
@@ -74,7 +81,7 @@ export async function rizzTurn(
   preferAi: boolean,
 ): Promise<RizzTurnResult & { source: "ai" | "local"; provider?: string }> {
   if (preferAi) {
-    const ai = await rizzTurnWithAi(
+    let ai = await rizzTurnWithAi(
       persona,
       history,
       playerMessage,
@@ -82,6 +89,17 @@ export async function rizzTurn(
       turn,
       isStoryReply,
     );
+    if (!ai) {
+      await new Promise((r) => setTimeout(r, 350));
+      ai = await rizzTurnWithAi(
+        persona,
+        history,
+        playerMessage,
+        interest,
+        turn,
+        isStoryReply,
+      );
+    }
     if (ai) return { ...ai, source: "ai", provider: ai.provider };
   }
   return {

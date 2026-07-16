@@ -1559,6 +1559,7 @@ button {
 }
 
 .card-preview-wrap {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1792,6 +1793,48 @@ button {
 .toast.show {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+}
+
+.toast.toast-ok {
+  border-color: rgba(52, 199, 89, 0.45);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(52, 199, 89, 0.15);
+}
+
+.toast.toast-error {
+  border-color: rgba(255, 69, 58, 0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 69, 58, 0.12);
+}
+
+.char-count {
+  text-align: right;
+  font-size: 0.78rem;
+  margin-top: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.btn.is-loading {
+  opacity: 0.85;
+  cursor: wait;
+}
+
+.card-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 7, 6, 0.55);
+  backdrop-filter: blur(4px);
+  border-radius: 18px;
+  color: var(--label-secondary);
+  font-size: 0.9rem;
+  font-weight: 550;
+  pointer-events: none;
+}
+
+.card-loading[hidden] {
+  display: none !important;
 }
 
 .icon {

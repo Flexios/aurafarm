@@ -12,7 +12,10 @@ import { coreName, localizeChallenge, t } from "../i18n";
 import { hasPlayedDaily } from "../state/store";
 import type { Challenge, PlayerState, ScoreResult } from "../types";
 import { escapeHtml } from "../utils/format";
+import { playUiSound } from "../utils/sound";
 import { showToast } from "./toast";
+
+const ANSWER_MAX = 400;
 
 export function renderPlay(
   container: HTMLElement,
@@ -33,6 +36,8 @@ export function renderPlay(
   let preferAi = aiOn && state.settings.preferAiJudge;
   /** Provider name from last successful AI judge (for result badge) */
   let lastAiProvider: string | undefined;
+  /** Survives re-paint while judging so the answer isn't wiped */
+  let draft = "";
 
   const paint = () => {
     if (result) {
@@ -85,18 +90,19 @@ export function renderPlay(
       `;
       container.querySelector("#again")?.addEventListener("click", () => {
         result = null;
+        draft = "";
         mode = hasPlayedDaily(state) ? "practice" : "daily";
         challengeRaw = loadChallengeRaw(mode);
         paint();
       });
       container.querySelector("#back-home")?.addEventListener("click", () => {
-        // soft navigate via custom event
         window.dispatchEvent(new CustomEvent("aurafarm:nav", { detail: "home" }));
       });
       return;
     }
 
     const challenge = localizeChallenge(challengeRaw);
+    const chars = draft.length;
 
     container.innerHTML = `
       <div class="segmented play-tabs">
@@ -126,24 +132,35 @@ export function renderPlay(
       <div class="card home-panel">
         <div class="field">
           <label for="answer">${t("play.yourAnswer")}</label>
-          <textarea id="answer" maxlength="400" placeholder="${t("play.placeholder")}"></textarea>
+          <textarea id="answer" maxlength="${ANSWER_MAX}" placeholder="${t("play.placeholder")}" ${busy ? "readonly" : ""}>${escapeHtml(draft)}</textarea>
+          <div class="char-count muted" id="char-count">${chars}/${ANSWER_MAX}</div>
         </div>
         <label class="muted" style="display:flex;align-items:center;gap:8px;margin:12px 0;font-size:0.9rem">
-          <input type="checkbox" id="use-ai" ${preferAi && aiOn ? "checked" : ""} ${aiOn ? "" : "disabled"} />
+          <input type="checkbox" id="use-ai" ${preferAi && aiOn ? "checked" : ""} ${aiOn || busy ? "" : "disabled"} ${busy ? "disabled" : ""} />
           ${t("play.preferAi")}${aiOn ? "" : ` · ${t("play.aiOffline")}`}
         </label>
         <div class="ai-badge ${aiOn ? "on" : ""}" style="margin-top:0;margin-bottom:8px">${aiOn ? t("home.aiOn") : t("home.aiOff")}</div>
-        <button class="btn btn-fill" id="submit" style="margin-top:auto" ${mode === "daily" && dailyDone ? "disabled" : ""} ${busy ? "disabled" : ""}>${busy ? t("play.judging") : t("play.submit")}</button>
+        <button class="btn btn-fill ${busy ? "is-loading" : ""}" id="submit" style="margin-top:auto" ${mode === "daily" && dailyDone ? "disabled" : ""} ${busy ? "disabled" : ""}>${busy ? t("play.judging") : t("play.submit")}</button>
       </div>
       </div>
     `;
 
     container.querySelectorAll<HTMLButtonElement>("[data-mode]").forEach((btn) => {
       btn.addEventListener("click", () => {
+        if (busy) return;
+        const ta = container.querySelector("#answer") as HTMLTextAreaElement | null;
+        if (ta) draft = ta.value;
         mode = btn.dataset.mode as "daily" | "practice";
         challengeRaw = loadChallengeRaw(mode);
         paint();
       });
+    });
+
+    const answerEl = container.querySelector("#answer") as HTMLTextAreaElement | null;
+    const countEl = container.querySelector("#char-count");
+    answerEl?.addEventListener("input", () => {
+      draft = answerEl.value.slice(0, ANSWER_MAX);
+      if (countEl) countEl.textContent = `${draft.length}/${ANSWER_MAX}`;
     });
 
     const aiBox = container.querySelector("#use-ai") as HTMLInputElement | null;
@@ -151,20 +168,28 @@ export function renderPlay(
       preferAi = aiBox.checked;
     });
 
+    // Restore caret at end after paint
+    if (answerEl && draft && !busy) {
+      answerEl.focus();
+      answerEl.selectionStart = answerEl.selectionEnd = answerEl.value.length;
+    }
+
     container.querySelector("#submit")?.addEventListener("click", async () => {
       if (busy) return;
       if (mode === "daily" && hasPlayedDaily(state)) {
-        showToast("Daily already done — try Practice.");
+        showToast(t("play.dailyAlready"), 2400, "error");
         return;
       }
       const answer = (container.querySelector("#answer") as HTMLTextAreaElement).value;
+      draft = answer;
       if (answer.trim().length < 3) {
-        showToast("Give me at least a little aura (3+ chars).");
+        showToast(t("play.tooShort"), 2400, "error");
         return;
       }
 
       busy = true;
       paint();
+      playUiSound("tap", state.settings.soundEnabled);
       const useAi = preferAi && aiOn;
       // Always score against English source challenge for consistent judging
       const local = scoreLocal(answer, challengeRaw, state.core, state.streak);
@@ -189,10 +214,10 @@ export function renderPlay(
             breakdown: ai.breakdown ?? local.breakdown,
             grade: gradeFromScore(blended),
           };
-          showToast(t("play.aiOk", { provider: lastAiProvider }), 1800);
+          showToast(t("play.aiOk", { provider: lastAiProvider }), 1800, "ok");
         } else {
           lastAiProvider = undefined;
-          showToast(t("play.aiFallback"));
+          showToast(t("play.aiFallback"), 2800, "error");
         }
       } else {
         lastAiProvider = undefined;
@@ -200,13 +225,22 @@ export function renderPlay(
 
       const full = finalizeRewards(base, state.streak, state.ownedCores);
       result = full;
+      draft = "";
       const next =
         mode === "daily"
           ? applyDailyResult(state, full, challengeRaw.id)
           : applyPracticeResult(state, full);
       onState(next);
       busy = false;
-      showToast(`+${full.score} aura · +${full.sparksEarned} sparks`);
+      playUiSound("success", state.settings.soundEnabled);
+      showToast(
+        t("play.rewardToast", {
+          score: full.score,
+          sparks: full.sparksEarned,
+        }),
+        2600,
+        "ok",
+      );
       paint();
     });
   };

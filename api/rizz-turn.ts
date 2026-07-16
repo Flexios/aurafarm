@@ -46,11 +46,22 @@ function env(key: string): string {
   return String(process.env[key] ?? "").trim();
 }
 
-function providers(): OpenAiProvider[] {
-  const out: OpenAiProvider[] = [];
+type GeminiProvider = {
+  kind: "gemini";
+  name: "gemini";
+  apiKey: string;
+  model: string;
+};
+
+type OpenAiP = OpenAiProvider & { kind: "openai" };
+type AnyProvider = OpenAiP | GeminiProvider;
+
+function providers(): AnyProvider[] {
+  const out: AnyProvider[] = [];
   const xai = env("XAI_API_KEY");
   if (xai) {
     out.push({
+      kind: "openai",
       name: "xai",
       baseUrl: "https://api.x.ai/v1",
       apiKey: xai,
@@ -60,6 +71,7 @@ function providers(): OpenAiProvider[] {
   const openrouter = env("OPENROUTER_API_KEY");
   if (openrouter) {
     out.push({
+      kind: "openai",
       name: "openrouter",
       baseUrl: "https://openrouter.ai/api/v1",
       apiKey: openrouter,
@@ -74,16 +86,26 @@ function providers(): OpenAiProvider[] {
   const groq = env("GROQ_API_KEY");
   if (groq) {
     out.push({
+      kind: "openai",
       name: "groq",
       baseUrl: "https://api.groq.com/openai/v1",
       apiKey: groq,
       model: env("GROQ_MODEL") || "llama-3.3-70b-versatile",
     });
   }
+  const gemini = env("GEMINI_API_KEY");
+  if (gemini) {
+    out.push({
+      kind: "gemini",
+      name: "gemini",
+      apiKey: gemini,
+      model: env("GEMINI_MODEL") || "gemini-2.0-flash",
+    });
+  }
   return out;
 }
 
-async function callProvider(
+async function callOpenAi(
   p: OpenAiProvider,
   system: string,
   user: string,
@@ -108,13 +130,51 @@ async function callProvider(
   if (!resp.ok) {
     const detail = await resp.text().catch(() => "");
     console.warn(`[rizz-turn] ${p.name} ${resp.status}: ${detail.slice(0, 400)}`);
-    // Retry once without extras if model rejects body shape
     return null;
   }
   const data = (await resp.json()) as {
     choices?: Array<{ message?: { content?: string } }>;
   };
   return data.choices?.[0]?.message?.content?.trim() || null;
+}
+
+async function callGemini(
+  p: GeminiProvider,
+  system: string,
+  user: string,
+): Promise<string | null> {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(p.model)}:generateContent?key=${encodeURIComponent(p.apiKey)}`;
+  const resp = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: system }] },
+      contents: [{ role: "user", parts: [{ text: user }] }],
+      generationConfig: { temperature: 0.65, maxOutputTokens: 220 },
+    }),
+  });
+  if (!resp.ok) {
+    const detail = await resp.text().catch(() => "");
+    console.warn(`[rizz-turn] gemini ${resp.status}: ${detail.slice(0, 400)}`);
+    return null;
+  }
+  const data = (await resp.json()) as {
+    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+  };
+  const text = (data.candidates?.[0]?.content?.parts ?? [])
+    .map((x) => x.text ?? "")
+    .join("")
+    .trim();
+  return text || null;
+}
+
+async function callProvider(
+  p: AnyProvider,
+  system: string,
+  user: string,
+): Promise<string | null> {
+  if (p.kind === "gemini") return callGemini(p, system, user);
+  return callOpenAi(p, system, user);
 }
 
 function buildUserMessage(opts: {

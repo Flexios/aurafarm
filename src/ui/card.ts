@@ -3,10 +3,12 @@ import { cosmeticById } from "../data/cosmetics";
 import { rankForAura } from "../data/ranks";
 import { t } from "../i18n";
 import type { PlayerState } from "../types";
+import { playUiSound } from "../utils/sound";
 import { showToast } from "./toast";
 
 const W = 720;
 const H = 1080;
+const CARD_FONT = '"IBM Plex Sans", system-ui, sans-serif';
 
 function gradientForBg(id: string, ctx: CanvasRenderingContext2D): CanvasGradient | string {
   const g = ctx.createLinearGradient(0, 0, W, H);
@@ -124,7 +126,7 @@ export async function drawAuraCard(
 
   // Brand
   ctx.fillStyle = "rgba(255,255,255,0.7)";
-  ctx.font = "700 28px Outfit, system-ui, sans-serif";
+  ctx.font = `700 28px ${CARD_FONT}`;
   ctx.fillText("AURAFARM", 90, 120);
 
   // Avatar circle
@@ -181,19 +183,19 @@ export async function drawAuraCard(
   ctx.textAlign = "center";
   roundRectFill(ctx, 140, 480, W - 280, 88, 24, plate);
   ctx.fillStyle = "#fff";
-  ctx.font = "800 40px Syne, Outfit, system-ui, sans-serif";
+  ctx.font = `800 40px ${CARD_FONT}`;
   ctx.fillText(state.displayName.slice(0, 18), cx, 536);
 
   // Stats
   ctx.fillStyle = "rgba(255,255,255,0.92)";
-  ctx.font = "800 64px Syne, Outfit, system-ui, sans-serif";
+  ctx.font = `800 64px ${CARD_FONT}`;
   ctx.fillText(`${rank.emoji} ${rank.name}`, cx, 640);
 
-  ctx.font = "600 30px Outfit, system-ui, sans-serif";
+  ctx.font = `600 30px ${CARD_FONT}`;
   ctx.fillStyle = "rgba(255,255,255,0.75)";
   ctx.fillText(`${aesthetic.label} Core · ${state.totalAura.toLocaleString()} Aura`, cx, 690);
 
-  ctx.font = "600 26px Outfit, system-ui, sans-serif";
+  ctx.font = `600 26px ${CARD_FONT}`;
   ctx.fillStyle = "rgba(255,255,255,0.65)";
   ctx.fillText(
     `🔥 ${state.streak} day streak   ·   ${state.duelWins} duel wins`,
@@ -202,12 +204,12 @@ export async function drawAuraCard(
   );
 
   ctx.fillStyle = "rgba(255,255,255,0.85)";
-  ctx.font = "700 28px Outfit, system-ui, sans-serif";
+  ctx.font = `700 28px ${CARD_FONT}`;
   ctx.fillText(`${state.ownedCores.length} cores collected`, cx, 820);
 
   // Footer
   ctx.fillStyle = "rgba(255,255,255,0.45)";
-  ctx.font = "600 22px Outfit, system-ui, sans-serif";
+  ctx.font = `600 22px ${CARD_FONT}`;
   ctx.fillText("Farm your aura. Flex your vibe.", cx, 980);
   ctx.fillText("#AuraFarm", cx, 1015);
 
@@ -259,42 +261,116 @@ function roundRectFill(
   ctx.stroke();
 }
 
+async function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob | null> {
+  return new Promise((resolve) => {
+    canvas.toBlob((b) => resolve(b), "image/png");
+  });
+}
+
 export function renderCard(
   container: HTMLElement,
   state: PlayerState,
 ): void {
+  const canShare =
+    typeof navigator !== "undefined" &&
+    typeof navigator.share === "function";
+
   container.innerHTML = `
     <div class="desktop-grid card-layout">
       <div class="card card-preview-wrap home-panel">
+        <div class="card-loading" id="card-loading">${t("card.rendering")}</div>
         <canvas id="aura-card-canvas" width="720" height="1080" aria-label="Aura card preview"></canvas>
       </div>
       <div class="card card-actions home-panel">
         <h2 style="margin:0">${t("card.title")}</h2>
         <p class="muted" style="margin:8px 0 0">${t("card.blurb")}</p>
         <div class="btn-row card-actions-btns">
-          <button class="btn btn-fill" id="download-card">${t("card.download")}</button>
-          <button class="btn btn-secondary" id="redraw">${t("card.refresh")}</button>
+          <button class="btn btn-fill" id="download-card" disabled>${t("card.download")}</button>
+          ${canShare ? `<button class="btn btn-secondary" id="share-card" disabled>${t("card.share")}</button>` : ""}
+          <button class="btn btn-secondary" id="redraw" disabled>${t("card.refresh")}</button>
         </div>
       </div>
     </div>
   `;
 
   const canvas = container.querySelector("#aura-card-canvas") as HTMLCanvasElement;
-  void drawAuraCard(canvas, state);
+  const loading = container.querySelector("#card-loading") as HTMLElement | null;
+  const actionBtns = () =>
+    container.querySelectorAll<HTMLButtonElement>("#download-card, #share-card, #redraw");
+
+  const setBusy = (busy: boolean) => {
+    if (loading) loading.hidden = !busy;
+    actionBtns().forEach((b) => {
+      b.disabled = busy;
+    });
+  };
+
+  const redraw = async () => {
+    setBusy(true);
+    try {
+      await drawAuraCard(canvas, state);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  void redraw();
 
   container.querySelector("#redraw")?.addEventListener("click", () => {
-    void drawAuraCard(canvas, state);
+    playUiSound("soft", state.settings.soundEnabled);
+    void redraw();
   });
+
   container.querySelector("#download-card")?.addEventListener("click", async () => {
-    await drawAuraCard(canvas, state);
+    setBusy(true);
     try {
+      await drawAuraCard(canvas, state);
       const link = document.createElement("a");
       link.download = `aurafarm-${state.displayName || "card"}.png`;
       link.href = canvas.toDataURL("image/png");
       link.click();
-      showToast("Saved to downloads");
+      playUiSound("success", state.settings.soundEnabled);
+      showToast(t("card.saved"), 2400, "ok");
     } catch {
-      showToast("Could not export card (photo blocked by browser CORS). Try again later.");
+      playUiSound("error", state.settings.soundEnabled);
+      showToast(t("card.exportFail"), 3200, "error");
+    } finally {
+      setBusy(false);
+    }
+  });
+
+  container.querySelector("#share-card")?.addEventListener("click", async () => {
+    setBusy(true);
+    try {
+      await drawAuraCard(canvas, state);
+      const blob = await canvasToBlob(canvas);
+      if (!blob) throw new Error("blob");
+      const file = new File([blob], `aurafarm-${state.displayName || "card"}.png`, {
+        type: "image/png",
+      });
+      const payload: ShareData = {
+        files: [file],
+        title: "AuraFarm",
+        text: t("card.shareText", { name: state.displayName || "AuraFarm" }),
+      };
+      if (navigator.canShare?.(payload)) {
+        await navigator.share(payload);
+        playUiSound("success", state.settings.soundEnabled);
+        showToast(t("card.shared"), 2200, "ok");
+      } else {
+        const link = document.createElement("a");
+        link.download = file.name;
+        link.href = URL.createObjectURL(blob);
+        link.click();
+        URL.revokeObjectURL(link.href);
+        showToast(t("card.saved"), 2400, "ok");
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") return;
+      playUiSound("error", state.settings.soundEnabled);
+      showToast(t("card.exportFail"), 3200, "error");
+    } finally {
+      setBusy(false);
     }
   });
 }
