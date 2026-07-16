@@ -283,11 +283,24 @@ export function renderRizz(
       return;
     }
 
-    if (phase === "chat" && persona) {
+    if ((phase === "chat" || phase === "result") && persona) {
       const p = persona;
+      const ended = phase === "result" && live.result;
+      const result = live.result;
       const turnsLeft = Math.max(0, RIZZ_MAX_TURNS - live.turn);
+      const win = result?.outcome === "like";
+      const friend = result?.outcome === "friendzone";
+      const endTitle = !result
+        ? ""
+        : win
+          ? t("rizz.result.like")
+          : friend
+            ? t("rizz.result.friendzone")
+            : t("rizz.result.ghost");
+      const endEmoji = win ? "❤️" : friend ? "🤝" : "👻";
+
       container.innerHTML = `
-        <div class="rizz-chat">
+        <div class="rizz-chat${ended ? " rizz-chat-ended" : ""}">
           <div class="rizz-chat-layout">
             <aside class="rizz-chat-photo" aria-hidden="true">
               <div class="rizz-story-art rizz-chat-art" style="--rizz-a:${escapeHtml(p.accent)};--rizz-b:${escapeHtml(p.accent2)}">
@@ -301,16 +314,27 @@ export function renderRizz(
                 <div class="rizz-avatar rizz-avatar-sm has-photo" style="${avatarStyle(p)}" aria-hidden="true">${p.emoji}</div>
                 <div style="flex:1;min-width:0">
                   <strong>${escapeHtml(p.name)}</strong>
-                  <div class="muted" style="font-size:0.75rem">@${escapeHtml(p.handle)}</div>
+                  <div class="muted" style="font-size:0.75rem">@${escapeHtml(p.handle)}${ended ? ` · ${t("rizz.chatEnded")}` : ""}</div>
                 </div>
                 <div class="rizz-interest" title="${t("rizz.interest")}">
                   <div class="rizz-interest-ring">
-                    <span>${Math.round(live.interest)}</span>
+                    <span>${Math.round(ended && result ? result.interest : live.interest)}</span>
                   </div>
-                  <div class="rizz-interest-label">${interestLabel(live.interest)}</div>
+                  <div class="rizz-interest-label">${interestLabel(ended && result ? result.interest : live.interest)}</div>
                 </div>
               </div>
-              <div class="rizz-interest-bar" aria-hidden="true"><i style="width:${live.interest}%"></i></div>
+              <div class="rizz-interest-bar" aria-hidden="true"><i style="width:${ended && result ? result.interest : live.interest}%"></i></div>
+              ${
+                ended && result
+                  ? `<div class="rizz-end-banner rizz-end-${escapeHtml(result.outcome)}" role="status">
+                <span class="rizz-end-emoji">${endEmoji}</span>
+                <div class="rizz-end-copy">
+                  <strong>${endTitle}</strong>
+                  <span class="muted">${t("rizz.result.interest", { n: result.interest })} · +${result.aura} ${t("common.aura")} · +${result.sparks} ${t("currency.sparks")}</span>
+                </div>
+              </div>`
+                  : ""
+              }
               <div class="rizz-bubbles" id="rizz-bubbles">
                 ${live.messages
                   .map((m, i) => {
@@ -326,12 +350,19 @@ export function renderRizz(
                   .join("")}
                 ${live.busy ? `<div class="rizz-bubble rizz-bubble-them rizz-typing"><span></span><span></span><span></span></div>` : ""}
               </div>
-              <p class="muted rizz-turns">${t("rizz.turnsLeft", { n: turnsLeft })}</p>
+              ${
+                ended
+                  ? `<div class="rizz-end-actions btn-row">
+                <button type="button" class="btn btn-fill" id="rizz-again">${t("rizz.again")}</button>
+                <button type="button" class="btn btn-secondary" id="rizz-home">${t("play.home")}</button>
+              </div>`
+                  : `<p class="muted rizz-turns">${t("rizz.turnsLeft", { n: turnsLeft })}</p>
               <form class="rizz-chat-composer" id="rizz-chat-form">
                 <input type="text" id="rizz-chat-input" maxlength="200" autocomplete="off"
                   placeholder="${t("rizz.chatPlaceholder")}" ${live.busy ? "disabled" : ""} />
                 <button type="submit" class="btn btn-fill rizz-send" ${live.busy ? "disabled" : ""}>${t("rizz.send")}</button>
-              </form>
+              </form>`
+              }
             </div>
           </div>
         </div>`;
@@ -343,54 +374,30 @@ export function renderRizz(
         resetRun();
         paint();
       });
-      container.querySelector("#rizz-chat-form")?.addEventListener("submit", (e) => {
-        e.preventDefault();
-        void sendMessage(
-          (container.querySelector("#rizz-chat-input") as HTMLInputElement)?.value ?? "",
-          false,
-        );
-      });
-      if (!live.busy) {
-        (container.querySelector("#rizz-chat-input") as HTMLInputElement | null)?.focus();
+      if (ended) {
+        container.querySelector("#rizz-again")?.addEventListener("click", () => {
+          resetRun();
+          live.phase = "pick";
+          paint();
+        });
+        container.querySelector("#rizz-home")?.addEventListener("click", () => {
+          resetRun();
+          live.phase = live.gender ? "pick" : "gate";
+          window.dispatchEvent(new CustomEvent("aurafarm:nav", { detail: "home" }));
+        });
+      } else {
+        container.querySelector("#rizz-chat-form")?.addEventListener("submit", (e) => {
+          e.preventDefault();
+          void sendMessage(
+            (container.querySelector("#rizz-chat-input") as HTMLInputElement)?.value ?? "",
+            false,
+          );
+        });
+        if (!live.busy) {
+          (container.querySelector("#rizz-chat-input") as HTMLInputElement | null)?.focus();
+        }
       }
       return;
-    }
-
-    if (phase === "result" && live.result) {
-      const result = live.result;
-      const win = result.outcome === "like";
-      const friend = result.outcome === "friendzone";
-      const title = win
-        ? t("rizz.result.like")
-        : friend
-          ? t("rizz.result.friendzone")
-          : t("rizz.result.ghost");
-      container.innerHTML = `
-        <div class="card result-panel rizz-result">
-          <div class="muted" style="font-weight:600;font-size:0.84rem">${escapeHtml(result.personaName)}</div>
-          <div class="hero-score" style="font-size:${win ? "2.4rem" : "1.8rem"}">${win ? "❤️" : friend ? "🤝" : "👻"}</div>
-          <h2 style="margin:0;text-align:center">${title}</h2>
-          <p class="verdict" style="text-align:center">${t("rizz.result.interest", { n: result.interest })}</p>
-          <div class="stat-grid">
-            <div class="stat"><b>+${result.aura}</b><span>${t("common.aura")}</span></div>
-            <div class="stat"><b>+${result.sparks}</b><span>${t("currency.sparks")}</span></div>
-            <div class="stat"><b>${result.turns}</b><span>${t("rizz.turns")}</span></div>
-          </div>
-          <div class="btn-row">
-            <button type="button" class="btn btn-fill" id="rizz-again">${t("rizz.again")}</button>
-            <button type="button" class="btn btn-secondary" id="rizz-home">${t("play.home")}</button>
-          </div>
-        </div>`;
-      container.querySelector("#rizz-again")?.addEventListener("click", () => {
-        resetRun();
-        live.phase = "pick";
-        paint();
-      });
-      container.querySelector("#rizz-home")?.addEventListener("click", () => {
-        resetRun();
-        live.phase = live.gender ? "pick" : "gate";
-        window.dispatchEvent(new CustomEvent("aurafarm:nav", { detail: "home" }));
-      });
     }
   };
 

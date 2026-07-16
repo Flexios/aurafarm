@@ -3503,3 +3503,47 @@ html[data-hide-top-currency="1"] .topbar-currency {
     grid-template-columns: min(44vh, 440px) minmax(0, 1fr) !important;
   }
 }
+
+/* End-of-chat banner (keeps transcript visible) */
+.rizz-end-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--separator);
+  background: rgba(20, 18, 16, 0.92);
+  flex-shrink: 0;
+}
+.rizz-end-emoji {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+.rizz-end-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.rizz-end-copy strong {
+  font-size: 1rem;
+}
+.rizz-end-like {
+  border-color: rgba(232, 93, 76, 0.45);
+  background: rgba(232, 93, 76, 0.12);
+}
+.rizz-end-friendzone {
+  border-color: rgba(74, 158, 255, 0.35);
+  background: rgba(74, 158, 255, 0.1);
+}
+.rizz-end-ghost {
+  border-color: rgba(244, 239, 230, 0.12);
+  background: rgba(0, 0, 0, 0.35);
+}
+.rizz-end-actions {
+  margin-top: auto;
+  flex-shrink: 0;
+}
+.rizz-chat-ended .rizz-bubbles {
+  opacity: 0.98;
+}
