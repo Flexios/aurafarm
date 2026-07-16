@@ -2072,7 +2072,14 @@ button {
     box-shadow: none;
     backdrop-filter: none;
     min-height: 100%;
-    max-width: 1100px;
+    max-width: none;
+    width: 100%;
+  }
+
+  /* Use full main column width on rizz (was leaving empty right half) */
+  .app-shell[data-screen="rizz"] .screen,
+  .app-shell[data-screen="rizz"] .screen-body {
+    max-width: none;
     width: 100%;
   }
 
@@ -2188,80 +2195,176 @@ button {
     min-height: 160px;
   }
 
-  /* ——— Rizz desktop: full-width 16:9 story stage ——— */
+  /* ——— Rizz desktop: split stage fills the width ——— */
   .rizz-gate,
   .rizz-pick,
   .rizz-chat,
-  .rizz-result {
-    max-width: 920px;
+  .rizz-result,
+  .rizz-story {
+    max-width: none;
+    width: 100%;
   }
 
   .rizz-gender-card {
-    max-width: 520px;
+    max-width: 560px;
   }
 
   .rizz-persona-list {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
   }
 
   .rizz-story-chrome {
-    min-height: auto;
-    gap: 12px;
-    max-width: 100%;
+    gap: 14px;
+    width: 100%;
+  }
+
+  .rizz-story-stage {
+    display: grid;
+    grid-template-columns: minmax(300px, 0.95fr) minmax(320px, 1.05fr);
+    gap: 24px;
+    align-items: stretch;
+    min-height: min(72vh, 640px);
   }
 
   .rizz-story-art {
-    flex: none;
     width: 100%;
-    aspect-ratio: 16 / 9;
-    min-height: 0;
-    max-height: min(62vh, 560px);
+    height: 100%;
+    min-height: min(68vh, 620px);
+    max-height: min(72vh, 680px);
+    aspect-ratio: auto;
     border-radius: 16px;
   }
 
+  /* Show face + upper body cleanly — no aggressive mid-crop */
   .rizz-story-img {
-    object-position: center 22%;
+    object-fit: cover;
+    object-position: center 18%;
+  }
+
+  /* Caption lives in the right panel on desktop (readable) */
+  .rizz-story-caption-onimg {
+    display: none;
+  }
+
+  .rizz-story-side {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 100%;
+    padding: 4px 0 0;
+  }
+
+  .rizz-story-side-card {
+    display: block;
+    flex: 1;
+  }
+
+  .rizz-story-caption-block {
+    font-size: 1.45rem;
   }
 
   .rizz-story-composer {
-    max-width: 720px;
+    max-width: none;
+    margin-top: auto;
+  }
+
+  .rizz-story-composer .rizz-send {
+    min-width: 110px;
   }
 
   .rizz-chat {
+    display: grid;
+    grid-template-columns: minmax(260px, 0.85fr) minmax(320px, 1.15fr);
+    grid-template-rows: auto auto 1fr auto auto;
+    gap: 12px 24px;
     min-height: min(78vh, 720px);
-    max-width: 720px;
+    max-width: none;
+    width: 100%;
+    align-content: start;
+  }
+
+  .rizz-chat-top {
+    grid-column: 1 / -1;
+  }
+
+  .rizz-interest-bar {
+    grid-column: 1 / -1;
+  }
+
+  .rizz-chat::before {
+    content: "";
+    grid-column: 1;
+    grid-row: 3 / 5;
+    border-radius: 16px;
+    border: 1px solid var(--separator);
+    background:
+      linear-gradient(180deg, rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.45)),
+      var(--rizz-chat-bg, var(--fill)) center 20% / cover no-repeat;
+    min-height: 280px;
   }
 
   .rizz-bubbles {
-    max-height: min(52vh, 480px);
+    grid-column: 2;
+    grid-row: 3;
+    max-height: min(56vh, 520px);
+    min-height: 280px;
+  }
+
+  .rizz-turns {
+    grid-column: 2;
+    grid-row: 4;
+    text-align: left;
+  }
+
+  .rizz-chat-composer {
+    grid-column: 2;
+    grid-row: 5;
   }
 
   .rizz-send {
-    max-width: 120px !important;
+    max-width: 140px !important;
+  }
+
+  .rizz-pick .rizz-daily-card {
+    max-width: none;
   }
 }
 
 @media (min-width: 1200px) {
   .screen {
-    padding: 32px 48px 56px;
-    max-width: 1180px;
+    padding: 32px 40px 56px;
+  }
+
+  .rizz-story-stage {
+    grid-template-columns: minmax(340px, 0.9fr) minmax(380px, 1.1fr);
+    gap: 28px;
   }
 
   .rizz-story-art {
-    max-height: min(64vh, 620px);
+    min-height: min(70vh, 680px);
+    max-height: min(74vh, 720px);
+  }
+
+  .rizz-persona-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 1440px) {
   .screen {
-    padding: 36px 56px 64px;
-    max-width: 1240px;
+    padding: 36px 48px 64px;
   }
 
   .sidebar {
     width: 260px;
+  }
+
+  .rizz-story-stage {
+    grid-template-columns: minmax(380px, 0.85fr) minmax(420px, 1.15fr);
+    max-width: 1400px;
   }
 }
 
@@ -2736,11 +2839,15 @@ html[data-hide-top-currency="1"] .topbar-currency {
 }
 
 /* Instagram-like story */
+.rizz-story {
+  width: 100%;
+}
+
 .rizz-story-chrome {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  min-height: min(72vh, 640px);
+  gap: 12px;
+  width: 100%;
 }
 
 .rizz-story-progress {
@@ -2771,16 +2878,23 @@ html[data-hide-top-currency="1"] .topbar-currency {
   padding: 0 8px;
 }
 
+.rizz-story-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
 .rizz-story-art {
   position: relative;
-  flex: 1;
-  min-height: 360px;
+  width: 100%;
   aspect-ratio: 3 / 4;
-  max-height: min(62vh, 560px);
+  max-height: min(58vh, 520px);
   border-radius: 14px;
   overflow: hidden;
   background: linear-gradient(160deg, var(--rizz-a, #e85d4c), var(--rizz-b, #141210) 70%);
   border: 1px solid var(--separator);
+  flex-shrink: 0;
 }
 
 .rizz-story-img {
@@ -2789,7 +2903,9 @@ html[data-hide-top-currency="1"] .topbar-currency {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center top;
   z-index: 1;
+  display: block;
 }
 
 .rizz-story-fallback {
@@ -2806,19 +2922,66 @@ html[data-hide-top-currency="1"] .topbar-currency {
   opacity: 0.9;
 }
 
-.rizz-story-caption {
+/* Caption on image (mobile) */
+.rizz-story-caption,
+.rizz-story-caption-onimg {
   position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: 14px;
-  z-index: 2;
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(8px);
-  font-size: 0.95rem;
-  font-weight: 550;
-  line-height: 1.35;
+  left: 10px;
+  right: 10px;
+  bottom: 12px;
+  z-index: 3;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #fff !important;
+  font-size: 0.98rem;
+  font-weight: 600;
+  line-height: 1.4;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+/* Side panel (desktop primary; mobile still shows composer below) */
+.rizz-story-side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.rizz-story-side-card {
+  display: none; /* mobile uses on-image caption */
+  padding: 18px 18px 16px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--separator);
+  background: rgba(20, 18, 16, 0.88);
+}
+
+.rizz-story-caption-block {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 650;
+  line-height: 1.4;
+  color: var(--label);
+  letter-spacing: -0.02em;
+}
+
+.rizz-story-vibe {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.rizz-story-tip {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
 }
 
 .rizz-story-composer,
@@ -2826,32 +2989,40 @@ html[data-hide-top-currency="1"] .topbar-currency {
   display: flex;
   gap: 8px;
   align-items: center;
+  width: 100%;
 }
 
 .rizz-story-composer input,
 .rizz-chat-composer input {
   flex: 1;
-  min-height: 46px;
-  padding: 0 14px;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 16px;
   border-radius: 999px;
   border: 1px solid var(--separator);
-  background: rgba(20, 18, 16, 0.85);
+  background: rgba(20, 18, 16, 0.92);
   color: var(--label);
   outline: none;
+  font-size: 1rem;
+}
+
+.rizz-story-composer input::placeholder,
+.rizz-chat-composer input::placeholder {
+  color: var(--label-tertiary);
 }
 
 .rizz-story-composer input:focus,
 .rizz-chat-composer input:focus {
-  border-color: rgba(232, 93, 76, 0.45);
+  border-color: rgba(232, 93, 76, 0.5);
 }
 
 .rizz-send {
   width: auto !important;
-  min-width: 72px;
-  max-width: 100px !important;
-  min-height: 46px;
+  min-width: 88px;
+  max-width: 120px !important;
+  min-height: 48px;
   border-radius: 999px;
-  padding: 0 16px;
+  padding: 0 18px;
   flex-shrink: 0;
 }
 

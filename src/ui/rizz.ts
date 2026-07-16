@@ -72,7 +72,7 @@ function storyArtHtml(p: RizzPersona): string {
       <div class="rizz-story-fallback" aria-hidden="true">
         <span class="rizz-story-emoji">${p.emoji}</span>
       </div>
-      <div class="rizz-story-caption">${escapeHtml(p.storyCaption)}</div>
+      <div class="rizz-story-caption rizz-story-caption-onimg">${escapeHtml(p.storyCaption)}</div>
     </div>`;
 }
 
@@ -217,16 +217,26 @@ export function renderRizz(
               <div class="rizz-avatar rizz-avatar-sm has-photo" style="${avatarStyle(p)}" aria-hidden="true">${p.emoji}</div>
               <div style="flex:1;min-width:0">
                 <strong>${escapeHtml(p.name)}</strong>
-                <div class="muted" style="font-size:0.75rem">${t("rizz.justNow")}</div>
+                <div class="muted" style="font-size:0.75rem">@${escapeHtml(p.handle)} · ${t("rizz.justNow")}</div>
               </div>
               <button type="button" class="btn-plain rizz-close" id="rizz-abort" aria-label="${t("common.close")}">✕</button>
             </div>
-            ${storyArtHtml(p)}
-            <form class="rizz-story-composer" id="rizz-story-form">
-              <input type="text" id="rizz-story-input" maxlength="200" autocomplete="off"
-                placeholder="${t("rizz.replyPlaceholder")}" ${live.busy ? "disabled" : ""} />
-              <button type="submit" class="btn btn-fill rizz-send" ${live.busy ? "disabled" : ""}>${live.busy ? "…" : t("rizz.send")}</button>
-            </form>
+            <div class="rizz-story-stage">
+              ${storyArtHtml(p)}
+              <div class="rizz-story-side">
+                <div class="rizz-story-side-card">
+                  <div class="section-header" style="margin:0 0 8px">${t("rizz.storyReply")}</div>
+                  <p class="rizz-story-caption-block">${escapeHtml(p.storyCaption)}</p>
+                  <p class="muted rizz-story-vibe">${escapeHtml(p.vibe)}</p>
+                  <p class="muted rizz-story-tip">${t("rizz.storyTip")}</p>
+                </div>
+                <form class="rizz-story-composer" id="rizz-story-form">
+                  <input type="text" id="rizz-story-input" maxlength="200" autocomplete="off"
+                    placeholder="${t("rizz.replyPlaceholder")}" ${live.busy ? "disabled" : ""} />
+                  <button type="submit" class="btn btn-fill rizz-send" ${live.busy ? "disabled" : ""}>${live.busy ? "…" : t("rizz.send")}</button>
+                </form>
+              </div>
+            </div>
           </div>
         </div>`;
       container.querySelector("#rizz-abort")?.addEventListener("click", () => {
@@ -249,7 +259,7 @@ export function renderRizz(
       const p = persona;
       const turnsLeft = Math.max(0, RIZZ_MAX_TURNS - live.turn);
       container.innerHTML = `
-        <div class="rizz-chat">
+        <div class="rizz-chat" style="--rizz-chat-bg:url('${escapeHtml(p.image)}')">
           <div class="rizz-chat-top">
             <button type="button" class="btn-plain" id="rizz-back-pick">←</button>
             <div class="rizz-avatar rizz-avatar-sm has-photo" style="${avatarStyle(p)}" aria-hidden="true">${p.emoji}</div>
