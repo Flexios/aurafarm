@@ -38,9 +38,9 @@
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring: cubic-bezier(0.34, 1.2, 0.64, 1);
   --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
-  --dur: 0.45s;
-  --dur-fast: 0.18s;
-  --dur-hover: 0.32s;
+  --dur: 0.55s;
+  --dur-fast: 0.28s;
+  --dur-hover: 0.55s;
   color-scheme: dark;
 }
 
@@ -3304,6 +3304,151 @@ html[data-hide-top-currency="1"] .topbar-currency {
   font-size: 0.65rem;
   margin-top: 2px;
   text-align: center;
+}
+
+/* ——— Rizz Coach assistant ——— */
+.rizz-coach {
+  margin-top: 12px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--separator));
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--accent) 12%, transparent), transparent 60%),
+    rgba(20, 18, 16, 0.72);
+  overflow: hidden;
+}
+
+.rizz-coach-collapsed,
+.rizz-coach-off {
+  border-style: dashed;
+  background: rgba(20, 18, 16, 0.45);
+}
+
+.rizz-coach-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 12px;
+  font-size: 0.84rem;
+  font-weight: 650;
+  color: var(--label);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background var(--dur-hover) var(--ease-soft),
+    color var(--dur-hover) var(--ease-soft);
+}
+
+.rizz-coach-toggle:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.rizz-coach-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 0 var(--accent-glow);
+  animation: coach-pulse 2.4s var(--ease-soft) infinite;
+  flex-shrink: 0;
+}
+
+@keyframes coach-pulse {
+  0% {
+    box-shadow: 0 0 0 0 var(--accent-glow);
+  }
+  70% {
+    box-shadow: 0 0 0 8px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.rizz-coach-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px 0;
+}
+
+.rizz-coach-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.86rem;
+}
+
+.rizz-coach-head-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.rizz-coach-mini {
+  min-height: 28px !important;
+  padding: 0 8px !important;
+  font-size: 0.75rem !important;
+  opacity: 0.75;
+}
+
+.rizz-coach-status {
+  margin: 8px 12px 0;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--accent);
+  line-height: 1.35;
+}
+
+.rizz-coach-tips {
+  margin: 8px 12px 0;
+  padding-left: 1.15rem;
+  font-size: 0.8rem;
+  color: var(--label-secondary);
+  line-height: 1.4;
+}
+
+.rizz-coach-tips li + li {
+  margin-top: 4px;
+}
+
+.rizz-coach-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px 12px;
+}
+
+.rizz-coach-lines-label {
+  font-size: 0.7rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.rizz-coach-line {
+  text-align: left;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--separator);
+  background: rgba(120, 120, 128, 0.1);
+  color: var(--label);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-hover) var(--ease-soft),
+    background var(--dur-hover) var(--ease-soft),
+    transform var(--dur-hover) var(--ease-soft);
+}
+
+.rizz-chat-main .rizz-coach {
+  margin: 8px 0 4px;
+  flex-shrink: 0;
 }
 
 .rizz-interest-hard > i {

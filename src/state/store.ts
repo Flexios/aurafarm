@@ -37,6 +37,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
   language: "en",
   nsfwChallenges: false,
   rizzTargetGender: null,
+  rizzCoachEnabled: true,
 };
 
 export const USERNAME_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
@@ -114,6 +115,10 @@ export function normalizeState(
           : parsed.settings?.rizzTargetGender === null
             ? null
             : DEFAULT_SETTINGS.rizzTargetGender,
+      rizzCoachEnabled:
+        typeof parsed.settings?.rizzCoachEnabled === "boolean"
+          ? parsed.settings.rizzCoachEnabled
+          : DEFAULT_SETTINGS.rizzCoachEnabled,
     },
     avatarUrl: parsed.avatarUrl ?? null,
     claimedFriendBattleIds: Array.isArray(parsed.claimedFriendBattleIds)

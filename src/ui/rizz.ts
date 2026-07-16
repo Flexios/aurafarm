@@ -12,6 +12,7 @@ import {
   type RizzPersona,
 } from "../data/rizzScenarios";
 import { applyRizzResult } from "../game/economy";
+import { buildCoachAdvice } from "../game/rizzCoach";
 import {
   RIZZ_LIKE_AT,
   RIZZ_MAX_TURNS,
@@ -53,6 +54,8 @@ let live: {
   result: SessionResult | null;
   storyReplySent: boolean;
   lastSource: "ai" | "local" | null;
+  /** Coach panel expanded (when enabled in settings) */
+  coachOpen: boolean;
 } = {
   gender: null,
   phase: "gate",
@@ -65,6 +68,7 @@ let live: {
   result: null,
   storyReplySent: false,
   lastSource: null,
+  coachOpen: true,
 };
 
 /** Home / external: open straight into a persona story */
@@ -109,11 +113,15 @@ function trainerBadgesHtml(p: RizzPersona, locked: boolean): string {
   if (locked) bits.push(`<span class="rizz-badge rizz-badge-locked">${t("rizz.locked")}</span>`);
   if (p.exclusive && !locked)
     bits.push(`<span class="rizz-badge rizz-badge-exclusive">${t("rizz.exclusive")}</span>`);
-  if (p.hardMode) bits.push(`<span class="rizz-badge rizz-badge-hard">${t("rizz.hardMode")}</span>`);
   if (p.nsfw) bits.push(`<span class="rizz-badge rizz-badge-18">18+</span>`);
-  bits.push(
-    `<span class="rizz-badge rizz-badge-diff rizz-diff-${escapeHtml(p.difficulty)}">${escapeHtml(difficultyLabel(p.difficulty))}</span>`,
-  );
+  // One difficulty badge only — hardMode + difficulty "hard" used to double-tag Elise
+  if (p.hardMode || p.difficulty === "hard") {
+    bits.push(`<span class="rizz-badge rizz-badge-hard">${t("rizz.hardMode")}</span>`);
+  } else {
+    bits.push(
+      `<span class="rizz-badge rizz-badge-diff rizz-diff-${escapeHtml(p.difficulty)}">${escapeHtml(difficultyLabel(p.difficulty))}</span>`,
+    );
+  }
   return bits.join("");
 }
 
@@ -146,6 +154,101 @@ function moodClassFor(
   if (outcome === "ghost" || outcome === "friendzone" || interest <= 32)
     return "rizz-mood-fail";
   return "";
+}
+
+function coachPanelHtml(
+  p: RizzPersona,
+  opts: {
+    interest: number;
+    turn: number;
+    isStoryPhase: boolean;
+    history: RizzChatMessage[];
+    enabled: boolean;
+    open: boolean;
+  },
+): string {
+  if (!opts.enabled) {
+    return `
+      <div class="rizz-coach rizz-coach-off">
+        <button type="button" class="rizz-coach-toggle" id="rizz-coach-enable">${t("rizz.coach.enable")}</button>
+      </div>`;
+  }
+  if (!opts.open) {
+    return `
+      <div class="rizz-coach rizz-coach-collapsed">
+        <button type="button" class="rizz-coach-toggle" id="rizz-coach-open" aria-expanded="false">
+          <span class="rizz-coach-dot" aria-hidden="true"></span>
+          ${t("rizz.coach.title")}
+        </button>
+      </div>`;
+  }
+  const advice = buildCoachAdvice({
+    persona: p,
+    interest: opts.interest,
+    turn: opts.turn,
+    isStoryPhase: opts.isStoryPhase,
+    history: opts.history,
+  });
+  return `
+    <div class="rizz-coach rizz-coach-open" role="complementary" aria-label="${t("rizz.coach.title")}">
+      <div class="rizz-coach-head">
+        <div class="rizz-coach-brand">
+          <span class="rizz-coach-dot" aria-hidden="true"></span>
+          <strong>${t("rizz.coach.title")}</strong>
+        </div>
+        <div class="rizz-coach-head-actions">
+          <button type="button" class="btn-plain rizz-coach-mini" id="rizz-coach-collapse" aria-expanded="true">${t("rizz.coach.hide")}</button>
+          <button type="button" class="btn-plain rizz-coach-mini" id="rizz-coach-disable">${t("rizz.coach.off")}</button>
+        </div>
+      </div>
+      <p class="rizz-coach-status">${escapeHtml(advice.status)}</p>
+      <ul class="rizz-coach-tips">
+        ${advice.tips.map((tip) => `<li>${escapeHtml(tip)}</li>`).join("")}
+      </ul>
+      <div class="rizz-coach-lines">
+        <span class="muted rizz-coach-lines-label">${t("rizz.coach.try")}</span>
+        ${advice.lines
+          .map(
+            (line, i) =>
+              `<button type="button" class="rizz-coach-line" data-coach-line="${i}">${escapeHtml(line)}</button>`,
+          )
+          .join("")}
+      </div>
+    </div>`;
+}
+
+function wireCoachPanel(
+  container: HTMLElement,
+  state: PlayerState,
+  onState: (s: PlayerState) => void,
+  paint: () => void,
+  inputSelector: string,
+): void {
+  container.querySelector("#rizz-coach-enable")?.addEventListener("click", () => {
+    live.coachOpen = true;
+    onState(updateSettings(state, { rizzCoachEnabled: true }));
+  });
+  container.querySelector("#rizz-coach-open")?.addEventListener("click", () => {
+    live.coachOpen = true;
+    paint();
+  });
+  container.querySelector("#rizz-coach-collapse")?.addEventListener("click", () => {
+    live.coachOpen = false;
+    paint();
+  });
+  container.querySelector("#rizz-coach-disable")?.addEventListener("click", () => {
+    live.coachOpen = false;
+    onState(updateSettings(state, { rizzCoachEnabled: false }));
+  });
+  container.querySelectorAll<HTMLButtonElement>("[data-coach-line]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const input = container.querySelector(inputSelector) as HTMLInputElement | null;
+      if (!input || live.busy) return;
+      input.value = btn.textContent?.trim() ?? "";
+      input.focus();
+      playUiSound("tap", state.settings.soundEnabled);
+    });
+  });
 }
 
 function resetRun(): void {
@@ -358,7 +461,10 @@ export function renderRizz(
                   <p class="rizz-story-caption-block">${escapeHtml(p.storyCaption)}</p>
                   <p class="muted rizz-story-vibe">${escapeHtml(p.vibe)} · ${escapeHtml(p.bio)}</p>
                   <p class="muted rizz-story-tip">${escapeHtml(p.openTip)}</p>
-                  <div class="rizz-starters" id="rizz-starters">
+                  ${
+                    state.settings.rizzCoachEnabled && live.coachOpen
+                      ? ""
+                      : `<div class="rizz-starters" id="rizz-starters">
                     <span class="muted rizz-starters-label">${t("rizz.tryLine")}</span>
                     ${p.starters
                       .map(
@@ -366,7 +472,16 @@ export function renderRizz(
                           `<button type="button" class="rizz-starter-chip" data-starter="${i}">${escapeHtml(s)}</button>`,
                       )
                       .join("")}
-                  </div>
+                  </div>`
+                  }
+                  ${coachPanelHtml(p, {
+                    interest: live.interest,
+                    turn: live.turn,
+                    isStoryPhase: true,
+                    history: live.messages,
+                    enabled: Boolean(state.settings.rizzCoachEnabled),
+                    open: live.coachOpen,
+                  })}
                 </div>
                 <form class="rizz-story-composer" id="rizz-story-form">
                   <input type="text" id="rizz-story-input" maxlength="200" autocomplete="off"
@@ -393,6 +508,7 @@ export function renderRizz(
           playUiSound("tap", state.settings.soundEnabled);
         });
       });
+      wireCoachPanel(container, state, onState, paint, "#rizz-story-input");
       container.querySelector("#rizz-story-form")?.addEventListener("submit", (e) => {
         e.preventDefault();
         void sendMessage(input?.value ?? "", true);
@@ -507,7 +623,15 @@ export function renderRizz(
                 <button type="button" class="btn btn-fill" id="rizz-again">${t("rizz.again")}</button>
                 <button type="button" class="btn btn-secondary" id="rizz-home">${t("play.home")}</button>
               </div>`
-                  : `<p class="muted rizz-turns">${t("rizz.turnsLeft", { n: turnsLeft })}</p>
+                  : `${coachPanelHtml(p, {
+                      interest: live.interest,
+                      turn: live.turn,
+                      isStoryPhase: false,
+                      history: live.messages,
+                      enabled: Boolean(state.settings.rizzCoachEnabled),
+                      open: live.coachOpen,
+                    })}
+              <p class="muted rizz-turns">${t("rizz.turnsLeft", { n: turnsLeft })}</p>
               <form class="rizz-chat-composer" id="rizz-chat-form">
                 <input type="text" id="rizz-chat-input" maxlength="200" autocomplete="off"
                   placeholder="${t("rizz.chatPlaceholder")}" ${live.busy ? "disabled" : ""} />
@@ -537,6 +661,7 @@ export function renderRizz(
           window.dispatchEvent(new CustomEvent("aurafarm:nav", { detail: "home" }));
         });
       } else {
+        wireCoachPanel(container, state, onState, paint, "#rizz-chat-input");
         container.querySelector("#rizz-chat-form")?.addEventListener("submit", (e) => {
           e.preventDefault();
           void sendMessage(

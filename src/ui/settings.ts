@@ -381,6 +381,7 @@ export function renderSettings(
       <div class="section-header">${t("settings.experience")}</div>
       <div class="card stack">
         ${toggleRow("preferAiJudge", t("settings.preferAi"), s.preferAiJudge)}
+        ${toggleRow("rizzCoachEnabled", t("settings.rizzCoach"), Boolean(s.rizzCoachEnabled))}
         ${toggleRow("reduceMotion", t("settings.reduceMotion"), s.reduceMotion)}
         ${toggleRow("soundEnabled", t("settings.sounds"), s.soundEnabled)}
         ${toggleRow("hideTopCurrency", t("settings.hideCurrency"), s.hideTopCurrency)}

@@ -60,6 +60,8 @@ export interface UserSettings {
    * Persists forever; changeable in Settings. null = not chosen yet.
    */
   rizzTargetGender: RizzGender | null;
+  /** Show the Rizz Coach assistant during training */
+  rizzCoachEnabled: boolean;
 }
 
 export type ChallengeCategory =
