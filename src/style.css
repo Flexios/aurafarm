@@ -2939,6 +2939,132 @@ html[data-hide-top-currency="1"] .topbar-currency {
   width: 100%;
   cursor: pointer;
   padding: 12px 14px;
+  align-items: flex-start;
+}
+
+.rizz-persona-card.rizz-persona-locked {
+  opacity: 0.72;
+  border-style: dashed;
+}
+
+.rizz-persona-card.rizz-persona-locked .rizz-avatar {
+  filter: grayscale(0.35);
+}
+
+.rizz-bio {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.rizz-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.rizz-badge-row-compact {
+  margin-top: 3px;
+}
+
+.rizz-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(120, 120, 128, 0.22);
+  color: var(--label-secondary);
+}
+
+.rizz-badge-hard {
+  background: rgba(232, 93, 76, 0.22);
+  color: #ffb4a8;
+}
+
+.rizz-badge-18,
+.rizz-badge-wild,
+.rizz-diff-wild {
+  background: rgba(255, 77, 141, 0.2);
+  color: #ff9ec8;
+}
+
+.rizz-badge-exclusive {
+  background: rgba(232, 196, 184, 0.22);
+  color: #f0d4c8;
+}
+
+.rizz-badge-locked {
+  background: rgba(120, 120, 128, 0.28);
+  color: var(--label-tertiary);
+}
+
+.rizz-diff-chill {
+  background: rgba(107, 207, 142, 0.18);
+  color: #9ee0b4;
+}
+
+.rizz-diff-hard {
+  background: rgba(232, 93, 76, 0.22);
+  color: #ffb4a8;
+}
+
+.rizz-starters {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.rizz-starters-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.rizz-starter-chip {
+  text-align: left;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--separator);
+  background: rgba(120, 120, 128, 0.12);
+  color: var(--label-primary);
+  cursor: pointer;
+  transition:
+    border-color 0.2s var(--ease-out),
+    background 0.2s var(--ease-out);
+}
+
+.rizz-starter-chip:hover {
+  border-color: rgba(232, 93, 76, 0.45);
+  background: rgba(232, 93, 76, 0.1);
+}
+
+.rizz-hard-note {
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+  padding: 0 4px;
+}
+
+.rizz-peak-mini {
+  font-size: 0.65rem;
+  margin-top: 2px;
+  text-align: center;
+}
+
+.rizz-interest-hard > i {
+  background: linear-gradient(90deg, #e8c4b8, #e85d4c) !important;
+}
+
+.rizz-persona-row {
+  align-items: flex-start;
 }
 
 .rizz-avatar {

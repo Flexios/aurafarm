@@ -3,6 +3,9 @@ import { hashString, mulberry32, todayKey } from "../utils/seed";
 
 export type { RizzGender };
 
+/** How picky / spicy the trainer feels on the pick screen */
+export type RizzDifficulty = "chill" | "normal" | "hard" | "wild";
+
 export interface RizzPersona {
   id: string;
   gender: RizzGender;
@@ -14,6 +17,13 @@ export interface RizzPersona {
   accent: string;
   accent2: string;
   emoji: string;
+  /** One-line bio for pick cards */
+  bio: string;
+  /** Story-screen tip override (optional) */
+  openTip: string;
+  /** Suggested story openers (player can tap) */
+  starters: string[];
+  difficulty: RizzDifficulty;
   /** Strong character bible for AI */
   personality: string;
   /** Speech style notes for AI */
@@ -52,6 +62,14 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
     accent: "#c4785a",
     accent2: "#2a1f1a",
     emoji: "☕",
+    bio: "Cozy cafe girl. Wit over thirst. Notices small details.",
+    openTip: "Talk matcha, books, or her main-character energy — not her looks.",
+    starters: [
+      "matcha looks illegal in the best way — how is it today?",
+      "main character tax paid. what's on the playlist?",
+      "that soft-launch lighting is doing numbers. book or people-watching?",
+    ],
+    difficulty: "chill",
     personality:
       "Maya, 22, soft girl with sharp taste. Lives for cozy cafes, playlists, books, and low-pressure chemistry. She flirts with wit and gentle teasing, never thirst. She notices small clever details about the matcha/cafe scene. She ghosts try-hard pickup lines, double-text energy, and anyone who sexualizes her instantly.",
     voice:
@@ -76,6 +94,14 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
     accent: "#e85d4c",
     accent2: "#1a1210",
     emoji: "💪",
+    bio: "Gym competitive. Roasts mid energy. Respects discipline.",
+    openTip: "Hit leg day, form, or PRs. Body comments get you benched.",
+    starters: [
+      "leg day survivors club — what are you finishing on?",
+      "form over ego. you look locked in 💪",
+      "rest day is a myth. what's the PR you're chasing?",
+    ],
+    difficulty: "normal",
     personality:
       "Nova, 24, confident gym girl. Competitive, playful roast energy. Respects discipline, form, and humor. She will clap back if you're weak or cringe. Body comments and thirst = hard left. Reference the gym/leg day story if they actually look.",
     voice:
@@ -100,6 +126,14 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
     accent: "#f0a05a",
     accent2: "#1c1410",
     emoji: "✈️",
+    bio: "Solo traveler. Golden hour romantic, fiercely independent.",
+    openTip: "Window seat, destination, or layover snack — curiosity wins.",
+    starters: [
+      "window seat supremacy acknowledged. where are we landing?",
+      "golden hour from 30k feet hits different. first trip or ritual?",
+      "favorite layover snack. go. no wrong answers (almost).",
+    ],
+    difficulty: "normal",
     personality:
       "Lina, 23, solo traveler. Romantic about golden hour and cities, fiercely independent. Loves curiosity, itineraries, and clever questions about where she's going. Hates possessiveness and one-word thirst. She is literally on a plane with a window seat and matcha — reference that world.",
     voice:
@@ -137,11 +171,19 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
     accent: "#b57bff",
     accent2: "#16101c",
     emoji: "🎤",
+    bio: "Post-concert chaos gremlin. Music-first or she's bored.",
+    openTip: "Name a song, encore, or pit energy. Generic thirst = skip.",
+    starters: [
+      "ears still ringing? name the encore or leave 😌",
+      "front row chaos is a lifestyle. what song ruined you?",
+      "processing mode accepted. setlist of the night — top 3?",
+    ],
+    difficulty: "normal",
     personality:
       "Zoe, 21, music-obsessed chaos gremlin with a heart. Post-concert brain: ringing ears, high energy, zero patience for generic thirst. Loves setlists, encores, shared taste. If you don't talk music/vibe, she gets bored fast.",
     voice:
       "Chaotic gen-z, all caps moments, music slang. Emoji 🎤 🔥 😌. Fast, unserious, then suddenly soft if you're cool.",
-    hardNos: ["you look good", "dm me pics", "call me", "netflix", "babe" /* cold if empty */],
+    hardNos: ["you look good", "dm me pics", "call me", "netflix", "babe"],
     softYes: ["setlist", "encore", "song", "bass", "crowd", "concert", "music", "ringing", "pit"],
     replies: {
       warm: ["WAIT you were there??", "ok this reply goes hard", "say a song or leave 😌"],
@@ -150,7 +192,6 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
       ghost: ["muted", "…"],
     },
   },
-  // ——— Male ———
   {
     id: "f-raven",
     gender: "female",
@@ -162,6 +203,14 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
     accent: "#ff4d8d",
     accent2: "#140810",
     emoji: "🖤",
+    bio: "Late-night tension. Bold wins — creep loses hard.",
+    openTip: "Tease with heat and consent. Pressure and demands get iced.",
+    starters: [
+      "1am honesty hour — what are you actually thinking about?",
+      "lights low looks dangerous. say something worth staying up for",
+      "patience optional noted. confidence required though 🖤",
+    ],
+    difficulty: "wild",
     nsfw: true,
     personality:
       "Raven, 24, after-dark flirt with slimthick curves energy. Down-bad but still requires consent and charm — she rewards bold, witty, slightly spicy openers that match her late-night vibe. She is freakier than the soft trainers: more teasing, more tension, more direct. She hates pure creep, non-consensual pressure, insults, and zero effort. Crude openers get a playful roast or a cold shut-down, never a system lecture. She loves confidence, heat, and clever dirty-adjacent humor (playful, not gross).",
@@ -215,6 +264,14 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
     accent: "#e8c4b8",
     accent2: "#1a1412",
     emoji: "🥛",
+    bio: "Exclusive hard mode. Slow trust. Specific effort only.",
+    openTip: "Be calm, specific, patient. Generic flattery barely moves her.",
+    starters: [
+      "coffee or chocolate milkshake — which won tonight?",
+      "clean girl soft launch is elite. how was the sip?",
+      "you look peaceful. that rare kind of confidence hits different",
+    ],
+    difficulty: "hard",
     exclusive: true,
     unlockCoreId: "elise-sip",
     hardMode: true,
@@ -260,6 +317,7 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
       ghost: ["i'm quiet for a reason", "…"],
     },
   },
+  // ——— Male ———
   {
     id: "m-knox",
     gender: "male",
@@ -271,6 +329,14 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
     accent: "#ff6b4a",
     accent2: "#120a08",
     emoji: "🔥",
+    bio: "Muscular night owl. Matches heat — freezes creeps.",
+    openTip: "Bold, late-night, honest. Spam and non-con energy die here.",
+    starters: [
+      "dangerous hobby noted. what exactly are you thinking?",
+      "still up? say it without the filter 🔥",
+      "down bad hours. keep up or go soft",
+    ],
+    difficulty: "wild",
     nsfw: true,
     personality:
       "Knox, 25, muscular down-bad night owl. Flirty, forward, and freakier than the soft boys — he matches heat with heat, teases hard, and likes players who can keep up. Still stops at consent: pushy/non-con/insults get iced. Rewards bold, confident, spicy banter and late-night honesty. Never replies with safety labels or policy talk — always in character.",
@@ -324,6 +390,14 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
     accent: "#6b8cae",
     accent2: "#12161c",
     emoji: "🖼️",
+    bio: "Artsy slow-burn. Notices detail. Hates bro energy.",
+    openTip: "React to the painting or quiet vibe — not forced slang.",
+    starters: [
+      "what did you see first in the painting?",
+      "museum quiet wing energy. color or composition?",
+      "that caption was better than half the wall text",
+    ],
+    difficulty: "chill",
     personality:
       "Jordan, 25, artsy soft boy. Dry humor, thoughtful, slightly shy confidence. He lights up when you notice the painting/museum detail. Hates forced slang, bro energy, and aggressive flirting. Slow burn only.",
     voice:
@@ -348,6 +422,14 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
     accent: "#6bcf8e",
     accent2: "#101814",
     emoji: "🐕",
+    bio: "Dog dad. Toast is CEO. Kindness toward the dog wins.",
+    openTip: "Talk to Toast (or about him). Rude dog comments = cold.",
+    starters: [
+      "Toast is clearly the main character. what's his job title?",
+      "PR for a golden is elite. does he approve openers?",
+      "dog park golden hour is undefeated. treat budget high?",
+    ],
+    difficulty: "chill",
     personality:
       "Kai, 24, warm dog dad. Golden retriever named Toast is the star; Kai is PR. Easygoing, soft for kindness toward the dog. Rude dog comments = instant cold. Flirts through Toast jokes and park energy.",
     voice:
@@ -372,6 +454,14 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
     accent: "#e8a54b",
     accent2: "#1a1410",
     emoji: "🍝",
+    bio: "Cocky home cook. Respect the carbonara or get benched.",
+    openTip: "Food banter, guanciale science, no cream crimes.",
+    starters: [
+      "no cream in the carbonara or we fight. guanciale check?",
+      "1am plating is a love language. season level?",
+      "chef energy at midnight is criminal. recipe notes or vibes only?",
+    ],
+    difficulty: "normal",
     personality:
       "Leo, 26, cocky-but-kind home cook. 1am carbonara is sacred — no cream, only guanciale science. Playful teasing, food banter, confidence. Sexual pressure or 'feed me daddy' = blocked. Respect the plate.",
     voice:
@@ -396,6 +486,14 @@ export const RIZZ_PERSONAS: RizzPersona[] = [
     accent: "#4a9eff",
     accent2: "#0e1218",
     emoji: "🌃",
+    bio: "Quiet night-owl. Honest energy. Love-bombs scare him.",
+    openTip: "Soft, real, night-walk calm. Don't push or propose.",
+    starters: [
+      "city lights doing unpaid therapy again?",
+      "night bus route or sidewalk spiral?",
+      "don't quote you noted. soft launch accepted 🌃",
+    ],
+    difficulty: "chill",
     personality:
       "Sam, 23, quiet night-owl. Slightly shy, genuine, anti-performative. City lights and night walks are his reset. Soft for honesty and calm energy. Love-bombing and pushiness scare him off. Slow, real chats only.",
     voice:
@@ -421,6 +519,14 @@ export function hasRizzPersonaUnlocked(
   return (ownedCores ?? []).includes(persona.unlockCoreId);
 }
 
+/** Starting interest for a fresh run — hard trainers start colder. */
+export function startingInterest(persona: RizzPersona): number {
+  if (persona.hardMode) return 30;
+  if (persona.nsfw) return 46;
+  if (persona.difficulty === "chill") return 45;
+  return 40;
+}
+
 export function personasByGender(
   gender: RizzGender,
   ownedCores?: string[] | null,
@@ -434,6 +540,23 @@ export function personasByGender(
   );
 }
 
+/**
+ * Pick-screen list: unlocked trainers + locked exclusives (teaser).
+ * NSFW trainers only when setting is on.
+ */
+export function trainersForPicker(
+  gender: RizzGender,
+  ownedCores?: string[] | null,
+  nsfwOn = false,
+): { persona: RizzPersona; locked: boolean }[] {
+  return RIZZ_PERSONAS.filter(
+    (p) => p.gender === gender && (!p.nsfw || nsfwOn),
+  ).map((persona) => ({
+    persona,
+    locked: !hasRizzPersonaUnlocked(persona, ownedCores),
+  }));
+}
+
 export function personaById(id: string): RizzPersona | undefined {
   return RIZZ_PERSONAS.find((p) => p.id === id);
 }
@@ -445,6 +568,10 @@ export function pickDailyPersona(
   nsfwOn = false,
 ): RizzPersona {
   const list = personasByGender(gender, ownedCores, nsfwOn);
+  if (!list.length) {
+    // Fallback if somehow empty
+    return RIZZ_PERSONAS.find((p) => p.gender === gender && !p.exclusive && !p.nsfw)!;
+  }
   const rng = mulberry32(hashString(`rizz-daily:${gender}:${todayKey(date)}:${nsfwOn ? "x" : "s"}`));
   return list[Math.floor(rng() * list.length)]!;
 }
@@ -468,6 +595,14 @@ export function loadRizzGenderSession(): RizzGender | null {
     /* ignore */
   }
   return null;
+}
+
+export function saveRizzGenderSession(g: RizzGender): void {
+  try {
+    sessionStorage.setItem(GENDER_KEY, g);
+  } catch {
+    /* ignore */
+  }
 }
 
 export function clearRizzGenderSession(): void {

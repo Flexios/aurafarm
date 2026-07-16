@@ -3,9 +3,11 @@ import {
   clearRizzGenderSession,
   loadRizzGenderSession,
   personaById,
-  personasByGender,
   pickDailyPersona,
   pickRandomPersona,
+  startingInterest,
+  trainersForPicker,
+  type RizzDifficulty,
   type RizzPersona,
 } from "../data/rizzScenarios";
 import { applyRizzResult } from "../game/economy";
@@ -19,6 +21,7 @@ import { t } from "../i18n";
 import { updateSettings } from "../state/store";
 import type { PlayerState, RizzGender } from "../types";
 import { escapeHtml } from "../utils/format";
+import { playUiSound } from "../utils/sound";
 import { showToast } from "./toast";
 
 type Phase = "gate" | "pick" | "story" | "chat" | "result";
@@ -65,11 +68,13 @@ let live: {
 
 /** Home / external: open straight into a persona story */
 export function queueRizzStory(personaId: string, gender: RizzGender): void {
+  const p = personaById(personaId);
+  const start = p ? startingInterest(p) : 40;
   live.gender = gender;
   live.personaId = personaId;
   live.messages = [];
-  live.interest = 42;
-  live.peakInterest = 42;
+  live.interest = start;
+  live.peakInterest = start;
   live.turn = 0;
   live.busy = false;
   live.result = null;
@@ -83,6 +88,32 @@ function interestLabel(n: number): string {
   if (n >= 55) return t("rizz.meter.vibing");
   if (n >= 35) return t("rizz.meter.warm");
   return t("rizz.meter.cold");
+}
+
+function difficultyLabel(d: RizzDifficulty): string {
+  switch (d) {
+    case "chill":
+      return t("rizz.diff.chill");
+    case "hard":
+      return t("rizz.diff.hard");
+    case "wild":
+      return t("rizz.diff.wild");
+    default:
+      return t("rizz.diff.normal");
+  }
+}
+
+function trainerBadgesHtml(p: RizzPersona, locked: boolean): string {
+  const bits: string[] = [];
+  if (locked) bits.push(`<span class="rizz-badge rizz-badge-locked">${t("rizz.locked")}</span>`);
+  if (p.exclusive && !locked)
+    bits.push(`<span class="rizz-badge rizz-badge-exclusive">${t("rizz.exclusive")}</span>`);
+  if (p.hardMode) bits.push(`<span class="rizz-badge rizz-badge-hard">${t("rizz.hardMode")}</span>`);
+  if (p.nsfw) bits.push(`<span class="rizz-badge rizz-badge-18">18+</span>`);
+  bits.push(
+    `<span class="rizz-badge rizz-badge-diff rizz-diff-${escapeHtml(p.difficulty)}">${escapeHtml(difficultyLabel(p.difficulty))}</span>`,
+  );
+  return bits.join("");
 }
 
 function avatarStyle(p: RizzPersona): string {
@@ -103,13 +134,27 @@ function storyArtHtml(p: RizzPersona): string {
 function resetRun(): void {
   live.personaId = null;
   live.messages = [];
-  live.interest = 42;
-  live.peakInterest = 42;
+  live.interest = 40;
+  live.peakInterest = 40;
   live.turn = 0;
   live.busy = false;
   live.result = null;
   live.storyReplySent = false;
   live.lastSource = null;
+}
+
+function beginWithPersona(p: RizzPersona): void {
+  const start = startingInterest(p);
+  live.personaId = p.id;
+  live.messages = [];
+  live.interest = start;
+  live.peakInterest = start;
+  live.turn = 0;
+  live.busy = false;
+  live.result = null;
+  live.storyReplySent = false;
+  live.lastSource = null;
+  live.phase = "story";
 }
 
 export function renderRizz(
@@ -184,7 +229,8 @@ export function renderRizz(
 
     if (phase === "pick" && gender) {
       const nsfwOn = Boolean(state.settings.nsfwChallenges);
-      const list = personasByGender(gender, state.ownedCores, nsfwOn);
+      const roster = trainersForPicker(gender, state.ownedCores, nsfwOn);
+      const unlocked = roster.filter((x) => !x.locked).map((x) => x.persona);
       const daily = pickDailyPersona(gender, new Date(), state.ownedCores, nsfwOn);
       container.innerHTML = `
         <div class="rizz-pick">
@@ -195,33 +241,37 @@ export function renderRizz(
             <button type="button" class="btn-plain" id="rizz-change-gender">${t("rizz.changeTarget")}</button>
           </div>
           <div class="card rizz-daily-card">
-            <div class="section-header" style="margin:0 0 8px">${t("rizz.daily")}${daily.nsfw ? ` <span class="tag challenge-18-tag" style="background:rgba(255,80,120,0.2)">18+</span>` : ""}</div>
+            <div class="section-header" style="margin:0 0 8px">${t("rizz.daily")}</div>
             <div class="rizz-persona-row">
               <div class="rizz-avatar has-photo" style="${avatarStyle(daily)}" aria-hidden="true">${daily.emoji}</div>
               <div style="flex:1;min-width:0">
                 <strong>${escapeHtml(daily.name)}</strong>
                 <div class="muted" style="font-size:0.84rem">@${escapeHtml(daily.handle)} · ${escapeHtml(daily.vibe)}</div>
+                <div class="rizz-badge-row">${trainerBadgesHtml(daily, false)}</div>
+                <p class="muted rizz-bio">${escapeHtml(daily.bio)}</p>
               </div>
             </div>
             <button type="button" class="btn btn-fill" id="rizz-start-daily" style="margin-top:14px">${t("rizz.replyToStory")}</button>
           </div>
           <div class="section-header">${t("rizz.morePersonas")}</div>
           <div class="rizz-persona-list">
-            ${list
-              .map(
-                (p) => `
-              <button type="button" class="card rizz-persona-card" data-persona="${escapeHtml(p.id)}">
+            ${roster
+              .map(({ persona: p, locked }) => {
+                return `
+              <button type="button" class="card rizz-persona-card${locked ? " rizz-persona-locked" : ""}" data-persona="${escapeHtml(p.id)}" data-locked="${locked ? "1" : "0"}">
                 <div class="rizz-avatar has-photo" style="${avatarStyle(p)}" aria-hidden="true">${p.emoji}</div>
                 <div style="flex:1;min-width:0;text-align:left">
-                  <strong>${escapeHtml(p.name)}${p.nsfw ? ` <span class="tag challenge-18-tag" style="background:rgba(255,80,120,0.2);font-size:0.7rem">18+</span>` : ""}</strong>
+                  <strong>${escapeHtml(p.name)}</strong>
                   <div class="muted" style="font-size:0.82rem">${escapeHtml(p.vibe)}</div>
+                  <div class="rizz-badge-row">${trainerBadgesHtml(p, locked)}</div>
+                  <p class="muted rizz-bio">${escapeHtml(locked ? t("rizz.lockedHint") : p.bio)}</p>
                 </div>
-                <span class="muted">→</span>
-              </button>`,
-              )
+                <span class="muted">${locked ? "🔒" : "→"}</span>
+              </button>`;
+              })
               .join("")}
           </div>
-          <button type="button" class="btn btn-secondary" id="rizz-random" style="margin-top:12px">${t("rizz.random")}</button>
+          <button type="button" class="btn btn-secondary" id="rizz-random" style="margin-top:12px" ${unlocked.length ? "" : "disabled"}>${t("rizz.random")}</button>
           <p class="muted" style="font-size:0.8rem;margin-top:10px">${aiOn ? t("rizz.aiOn") : t("rizz.aiOff")}${
             nsfwOn ? ` · ${t("rizz.nsfwOn")}` : ` · ${t("rizz.nsfwOff")}`
           }</p>
@@ -233,12 +283,19 @@ export function renderRizz(
       });
       const startWith = (p: RizzPersona) => {
         if (p.nsfw && !nsfwOn) {
-          showToast(t("rizz.nsfwLocked"));
+          showToast(t("rizz.nsfwLocked"), 2800, "error");
           return;
         }
-        resetRun();
-        live.personaId = p.id;
-        live.phase = "story";
+        if (!unlocked.some((u) => u.id === p.id)) {
+          showToast(
+            p.unlockCoreId === "elise-sip" ? t("rizz.unlockElise") : t("rizz.lockedHint"),
+            3200,
+            "error",
+          );
+          return;
+        }
+        beginWithPersona(p);
+        playUiSound("soft", state.settings.soundEnabled);
         paint();
       };
       container.querySelector("#rizz-start-daily")?.addEventListener("click", () => startWith(daily));
@@ -247,8 +304,8 @@ export function renderRizz(
       );
       container.querySelectorAll<HTMLButtonElement>("[data-persona]").forEach((btn) => {
         btn.addEventListener("click", () => {
-          const p = list.find((x) => x.id === btn.dataset.persona);
-          if (p) startWith(p);
+          const entry = roster.find((x) => x.persona.id === btn.dataset.persona);
+          if (entry) startWith(entry.persona);
         });
       });
       return;
@@ -270,8 +327,9 @@ export function renderRizz(
             <div class="rizz-story-top">
               <div class="rizz-avatar rizz-avatar-sm has-photo" style="${avatarStyle(p)}" aria-hidden="true">${p.emoji}</div>
               <div style="flex:1;min-width:0">
-                <strong>${escapeHtml(p.name)}${p.nsfw ? ` <span class="tag challenge-18-tag" style="background:rgba(255,80,120,0.2);font-size:0.7rem">18+</span>` : ""}</strong>
+                <strong>${escapeHtml(p.name)}</strong>
                 <div class="muted" style="font-size:0.75rem">@${escapeHtml(p.handle)} · ${t("rizz.justNow")}</div>
+                <div class="rizz-badge-row">${trainerBadgesHtml(p, false)}</div>
               </div>
               <button type="button" class="btn-plain rizz-close" id="rizz-abort" aria-label="${t("common.close")}">✕</button>
             </div>
@@ -281,8 +339,17 @@ export function renderRizz(
                 <div class="rizz-story-side-card">
                   <div class="section-header" style="margin:0 0 8px">${t("rizz.storyReply")}</div>
                   <p class="rizz-story-caption-block">${escapeHtml(p.storyCaption)}</p>
-                  <p class="muted rizz-story-vibe">${escapeHtml(p.vibe)}</p>
-                  <p class="muted rizz-story-tip">${t("rizz.storyTip")}</p>
+                  <p class="muted rizz-story-vibe">${escapeHtml(p.vibe)} · ${escapeHtml(p.bio)}</p>
+                  <p class="muted rizz-story-tip">${escapeHtml(p.openTip)}</p>
+                  <div class="rizz-starters" id="rizz-starters">
+                    <span class="muted rizz-starters-label">${t("rizz.tryLine")}</span>
+                    ${p.starters
+                      .map(
+                        (s, i) =>
+                          `<button type="button" class="rizz-starter-chip" data-starter="${i}">${escapeHtml(s)}</button>`,
+                      )
+                      .join("")}
+                  </div>
                 </div>
                 <form class="rizz-story-composer" id="rizz-story-form">
                   <input type="text" id="rizz-story-input" maxlength="200" autocomplete="off"
@@ -298,14 +365,22 @@ export function renderRizz(
         resetRun();
         paint();
       });
+      const input = container.querySelector("#rizz-story-input") as HTMLInputElement | null;
+      container.querySelectorAll<HTMLButtonElement>("[data-starter]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const idx = Number(btn.dataset.starter);
+          const line = p.starters[idx];
+          if (!input || !line || live.busy) return;
+          input.value = line;
+          input.focus();
+          playUiSound("tap", state.settings.soundEnabled);
+        });
+      });
       container.querySelector("#rizz-story-form")?.addEventListener("submit", (e) => {
         e.preventDefault();
-        void sendMessage(
-          (container.querySelector("#rizz-story-input") as HTMLInputElement)?.value ?? "",
-          true,
-        );
+        void sendMessage(input?.value ?? "", true);
       });
-      (container.querySelector("#rizz-story-input") as HTMLInputElement | null)?.focus();
+      input?.focus();
       return;
     }
 
@@ -352,15 +427,26 @@ export function renderRizz(
                       ? ` · ${live.lastSource === "ai" ? t("rizz.sourceAi") : t("rizz.sourceLocal")}`
                       : ""
                   }</div>
+                  <div class="rizz-badge-row rizz-badge-row-compact">${trainerBadgesHtml(p, false)}</div>
                 </div>
                 <div class="rizz-interest" title="${t("rizz.interest")}">
                   <div class="rizz-interest-ring">
                     <span>${Math.round(ended && result ? result.interest : live.interest)}</span>
                   </div>
                   <div class="rizz-interest-label">${interestLabel(ended && result ? result.interest : live.interest)}</div>
+                  ${
+                    !ended
+                      ? `<div class="muted rizz-peak-mini">${t("rizz.peakShort", { n: Math.round(live.peakInterest) })}</div>`
+                      : ""
+                  }
                 </div>
               </div>
-              <div class="rizz-interest-bar" aria-hidden="true"><i style="width:${ended && result ? result.interest : live.interest}%"></i></div>
+              <div class="rizz-interest-bar${p.hardMode ? " rizz-interest-hard" : ""}" aria-hidden="true"><i style="width:${ended && result ? result.interest : live.interest}%"></i></div>
+              ${
+                !ended && p.hardMode
+                  ? `<p class="muted rizz-hard-note">${t("rizz.hardNote")}</p>`
+                  : ""
+              }
               ${
                 ended && result
                   ? `<div class="rizz-end-banner rizz-end-${escapeHtml(result.outcome)}" role="status">
@@ -460,9 +546,16 @@ export function renderRizz(
       source: live.lastSource ?? undefined,
     };
     live.phase = "result";
-    if (won) showToast(t("rizz.toast.like"));
-    else if (friendzone) showToast(t("rizz.toast.friendzone"));
-    else showToast(t("rizz.toast.ghost"));
+    if (won) {
+      playUiSound("success", state.settings.soundEnabled);
+      showToast(t("rizz.toast.like"), 2600, "ok");
+    } else if (friendzone) {
+      playUiSound("soft", state.settings.soundEnabled);
+      showToast(t("rizz.toast.friendzone"), 2400);
+    } else {
+      playUiSound("error", state.settings.soundEnabled);
+      showToast(t("rizz.toast.ghost"), 2400, "error");
+    }
     // Parent re-render restores result via live session
     onState(applied.state);
   }

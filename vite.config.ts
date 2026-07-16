@@ -189,6 +189,13 @@ function aiJudgeProxy(): Plugin {
             typeof body.interest === "number" ? Math.max(0, Math.min(100, body.interest)) : 40;
           const turn = typeof body.turn === "number" ? body.turn : 1;
 
+          const bodyExtra = body as {
+            voice?: string;
+            bio?: string;
+            difficulty?: string;
+            hardMode?: boolean;
+            nsfw?: boolean;
+          };
           const persona: RizzPersona = {
             id: String(body.personaId ?? "npc"),
             gender: body.gender === "male" ? "male" : "female",
@@ -200,11 +207,22 @@ function aiJudgeProxy(): Plugin {
             accent: "#888",
             accent2: "#111",
             emoji: "✨",
+            bio: String(bodyExtra.bio ?? ""),
+            openTip: "",
+            starters: [],
+            difficulty:
+              bodyExtra.difficulty === "chill" ||
+              bodyExtra.difficulty === "hard" ||
+              bodyExtra.difficulty === "wild"
+                ? bodyExtra.difficulty
+                : "normal",
             personality: String(body.personality ?? "friendly"),
-            voice: String((body as { voice?: string }).voice ?? "natural Instagram DM"),
+            voice: String(bodyExtra.voice ?? "natural Instagram DM"),
             hardNos: Array.isArray(body.hardNos) ? body.hardNos.map(String) : [],
             softYes: Array.isArray(body.softYes) ? body.softYes.map(String) : [],
             replies: { warm: [], cold: [], like: [], ghost: [] },
+            hardMode: Boolean(bodyExtra.hardMode),
+            nsfw: Boolean(bodyExtra.nsfw),
           };
 
           const history = Array.isArray(body.history)

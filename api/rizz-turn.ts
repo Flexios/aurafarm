@@ -183,8 +183,12 @@ function buildUserMessage(opts: {
   gender: string;
   vibe: string;
   storyCaption: string;
+  bio: string;
   personality: string;
   voice: string;
+  difficulty: string;
+  hardMode: boolean;
+  nsfw: boolean;
   hardNos: string[];
   softYes: string[];
   history: HistMsg[];
@@ -201,8 +205,10 @@ function buildUserMessage(opts: {
     `YOU ARE: ${opts.name} (@${opts.handle}) — ${opts.gender}`,
     `VIBE / SCENE: ${opts.vibe}`,
     `STORY IMAGE CAPTION: ${opts.storyCaption}`,
+    opts.bio ? `BIO: ${opts.bio}` : null,
     `CHARACTER BIBLE: ${opts.personality}`,
     `VOICE / SPEECH STYLE: ${opts.voice}`,
+    `DIFFICULTY: ${opts.difficulty}${opts.hardMode ? " · HARD MODE (slow interest, high like bar, no early like)" : ""}${opts.nsfw ? " · 18+ heat ok in-character" : ""}`,
     `HARD NOs (big interest drop): ${opts.hardNos.join(", ")}`,
     `SOFT YESes (interest up if they hit these): ${opts.softYes.join(", ")}`,
     `CURRENT INTEREST: ${opts.interest}`,
@@ -211,7 +217,9 @@ function buildUserMessage(opts: {
     hist ? `HISTORY:\n${hist}` : "HISTORY: (start)",
     `PLAYER MESSAGE: ${opts.playerMessage}`,
     `Stay unmistakably ${opts.name}. Do not sound like any other trainer. JSON only.`,
-  ].join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 function clampInterest(n: number): number {
@@ -422,8 +430,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       gender: body.gender === "male" ? "male" : "female",
       vibe: String(body.vibe ?? "chill").slice(0, 80),
       storyCaption: String(body.storyCaption ?? "").slice(0, 160),
+      bio: String((body as { bio?: string }).bio ?? "").slice(0, 160),
       personality: String(body.personality ?? "friendly").slice(0, 500),
       voice: String(body.voice ?? "natural Instagram DM").slice(0, 300),
+      difficulty: String((body as { difficulty?: string }).difficulty ?? "normal").slice(0, 16),
+      hardMode: Boolean((body as { hardMode?: boolean }).hardMode),
+      nsfw: Boolean((body as { nsfw?: boolean }).nsfw),
       hardNos: Array.isArray(body.hardNos) ? body.hardNos.map(String).slice(0, 20) : [],
       softYes: Array.isArray(body.softYes) ? body.softYes.map(String).slice(0, 20) : [],
       history,

@@ -263,6 +263,21 @@ function personaFacts(p: RizzPersona): {
           "say something interesting or i'll get bored 🖤",
         ],
       };
+    case "f-elise":
+      return {
+        where: ["clean-girl corner of the cafe. soft lighting on purpose"],
+        doing: ["deciding between coffee and a chocolate milkshake like it's philosophy"],
+        drink: [
+          "chocolate milkshake won. coffee was a close second 🥛",
+          "it's a clean sip day. don't make it loud",
+          "matcha sometimes. milkshake when i need softness",
+        ],
+        vibeReply: [
+          "i open slowly. patience is attractive",
+          "specific effort lands. generic flattery doesn't",
+          "soft launch energy only — no chaos",
+        ],
+      };
     case "m-knox":
       return {
         where: ["still up. bad idea. good timing"],
@@ -320,11 +335,19 @@ function answerWhere(p: RizzPersona): string {
 function answerHow(p: RizzPersona, msg: string): string {
   const lower = msg.toLowerCase();
   const f = personaFacts(p);
-  if (/\b(matcha|drink|coffee|latte)\b/.test(lower) && f.drink) return pick(f.drink);
+  if (/\b(matcha|drink|coffee|latte|milkshake|chocolate|sip)\b/.test(lower) && f.drink)
+    return pick(f.drink);
   if (/\b(dog|pet|toast|puppy)\b/.test(lower) && f.pet) return pick(f.pet);
   if (/\b(song|music|concert|encore)\b/.test(lower) && f.music) return pick(f.music);
   if (/\b(pasta|food|carbonara|cook)\b/.test(lower) && f.food) return pick(f.food);
   if (/\b(flight|flying|trip)\b/.test(lower)) return pick(f.doing.concat(f.where));
+  if (p.hardMode && /\b(how are you|how's it going|wyd)\b/.test(lower)) {
+    return pick([
+      "quiet. good. your message will decide if it stays good",
+      "fine. i need more than small talk though",
+      pick(f.vibeReply),
+    ]);
+  }
   return pick([
     ...f.doing,
     "better now that the chat got interesting",
